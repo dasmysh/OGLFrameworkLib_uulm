@@ -53,6 +53,7 @@ endforeach()
 
 file(GLOB LIB_CONFIGS CMakeLists.txt Readme.md .gitattributes .gitignore .gitmodules)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME})
 cuda_add_library(${FWLIB_LIBNAME} ${LIB_TMP_FILES} ${LIB_TOP_FILES} ${LIB_RES_FILES} ${LIB_CONFIGS} SHARED)
 target_include_directories(${FWLIB_LIBNAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME})
 
