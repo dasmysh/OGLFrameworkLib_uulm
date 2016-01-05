@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 3.0)
 
+set(FWLIB_LIBNAME OGLFrameworkLib)
+set(FWLIB_LIBNAME ${FWLIB_LIBNAME} PARENT_SCOPE)
+project(${FWLIB_LIBNAME})
+
 find_package(CUDA QUIET REQUIRED)
 
-set(FWLIB_LIBNAME OGLFrameworkLib)
 set(FWLIB_RESOURCE_BASE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME}/resources)
 set(FWLIB_CUDA_ARCH "compute_20" CACHE STRING "CUDA compute capabilities.")
+set(FWLIB_CUDA_ARCH ${FWLIB_CUDA_ARCH} PARENT_SCOPE)
 set(FWLIB_CUDA_CODE "sm_20" CACHE STRING "CUDA code capabilities.")
+set(FWLIB_CUDA_CODE ${FWLIB_CUDA_CODE} PARENT_SCOPE)
 
 if(MSVC)
 	SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME}/gfx/glrenderer/Font.cpp PROPERTIES COMPILE_FLAGS /wd4503)
@@ -45,8 +50,8 @@ foreach(f ${LIB_RES_FILES})
     source_group("${SRCGR}" FILES ${f})
 endforeach()
 
-file(GLOB_RECURSE RES_OBJ_FILES ${FWLIB_RESOURCE_BASE_PATH}/*.obj)
-foreach(f ${RES_OBJ_FILES})
+file(GLOB_RECURSE LIB_RES_OBJ_FILES ${FWLIB_RESOURCE_BASE_PATH}/*.obj)
+foreach(f ${LIB_RES_OBJ_FILES})
 	set_source_files_properties(${f} PROPERTIES HEADER_FILE_ONLY TRUE)
 endforeach()
 
