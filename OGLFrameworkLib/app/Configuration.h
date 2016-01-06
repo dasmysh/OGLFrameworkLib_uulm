@@ -33,7 +33,7 @@ namespace cgu {
 
         /** Holds whether the main window is fullscreen. */
         bool fullscreen;
-        /** Holds the bit depth of the backbuffer. */
+        /** Holds the bit depth of the back-buffer. */
         int backbufferBits;
         /** Holds the windows left position. */
         int windowLeft;
@@ -49,6 +49,8 @@ namespace cgu {
         bool pauseOnKillFocus;
         /** Holds the resource base directory. */
         std::string resourceBase;
+        /** Holds the resource base directory. */
+        std::vector<std::string> resourceDirs;
         /** Holds whether to use CUDA in the application or not. */
         bool useCUDA;
         /** Holds the used CUDA device if CUDA is used. */
@@ -57,15 +59,14 @@ namespace cgu {
     private:
         /** Needed for serialization */
         friend class boost::serialization::access;
-        /** Needed for serialization. */
-        friend std::ostream & operator<<(std::ostream &os, const Configuration &config);
 
         /**
-         * Serialization method for boost serialization.
-         * @param ar the archive to serialize to
+         * Saving method for boost serialization.
+         * @param ar the archive to serialize to.
+         * @param version the archives version.
          */
         template<class Archive>
-        void serialize(Archive & ar, const unsigned int version)
+        void save(Archive & ar, const unsigned int version) const
         {
             ar & BOOST_SERIALIZATION_NVP(fullscreen);
             ar & BOOST_SERIALIZATION_NVP(backbufferBits);
@@ -82,14 +83,51 @@ namespace cgu {
             if (version >= 1) {
                 ar & BOOST_SERIALIZATION_NVP(resourceBase);
             }
+            if (version >= 5) {
+                ar & BOOST_SERIALIZATION_NVP(resourceDirs);
+            }
             if (version >= 2) {
                 ar & BOOST_SERIALIZATION_NVP(useCUDA);
                 ar & BOOST_SERIALIZATION_NVP(cudaDevice);
             }
         }
+
+        /**
+         * Saving method for boost serialization.
+         * @param ar the archive to serialize to.
+         * @param version the archives version.
+         */
+        template<class Archive>
+        void load(Archive & ar, const unsigned int version)
+        {
+            ar & BOOST_SERIALIZATION_NVP(fullscreen);
+            ar & BOOST_SERIALIZATION_NVP(backbufferBits);
+            ar & BOOST_SERIALIZATION_NVP(windowLeft);
+            ar & BOOST_SERIALIZATION_NVP(windowTop);
+            ar & BOOST_SERIALIZATION_NVP(windowWidth);
+            ar & BOOST_SERIALIZATION_NVP(windowHeight);
+            if (version >= 4) {
+                ar & BOOST_SERIALIZATION_NVP(useSRGB);
+            }
+            if (version >= 3) {
+                ar & BOOST_SERIALIZATION_NVP(pauseOnKillFocus);
+            }
+            if (version >= 1) {
+                ar & BOOST_SERIALIZATION_NVP(resourceBase);
+            }
+            if (version >= 5) {
+                ar & BOOST_SERIALIZATION_NVP(resourceDirs);
+            }
+            if (version >= 2) {
+                ar & BOOST_SERIALIZATION_NVP(useCUDA);
+                ar & BOOST_SERIALIZATION_NVP(cudaDevice);
+            }
+        }
+
+        BOOST_SERIALIZATION_SPLIT_MEMBER()
     };
 }
 
-BOOST_CLASS_VERSION(cgu::Configuration, 4)
+BOOST_CLASS_VERSION(cgu::Configuration, 5)
 
 #endif /* CONFIGURATION_H */

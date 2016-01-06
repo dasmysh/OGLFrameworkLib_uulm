@@ -119,10 +119,13 @@ namespace cgu {
     void OBJMesh::Load()
     {
         std::string currLine;
-        std::ifstream inFile(application->GetConfig().resourceBase + "/" + id);
+        std::string filename = application->GetConfig().resourceBase + "/" + GetParameters()[0];
+        std::ifstream inFile(filename);
 
         if (!inFile.is_open()) {
-            throw std::runtime_error("Could not open file: " + id);
+            LOG(ERROR) << "Cannot open file \"" << filename.c_str() << "\".";
+            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(id)
+                << errdesc_info("Cannot open file.");
         }
 
         createMeshData(inFile);
