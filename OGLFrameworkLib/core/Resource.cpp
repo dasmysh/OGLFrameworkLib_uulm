@@ -13,6 +13,9 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/classification.hpp>
+#include <boost/filesystem.hpp>
+#include "app/ApplicationBase.h"
+#include "app/Configuration.h"
 
 namespace cgu {
     /**
@@ -138,5 +141,25 @@ namespace cgu {
         boost::split(parameters, id, boost::is_any_of(","));
         for (auto& param : parameters) boost::trim(param);
         return parameters;
+    }
+
+    /**
+     *  Returns the actual location of the resource by looking into all search paths.
+     *  @param localFilename the file name local to any resource base directory.
+     *  @return the path to the resource.
+     */
+    std::string Resource::FindResourceLocation(const std::string& localFilename) const
+    {
+        auto filename = application->GetConfig().resourceBase + "/" + localFilename;
+        if (boost::filesystem::exists(filename)) return filename;
+
+        for (const auto& dir : application->GetConfig().resourceDirs) {
+            filename = dir + "/" + localFilename;
+            if (boost::filesystem::exists(filename)) return filename;
+        }
+
+        LOG(ERROR) << L"Cannot find local resource file \"" << localFilename.c_str() << L"\".";
+        throw resource_loading_error() << ::boost::errinfo_file_name(localFilename) << resid_info(id)
+            << errdesc_info("Cannot find local resource file.");
     }
 }

@@ -2,7 +2,6 @@
  * @file   Configuration.cpp
  * @author Sebastian Maisch <sebastian.maisch@googlemail.com>
  * @date   2013.12.18
- * @ingroup win
  *
  * @brief  Implementation of the configuration class for windows systems.
  */
@@ -32,7 +31,6 @@ namespace cgu {
 
     /**
      * Stream method used by boost serialization of the configuration.
-     * @ingroup win
      * @param os the output stream
      * @param config the configuration to serialize
      * @return the output stream

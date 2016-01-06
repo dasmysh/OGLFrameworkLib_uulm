@@ -31,11 +31,11 @@ namespace cgu {
         tfVBO(0),
         colorPicker()
     {
-        screenAlignedProg = app->GetGPUProgramManager()->GetResource("tfRenderGUI.vp|tfRenderGUI.fp");
+        screenAlignedProg = app->GetGPUProgramManager()->GetResource("shader/gui/tfRenderGUI.vp|shader/gui/tfRenderGUI.fp");
         screenAlignedTextureUniform = screenAlignedProg->GetUniformLocation("guiTex");
         screenAlignedProg->BindUniformBlock("tfOrthoProjection", *app->GetUBOBindingPoints());
 
-        tfProgram = app->GetGPUProgramManager()->GetResource("tfPicker.vp|tfPicker.fp");
+        tfProgram = app->GetGPUProgramManager()->GetResource("shader/gui/tfPicker.vp|shader/gui/tfPicker.fp");
         tfProgram->BindUniformBlock("tfOrthoProjection", *app->GetUBOBindingPoints());
 
         /*std::vector<GUIVertex> quadVerts(4);

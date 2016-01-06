@@ -69,9 +69,7 @@ namespace cgu {
         Configuration& GetConfig() const;
         GLWindow* GetWindow() const;
         GPUProgram* GetFontProgram() const;
-        GPUProgram* GetGUIProgram() const;
         ScreenQuadRenderable* GetScreenQuadRenderable() const;
-        BindingLocation* GetGUITexUniform() { return &guiTexUniform; };
 
     private:
         // application status
@@ -128,13 +126,8 @@ namespace cgu {
         std::unique_ptr<CameraView> cameraView;
         /** Holds the GPUProgram for font rendering. */
         GPUProgram* fontProgram;
-        /** Holds the GPUProgram for GUI rendering. */
-        GPUProgram* guiProgram;
         /** Holds the screen quad renderable. */
         std::unique_ptr<ScreenQuadRenderable> screenQuadRenderable;
-
-        /** holds the GUI programs uniform bindings. */
-        BindingLocation guiTexUniform;
     };
 }
 #endif /* APPLICATIONBASE_H */

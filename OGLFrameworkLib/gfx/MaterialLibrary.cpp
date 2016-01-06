@@ -57,7 +57,7 @@ namespace cgu {
     {
         ResourceType* currMat = nullptr;
         std::string currLine;
-        auto filename = Resource::application->GetConfig().resourceBase + "/" + GetParameters()[0];
+        auto filename = FindResourceLocation(GetParameters()[0]);
         std::ifstream inFile(filename);
 
         if (!inFile.is_open()) {

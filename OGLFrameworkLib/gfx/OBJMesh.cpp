@@ -119,7 +119,7 @@ namespace cgu {
     void OBJMesh::Load()
     {
         std::string currLine;
-        std::string filename = application->GetConfig().resourceBase + "/" + GetParameters()[0];
+        std::string filename = FindResourceLocation(GetParameters()[0]);
         std::ifstream inFile(filename);
 
         if (!inFile.is_open()) {

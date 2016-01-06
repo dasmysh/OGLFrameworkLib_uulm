@@ -127,7 +127,7 @@ namespace cgu {
     {
         auto shaderDefinition = GetParameters();
         std::vector<std::string> defines(shaderDefinition.begin() + 1, shaderDefinition.end());
-        return CompileShader(application->GetConfig().resourceBase + "/" + shaderDefinition[0], defines, type, strType);
+        return CompileShader(FindResourceLocation(shaderDefinition[0]), defines, type, strType);
     }
 
     void Shader::UnloadLocal()

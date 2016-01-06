@@ -2,7 +2,6 @@
  * @file   Configuration.h
  * @author Sebastian Maisch <sebastian.maisch@googlemail.com>
  * @date   2013.12.18
- * @ingroup win
  *
  * @brief  Definition of the configuration class for windows systems.
  */
@@ -12,12 +11,13 @@
 
 #include <string>
 #include <boost/archive/xml_oarchive.hpp>
+// ReSharper disable once CppUnusedIncludeDirective
+#include <boost/serialization/vector.hpp>
 
 namespace cgu {
 
     /**
      * @brief  Configuration class used on windows systems for serializing the configuration.
-     * @ingroup win
      *
      * @author Sebastian Maisch <sebastian.maisch@googlemail.com>
      * @date   2013.12.18

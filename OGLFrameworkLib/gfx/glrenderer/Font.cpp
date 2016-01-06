@@ -92,7 +92,9 @@ namespace cgu {
         using boost::property_tree::ptree;
         ptree pt;
 
-        auto filename = application->GetConfig().resourceBase + "/" + GetParameters()[0] + ".fnt";
+        auto filename = FindResourceLocation("fonts/" + GetParameters()[0] + ".fnt");
+        boost::filesystem::path datFile{ filename };
+        auto path = datFile.parent_path().string() + "/";
         if (!boost::filesystem::exists(filename)) {
             LOG(ERROR) << L"File \"" << filename.c_str() << L"\" does not exist.";
             throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(id)
@@ -152,7 +154,7 @@ namespace cgu {
         fontPages.reset(new GLTexture(texWidth, texHeight, static_cast<unsigned int>(fm.pages.size()), texDesc));
 
         for (const auto& page : fm.pages) {
-            auto texFilename = application->GetConfig().resourceBase + "/" + page.filename;
+            auto texFilename = path + page.filename;
             fontPages->AddTextureToArray(texFilename, page.id);
         }
 

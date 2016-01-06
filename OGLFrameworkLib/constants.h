@@ -1,7 +1,7 @@
 /**
  * @file   constants.h
  * @author Sebastian Maisch <sebastian.maisch@googlemail.com>
- * @date   5. Februar 2014
+ * @date   2014.02.05
  *
  * @brief  Contains global constant definitions.
  */
@@ -19,9 +19,7 @@ static unsigned int PTRN_OPENGL_MAJOR_VERSION = 3;
 static unsigned int PTRN_OPENGL_MINOR_VERSION = 3;
 
 /** The font program resource id. */
-static const char* fontProgramID = "renderText.vp|renderText.gp|renderText.fp";
-/** The gui program resource id. */
-static const char* guiProgramID = "renderGUI.vp|renderGUI.fp";
+static const char* fontProgramID = "shader/gui/renderText.vp|shader/gui/renderText.gp|shader/gui/renderText.fp";
 
 /** Uniform buffer block name of the font metrics buffer. */
 static const char* fontMetricsUBBName = "fontMetrics";
@@ -30,7 +28,7 @@ static const char* perspectiveProjectionUBBName = "perspectiveTransform";
 
 /** Holds the number of buffers used for dynamic buffering. */
 static unsigned int NUM_DYN_BUFFERS = 5;
-/** Holds the timeout to wait for asynchronus buffers. */
+/** Holds the timeout to wait for asynchronous buffers. */
 static GLuint64 ASYNC_TIMEOUT = 3000000;
 
 #endif /* CONSTANTS_H */

@@ -39,9 +39,7 @@ namespace cgu {
         orthoView(),
         cameraView(),
         fontProgram(nullptr),
-        guiProgram(nullptr),
-        screenQuadRenderable(nullptr),
-        guiTexUniform()
+        screenQuadRenderable(nullptr)
     {
         texManager.reset(new TextureManager(this));
         volManager.reset(new VolumeManager(this));
@@ -49,7 +47,6 @@ namespace cgu {
         shaderManager.reset(new ShaderManager(this));
         programManager.reset(new GPUProgramManager(this));
         fontManager.reset(new FontManager(this));
-        // guiThemeManager.reset(new GUIThemeManager(this));
         win.RegisterApplication(*this);
         win.ShowWindow();
         auto aspectRatio = static_cast<float> (win.GetWidth())
@@ -60,9 +57,6 @@ namespace cgu {
         TwInit(TW_OPENGL_CORE, nullptr);
         fontProgram = programManager->GetResource(fontProgramID);
         fontProgram->BindUniformBlock(orthoProjectionUBBName, uniformBindingPoints);
-        guiProgram = programManager->GetResource(guiProgramID);
-        guiTexUniform = guiProgram->GetUniformLocation("guiTex");
-        guiProgram->BindUniformBlock(orthoProjectionUBBName, uniformBindingPoints);
         screenQuadRenderable.reset(new ScreenQuadRenderable());
     }
 
@@ -177,15 +171,6 @@ namespace cgu {
     GPUProgram* ApplicationBase::GetFontProgram() const
     {
         return fontProgram;
-    }
-
-    /**
-     * Returns the GPU program for GUI rendering.
-     * @return the GUI rendering program
-     */
-    GPUProgram* ApplicationBase::GetGUIProgram() const
-    {
-        return guiProgram;
     }
 
     /**

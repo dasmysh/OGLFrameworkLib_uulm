@@ -247,9 +247,10 @@ namespace cgu {
         brickTextureDesc.type = children[0]->brickTextureDesc.type;
         brickTextureDesc.internalFormat = children[0]->brickTextureDesc.internalFormat;
 
-        if (brickTextureDesc.type == GL_UNSIGNED_BYTE) combineProg = app->GetGPUProgramManager()->GetResource("combineChildTextures8.cp");
-        else if (brickTextureDesc.type == GL_UNSIGNED_SHORT) combineProg = app->GetGPUProgramManager()->GetResource("combineChildTextures16.cp");
-        else if (brickTextureDesc.type == GL_UNSIGNED_INT) combineProg = app->GetGPUProgramManager()->GetResource("combineChildTextures32.cp");
+        // TODO: change shaders. with defines only one shader is needed. [1/6/2016 Sebastian Maisch]
+        if (brickTextureDesc.type == GL_UNSIGNED_BYTE) combineProg = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/combineChildTextures8.cp");
+        else if (brickTextureDesc.type == GL_UNSIGNED_SHORT) combineProg = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/combineChildTextures16.cp");
+        else if (brickTextureDesc.type == GL_UNSIGNED_INT) combineProg = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/combineChildTextures32.cp");
         else throw std::runtime_error("Pixel-type not supported.");
 
         auto uniformNames = combineProg->GetUniformLocations({ "childTex", "combineTex", "childShift", "maxChunkSize" });

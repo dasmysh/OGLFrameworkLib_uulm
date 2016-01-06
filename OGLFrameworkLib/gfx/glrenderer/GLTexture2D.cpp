@@ -63,7 +63,7 @@ namespace cgu {
     void GLTexture2D::Load()
     {
         auto fileOptions = GetParameters();
-        auto filename = application->GetConfig().resourceBase + "/" + fileOptions[0];
+        auto filename = FindResourceLocation(fileOptions[0]);
         if (!boost::filesystem::exists(filename)) {
             LOG(ERROR) << "File \"" << filename.c_str() << L"\" cannot be opened.";
             throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(id)

@@ -45,6 +45,7 @@ namespace cgu {
         static std::string GetNormalizedResourceId(const std::string& resId);
         SubResourceList GetSubresources() const;
         ParameterList GetParameters() const;
+        std::string FindResourceLocation(const std::string& localFilename) const;
 
         /** Holds the resources id. */
         std::string id;

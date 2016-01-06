@@ -99,7 +99,7 @@ namespace cgu {
 
     void GLTexture3D::Load()
     {
-        auto filename = application->GetConfig().resourceBase + "/" + GetParameters()[0];
+        auto filename = FindResourceLocation(GetParameters()[0]);
         boost::filesystem::path datFile{ filename };
         auto path = datFile.parent_path().string() + "/";
         auto ending = datFile.extension().string();
@@ -296,9 +296,10 @@ namespace cgu {
         fileStream = &ifs;
 
         GPUProgram* minMaxProg;
-        if (texDesc.bytesPP == 1) minMaxProg = application->GetGPUProgramManager()->GetResource("genMinMaxMipMaps8.cp");
-        else if (texDesc.bytesPP == 2) minMaxProg = application->GetGPUProgramManager()->GetResource("genMinMaxMipMaps16.cp");
-        else if (texDesc.bytesPP == 4) minMaxProg = application->GetGPUProgramManager()->GetResource("genMinMaxMipMaps32.cp");
+        // TODO: change shaders. with defines only one shader is needed. [1/6/2016 Sebastian Maisch]
+        if (texDesc.bytesPP == 1) minMaxProg = application->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMaxMipMaps8.cp");
+        else if (texDesc.bytesPP == 2) minMaxProg = application->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMaxMipMaps16.cp");
+        else if (texDesc.bytesPP == 4) minMaxProg = application->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMaxMipMaps32.cp");
         else throw std::runtime_error("Texture bit depth is not supported for min/max octrees.");
         auto uniformNames = minMaxProg->GetUniformLocations(boost::assign::list_of<std::string>("origTex")("nextLevelTex"));
         std::unique_ptr<VolumeBrickOctree> result{ new VolumeBrickOctree(this, glm::uvec3(0), volumeSize,
@@ -353,15 +354,16 @@ namespace cgu {
         minMaxDesc.bytesPP = texDesc.bytesPP * 4;
         minMaxDesc.format = GL_RGBA;
         minMaxDesc.type = texDesc.type;
+        // TODO: change shaders. with defines only one shader is needed. [1/6/2016 Sebastian Maisch]
         if (texDesc.type == GL_UNSIGNED_BYTE) {
             minMaxDesc.internalFormat = GL_RGBA8;
-            minMaxProg = application->GetGPUProgramManager()->GetResource("genMinMaxTexture8.cp");
+            minMaxProg = application->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMaxTexture8.cp");
         } else if (texDesc.type == GL_UNSIGNED_SHORT) {
             minMaxDesc.internalFormat = GL_RGBA16F;
-            minMaxProg = application->GetGPUProgramManager()->GetResource("genMinMaxTexture16.cp");
+            minMaxProg = application->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMaxTexture16.cp");
         } else if (texDesc.type == GL_UNSIGNED_INT) {
             minMaxDesc.internalFormat = GL_RGBA32F;
-            minMaxProg = application->GetGPUProgramManager()->GetResource("genMinMaxTexture32.cp");
+            minMaxProg = application->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMaxTexture32.cp");
         } else throw std::runtime_error("Pixel-type not supported.");
         auto uniformNames = minMaxProg->GetUniformLocations(boost::assign::list_of<std::string>("origTex")("minMaxTex"));
 
