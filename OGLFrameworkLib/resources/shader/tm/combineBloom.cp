@@ -29,9 +29,9 @@ void main() {
 
     vec4 result = pyramidFilter(sourceTex, tex, defocusWidth);
     for (int i = 0; i < NUM_PASSES; i++) {
-        vec4 passSmple = texture(blurTex[i], texcoord);
+        vec4 passSmple = texture(blurTex[i], tex);
         result.rgb += bloomIntensity * w[i] * passSmple.rgb / 127.0;
-        result.a += passSmple.a / N_PASSES;
+        result.a += passSmple.a / NUM_PASSES;
     }
     imageStore(targetTex, pos, result);
 }

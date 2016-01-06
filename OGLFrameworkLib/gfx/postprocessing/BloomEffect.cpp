@@ -19,10 +19,14 @@ namespace cgu {
         glareUniformIds(glareDetectProgram->GetUniformLocations({ "sourceTex", "targetTex", "exposure", "bloomThreshold" })),
         blurProgram(app->GetGPUProgramManager()->GetResource("shader/tm/blurBloom.cp")),
         blurUniformIds(blurProgram->GetUniformLocations({ "sourceTex", "targetTex", "dir", "bloomWidth" })),
-        combineProgram(app->GetGPUProgramManager()->GetResource("shader/tm/combineBloom.cp")),
-        combineUniformIds(combineProgram->GetUniformLocations({ "sourceTex", "blurTex", "targetTex", "defocus", "bloomIntensity" })),
+        combineProgram(nullptr),
+        combineUniformIds(),
         sourceRTSize(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight())
     {
+        std::stringstream passesToString;
+        passesToString << NUM_PASSES;
+        combineProgram = app->GetGPUProgramManager()->GetResource("shader/tm/combineBloom.cp,NUM_PASSES " + passesToString.str());
+        combineUniformIds = combineProgram->GetUniformLocations({ "sourceTex", "blurTex", "targetTex", "defocus", "bloomIntensity" });
         TextureDescriptor texDesc{ 128, GL_RGBA32F, GL_RGBA, GL_FLOAT };
         glm::uvec2 size(app->GetWindow()->GetWidth() / 2, app->GetWindow()->GetHeight() / 2);
         glaresRT.reset(new GLTexture(size.x, size.y, texDesc, nullptr));

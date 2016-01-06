@@ -97,7 +97,14 @@ namespace cgu {
      */
     void GPUProgramManager::HandleShaderCompileException(const shader_compiler_error& except) const
     {
-        std::string message = except.what();
+        auto filename = boost::get_error_info<boost::errinfo_file_name>(except);
+        auto resid = boost::get_error_info<resid_info>(except);
+        auto errDesc = boost::get_error_info<errdesc_info>(except);
+        auto errorString = boost::get_error_info<compiler_error_info>(except);
+        auto message = "ResourceID: " + (*resid) + "\n";
+        message += "Filename: " + (*filename) + "\n";
+        message += "Description: " + (*errDesc) + "\n";
+        message += "Compiler Message:\n" + (*errorString) + "\n";
         message += "\nRecompile (y) or Quit (n)?";
         if (!application->GetWindow()->MessageBoxQuestion("GPU Program Compiler Error", message)) {
             throw std::runtime_error("GPU program compilation error. Quitting.");
