@@ -8,7 +8,6 @@
 
 #include "GLTexture3D.h"
 #include "app/ApplicationBase.h"
-#include "app/Configuration.h"
 #include <codecvt>
 #include <fstream>
 #include "GLTexture.h"

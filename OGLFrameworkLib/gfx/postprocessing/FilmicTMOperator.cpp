@@ -27,7 +27,7 @@ namespace cgu {
         params.toeNumerator = 0.02f;
         params.toeDenominator = 0.3f;
         params.white = 11.2f;
-        params.gamma = 2.2f;
+        params.exposure = 2.0f;
 
         tmProgram->BindUniformBlock("filmicBuffer", *app->GetUBOBindingPoints());
 
@@ -54,7 +54,8 @@ namespace cgu {
         TwAddVarRW(bar, "FTMToeNum", TW_TYPE_FLOAT, &params.toeNumerator, " label='Toe Numerator' min=0.01 max=0.1 step=0.01");
         TwAddVarRW(bar, "FTMToeDenom", TW_TYPE_FLOAT, &params.toeDenominator, " label='Toe Denominator' min=0.1 max=1 step=0.1");
         TwAddVarRW(bar, "FTMWhite", TW_TYPE_FLOAT, &params.white, " label='White' min=5.0 max=50 step=0.1");
-        TwAddVarRW(bar, "Gamma", TW_TYPE_FLOAT, &params.gamma, " label='Gamma' min=1.0 max=3.0 step=0.1");
+        // no gamma on sRGB targets
+        // TwAddVarRW(bar, "Gamma", TW_TYPE_FLOAT, &params.gamma, " label='Gamma' min=1.0 max=3.0 step=0.1");
     }
 
     void FilmicTMOperator::ApplyTonemapping(GLRenderTarget* sourceRT, GLRenderTarget* targetRT)

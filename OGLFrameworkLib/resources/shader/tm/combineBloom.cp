@@ -25,7 +25,7 @@ void main() {
 
     ivec2 sourceSize = textureSize(sourceTex, 0);
     vec2 defocusWidth = vec2(defocus) / vec2(sourceSize);
-    vec2 tex = vec2(pos) / vec2(targetSize);
+    vec2 tex = (vec2(pos) + vec2(0.5f)) / vec2(targetSize);
 
     vec4 result = pyramidFilter(sourceTex, tex, defocusWidth);
     for (int i = 0; i < NUM_PASSES; i++) {

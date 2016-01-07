@@ -9,7 +9,7 @@ struct FilmicParams
     float toeNumerator;
     float toeDenominator;
     float white;
-    float gamma;
+    float exposure;
 };
 
 
@@ -53,14 +53,10 @@ vec3 Uncharted2Tonemap(vec3 x)
 
 void main() {
     vec3 rgbVal = texture(sourceTex, vTex).rgb;
-    
-    // float ExposureBias = 2.0f * 16.0f;
-    float ExposureBias = 1.0f;
-    vec3 curr = Uncharted2Tonemap(ExposureBias*rgbVal);
+
+    vec3 curr = 2.0f * Uncharted2Tonemap(filmicParams.exposure*rgbVal);
     vec3 whiteScale = 1.0f / Uncharted2Tonemap(vec3(filmicParams.white));
     vec3 color = curr*whiteScale;
 
-    vec3 retColor = pow(color, vec3(1 / filmicParams.gamma));
-
-    outputColor = vec4(retColor, 1);
+    outputColor = vec4(color, 1);
 }

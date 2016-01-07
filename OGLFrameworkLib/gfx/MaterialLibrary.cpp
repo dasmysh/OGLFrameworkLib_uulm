@@ -8,8 +8,6 @@
 
 #include "MaterialLibrary.h"
 #include "app/ApplicationBase.h"
-#include "app/Configuration.h"
-
 #include <fstream>
 #include <string>
 #include <boost/algorithm/string/predicate.hpp>

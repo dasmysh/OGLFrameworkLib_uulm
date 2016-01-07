@@ -16,7 +16,7 @@ void main() {
 
     ivec2 sourceSize = textureSize(sourceTex, 0);
     vec2 dirPixels = (dir / vec2(sourceSize)) * bloomWidth;
-    vec2 tex = vec2(pos) / vec2(targetSize);
+    vec2 tex = (vec2(pos) + vec2(0.5f)) / vec2(targetSize);
 
     vec4 color = vec4(0.0f);
     for (int i = 0; i < 13; i++)

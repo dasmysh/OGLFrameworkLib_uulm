@@ -17,7 +17,7 @@ void main() {
     if (pos.x >= targetSize.x || pos.y >= targetSize.y) return;
 
     vec4 color = vec4(1e20);
-    vec2 tex = vec2(pos) / vec2(targetSize);
+    vec2 tex = (vec2(pos) + vec2(0.5f)) / vec2(targetSize);
     for (int i = 0; i < 5; i++) {
         color = min(texture(sourceTex, tex + (offsets[i] * pixelSize)), color);
     }

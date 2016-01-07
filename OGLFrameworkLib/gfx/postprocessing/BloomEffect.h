@@ -37,6 +37,9 @@ namespace cgu {
         void AddParameterSlidersToBar(TwBar* bar);
         void ApplyEffect(GLRenderTarget* sourceRT, GLRenderTarget* targetRT);
 
+        void SetExposure(float exposure) { params.exposure = exposure; }
+        float GetExposure() const { return params.exposure; }
+
     private:
         using BlurPassTargets = std::array<std::unique_ptr<GLTexture>, 2>;
         static const unsigned int NUM_PASSES = 6;
@@ -45,6 +48,8 @@ namespace cgu {
         std::unique_ptr<GLTexture> glaresRT;
         /** Holds the temporary results of the blurring. */
         std::array<BlurPassTargets, NUM_PASSES> blurRTs;
+        /** Holds the bloom parameters. */
+        BloomParams params;
 
         /** Holds the screen quad renderable. */
         cgu::ScreenQuadRenderable* renderable;

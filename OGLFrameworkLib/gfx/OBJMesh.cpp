@@ -9,8 +9,6 @@
 #define GLM_SWIZZLE
 #include "OBJMesh.h"
 #include "app/ApplicationBase.h"
-#include "app/Configuration.h"
-
 #include <fstream>
 #include <codecvt>
 #include <boost/algorithm/string/predicate.hpp>
@@ -119,7 +117,7 @@ namespace cgu {
     void OBJMesh::Load()
     {
         std::string currLine;
-        std::string filename = FindResourceLocation(GetParameters()[0]);
+        auto filename = FindResourceLocation(GetParameters()[0]);
         std::ifstream inFile(filename);
 
         if (!inFile.is_open()) {

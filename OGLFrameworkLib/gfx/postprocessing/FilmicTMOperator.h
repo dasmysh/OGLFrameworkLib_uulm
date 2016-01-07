@@ -29,7 +29,7 @@ namespace cgu {
         float toeNumerator;
         float toeDenominator;
         float white;
-        float gamma;
+        float exposure;
     };
 
     /**
@@ -44,6 +44,9 @@ namespace cgu {
 
         void AddParameterSlidersToBar(TwBar* bar);
         void ApplyTonemapping(GLRenderTarget* sourceRT, GLRenderTarget* targetRT);
+
+        void SetExposure(float exposure) { params.exposure = exposure; }
+        float GetExposure() const { return params.exposure; }
 
     private:
         /** Holds the shader used for tone-mapping. */

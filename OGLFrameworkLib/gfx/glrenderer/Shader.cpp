@@ -8,8 +8,6 @@
 
 #include "Shader.h"
 #include "app/ApplicationBase.h"
-#include "app/Configuration.h"
-
 #include <fstream>
 #include <boost/algorithm/string/predicate.hpp>
 #include <codecvt>
