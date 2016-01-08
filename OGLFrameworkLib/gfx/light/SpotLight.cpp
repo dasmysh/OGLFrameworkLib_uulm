@@ -8,6 +8,8 @@
 
 #include "SpotLight.h"
 #include "gfx/glrenderer/GLUniformBuffer.h"
+#include "ShadowMap.h"
+#include "app/ApplicationBase.h"
 
 namespace cgu {
 
@@ -16,16 +18,68 @@ namespace cgu {
      *  @param intensity the lights power.
      *  @param theFov the light spots angle.
      *  @param pos the lights position.
+     *  @param smSize size of the shadow map.
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
-    SpotLight::SpotLight(const glm::vec3&  intensity, float theFov, const glm::vec3& pos, ShaderBufferBindingPoints* uniformBindingPoints) :
-        camera(RI_MOUSE_RIGHT_BUTTON_DOWN, MB_RGHT, theFov, 1.0f, 0.1f, 10.0f, pos, uniformBindingPoints),
+    SpotLight::SpotLight(const glm::vec3&  intensity, float theFov, const glm::vec3& pos, const glm::uvec2& smSize, ApplicationBase* app) :
+        camera(RI_MOUSE_RIGHT_BUTTON_DOWN, MB_RGHT, theFov, 1.0f, 0.1f, 100.0f, pos, app->GetUBOBindingPoints()),
         falloffWidth(0.05f),
         intensity(intensity),
         attenuation(1.0f / 128.0f),
         farPlane(10.0f),
-        bias(-0.01f)
+        bias(-0.01f),
+        shadowMap(new ShadowMap(smSize, *this, app)),
+        shadowMapSize(smSize),
+        application(app)
     {
+    }
+
+    /** Copy constructor. */
+    SpotLight::SpotLight(const SpotLight& rhs) :
+        SpotLight(rhs.intensity, rhs.GetCamera().GetFOV(), rhs.GetCamera().GetPosition(), rhs.shadowMapSize, rhs.application)
+    {
+    }
+
+    /** Copy assignment operator. */
+    SpotLight& SpotLight::operator=(const SpotLight& rhs)
+    {
+        if (this != &rhs) {
+            SpotLight tmp{ rhs };
+            std::swap(*this, tmp);
+        }
+        return *this;
+    }
+
+    /** Move constructor. */
+    SpotLight::SpotLight(SpotLight&& rhs) :
+        camera(std::move(rhs.camera)),
+        falloffWidth(rhs.falloffWidth),
+        intensity(rhs.intensity),
+        attenuation(rhs.attenuation),
+        farPlane(rhs.farPlane),
+        bias(rhs.bias),
+        shadowMap(std::move(rhs.shadowMap)),
+        shadowMapSize(rhs.shadowMapSize),
+        application(rhs.application)
+    {
+
+    }
+
+    /** Move assignment operator. */
+    SpotLight& SpotLight::operator=(SpotLight&& rhs)
+    {
+        if (this != &rhs) {
+            camera = std::move(rhs.camera);
+            falloffWidth = rhs.falloffWidth;
+            intensity = rhs.intensity;
+            attenuation = rhs.attenuation;
+            farPlane = rhs.farPlane;
+            bias = rhs.bias;
+            shadowMap = std::move(rhs.shadowMap);
+            shadowMapSize = rhs.shadowMapSize;
+            application = rhs.application;
+        }
+        return *this;
     }
 
     /** Default destructor. */

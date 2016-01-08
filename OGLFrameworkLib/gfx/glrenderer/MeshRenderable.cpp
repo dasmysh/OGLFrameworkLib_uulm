@@ -22,7 +22,7 @@ namespace cgu {
         mesh(renderMesh),
         vBuffer(0),
         iBuffer(0),
-        program(prog)
+        drawProgram(prog)
     {
         OGL_CALL(glGenBuffers, 1, &vBuffer);
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
@@ -40,7 +40,7 @@ namespace cgu {
 
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
 
-        FillMeshAttributeBindings();
+        FillMeshAttributeBindings(drawProgram, drawAttribBinds);
     }
 
     /**
@@ -68,7 +68,7 @@ namespace cgu {
      * @param orig the original object
      */
     MeshRenderable::MeshRenderable(const MeshRenderable& orig) :
-        MeshRenderable(orig.mesh, orig.program)
+        MeshRenderable(orig.mesh, orig.drawProgram)
     {
     }
 
@@ -81,27 +81,26 @@ namespace cgu {
         vBuffer(orig.vBuffer),
         iBuffer(orig.iBuffer),
         iBuffers(std::move(orig.iBuffers)),
-        program(orig.program),
-        attribBinds(std::move(attribBinds))
+        drawProgram(orig.drawProgram),
+        drawAttribBinds(std::move(orig.drawAttribBinds))
     {
         orig.mesh = nullptr;
         orig.vBuffer = 0;
         orig.iBuffer = 0;
-        orig.program = nullptr;
+        orig.drawProgram = nullptr;
+        iBuffers.clear();
     }
 
     /**
      * Copy assignment operator.
      * @param orig the original object
      */
-    MeshRenderable& MeshRenderable::operator=(MeshRenderable orig)
+    MeshRenderable& MeshRenderable::operator=(const MeshRenderable& orig)
     {
-        std::swap(mesh, orig.mesh);
-        std::swap(vBuffer, orig.vBuffer);
-        std::swap(iBuffer, orig.iBuffer);
-        std::swap(iBuffers, orig.iBuffers);
-        std::swap(program, orig.program);
-        std::swap(attribBinds, orig.attribBinds);
+        if (this != &orig) {
+            MeshRenderable tmp{ orig };
+            std::swap(*this, tmp);
+        }
         return *this;
     }
 
@@ -117,17 +116,17 @@ namespace cgu {
             vBuffer = orig.vBuffer;
             iBuffer = orig.iBuffer;
             iBuffers = std::move(orig.iBuffers);
-            program = orig.program;
-            attribBinds = std::move(orig.attribBinds);
+            drawProgram = orig.drawProgram;
+            drawAttribBinds = std::move(orig.drawAttribBinds);
             orig.mesh = nullptr;
             orig.vBuffer = 0;
             orig.iBuffer = 0;
-            orig.program = nullptr;
+            orig.drawProgram = nullptr;
         }
         return *this;
     }
 
-    void MeshRenderable::FillMeshAttributeBindings()
+    void MeshRenderable::FillMeshAttributeBindings(GPUProgram* program, ShaderMeshAttributes& attribBinds) const
     {
         assert(attribBinds.GetUniformIds().size() == 0);
         assert(attribBinds.GetVertexAttributes().size() == 0);
@@ -147,11 +146,17 @@ namespace cgu {
 
     void MeshRenderable::Draw() const
     {
+        Draw<true>(drawProgram, drawAttribBinds);
+    }
+
+    template <bool useMaterials>
+    void MeshRenderable::Draw(GPUProgram* program, const ShaderMeshAttributes& attribBinds) const
+    {
         program->UseProgram();
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        DrawSubMesh(attribBinds.GetVertexAttributes()[0], mesh);
+        DrawSubMesh<true>(program, attribBinds, attribBinds.GetVertexAttributes()[0], mesh);
         for (unsigned int idx = 0; idx < iBuffers.size(); ++idx) {
-            DrawSubMesh(attribBinds.GetVertexAttributes()[idx + 1], mesh->subMeshes[idx]);
+            DrawSubMesh<true>(program, attribBinds, attribBinds.GetVertexAttributes()[idx + 1], mesh->subMeshes[idx]);
         }
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
     }
@@ -183,25 +188,88 @@ namespace cgu {
         vao->EndAttributeSetup();
     }
 
-    void MeshRenderable::DrawSubMesh(const GLVertexAttributeArray* vao, const SubMesh* subMesh) const
+    template<bool useMaterials> void MeshRenderable::DrawSubMesh(GPUProgram* program, const ShaderMeshAttributes& attribBinds,
+        const GLVertexAttributeArray* vao, const SubMesh* subMesh) const
     {
         vao->EnableVertexAttributeArray();
         for (const auto& mtlChunk : subMesh->mtlChunks) {
-            if (mtlChunk.material->diffuseTex && attribBinds.GetUniformIds().size() != 0) {
-                mtlChunk.material->diffuseTex->GetTexture()->ActivateTexture(GL_TEXTURE0);
-                program->SetUniform(attribBinds.GetUniformIds()[0], 0);
-            }
-            if (mtlChunk.material->bumpTex && attribBinds.GetUniformIds().size() >= 2) {
-                mtlChunk.material->bumpTex->GetTexture()->ActivateTexture(GL_TEXTURE1);
-                program->SetUniform(attribBinds.GetUniformIds()[1], 1);
-                program->SetUniform(attribBinds.GetUniformIds()[2], mtlChunk.material->bumpMultiplier);
-            }
+            UseMaterials<useMaterials>(program, attribBinds, mtlChunk);
 
-            // TODO: set material ...
             GLsizei count = mtlChunk.face_seq_num;
             OGL_CALL(glDrawElements, GL_TRIANGLES, count, GL_UNSIGNED_INT,
                 (static_cast<char*> (nullptr)) + (mtlChunk.face_seq_begin * sizeof(unsigned int)));
         }
         vao->DisableVertexAttributeArray();
+    }
+
+    template<bool useMaterials> void MeshRenderable::UseMaterials(GPUProgram*, const ShaderMeshAttributes&, const SubMeshMaterialChunk&) const {}
+
+    template<> void MeshRenderable::UseMaterials<true>(GPUProgram* program, const ShaderMeshAttributes& attribBinds,
+        const SubMeshMaterialChunk& mtlChunk) const
+    {
+        if (mtlChunk.material->diffuseTex && attribBinds.GetUniformIds().size() != 0) {
+            mtlChunk.material->diffuseTex->GetTexture()->ActivateTexture(GL_TEXTURE0);
+            program->SetUniform(attribBinds.GetUniformIds()[0], 0);
+        }
+        if (mtlChunk.material->bumpTex && attribBinds.GetUniformIds().size() >= 2) {
+            mtlChunk.material->bumpTex->GetTexture()->ActivateTexture(GL_TEXTURE1);
+            program->SetUniform(attribBinds.GetUniformIds()[1], 1);
+            program->SetUniform(attribBinds.GetUniformIds()[2], mtlChunk.material->bumpMultiplier);
+        }
+    }
+
+    /**
+     *  Constructor.
+     *  @param renderMesh the mesh to render.
+     *  @param prog the GPU program for rendering.
+     *  @param shadowProg the GPU program for shadow map rendering.
+     */
+    MeshRenderableShadowing::MeshRenderableShadowing(const Mesh* renderMesh, GPUProgram* prog, GPUProgram* shadowProg) :
+        MeshRenderable(renderMesh, prog),
+        shadowProgram(shadowProg)
+
+    {
+        FillMeshAttributeBindings(shadowProgram, shadowAttribBinds);
+    }
+
+    /** Helper constructor for implementing the copy constructor. */
+    MeshRenderableShadowing::MeshRenderableShadowing(const MeshRenderable& rhs, GPUProgram* shadowProg) :
+        MeshRenderable(rhs),
+        shadowProgram(shadowProg)
+    {
+        FillMeshAttributeBindings(shadowProgram, shadowAttribBinds);
+    }
+
+    /** Copy constructor. */
+    MeshRenderableShadowing::MeshRenderableShadowing(const MeshRenderableShadowing& rhs) = default;
+    /** Copy assignment operator. */
+    MeshRenderableShadowing& MeshRenderableShadowing::operator=(const MeshRenderableShadowing& rhs) = default;
+
+    /** Move constructor. */
+    MeshRenderableShadowing::MeshRenderableShadowing(MeshRenderableShadowing&& rhs) :
+        MeshRenderable(std::move(rhs)),
+        shadowProgram(rhs.shadowProgram),
+        shadowAttribBinds(std::move(rhs.shadowAttribBinds))
+    {
+        rhs.shadowProgram = nullptr;
+    }
+
+    /** Move assignment operator. */
+    MeshRenderableShadowing& MeshRenderableShadowing::operator=(MeshRenderableShadowing&& rhs)
+    {
+        if (this != &rhs) {
+            this->~MeshRenderableShadowing();
+            MeshRenderable::operator =(std::move(rhs));
+            shadowProgram = std::move(rhs.shadowProgram);
+            shadowAttribBinds = std::move(rhs.shadowAttribBinds);
+        }
+        return *this;
+    }
+
+    MeshRenderableShadowing::~MeshRenderableShadowing() = default;
+
+    void MeshRenderableShadowing::DrawShadow() const
+    {
+        Draw<false>(shadowProgram, shadowAttribBinds);
     }
 }

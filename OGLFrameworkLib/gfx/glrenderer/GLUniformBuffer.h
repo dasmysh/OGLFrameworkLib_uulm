@@ -26,7 +26,7 @@ namespace cgu {
     public:
         GLUniformBuffer(const std::string& name, unsigned int size, ShaderBufferBindingPoints* bindings);
         GLUniformBuffer(const GLUniformBuffer&);
-        GLUniformBuffer& operator=(GLUniformBuffer);
+        GLUniformBuffer& operator=(const GLUniformBuffer&);
         GLUniformBuffer(GLUniformBuffer&&);
         GLUniformBuffer& operator=(GLUniformBuffer&&);
         virtual ~GLUniformBuffer();

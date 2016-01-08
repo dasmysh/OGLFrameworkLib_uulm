@@ -103,11 +103,13 @@ namespace cgu {
     /** Default move assignment operator. */
     OBJMesh& OBJMesh::operator=(OBJMesh&& rhs)
     {
-        this->~OBJMesh();
-        Resource* tRes = this;
-        *tRes = static_cast<Resource&&>(std::move(rhs));
-        Mesh* tMesh = this;
-        *tMesh = static_cast<Mesh&&>(std::move(rhs));
+        if (this != &rhs) {
+            this->~OBJMesh();
+            Resource* tRes = this;
+            *tRes = static_cast<Resource&&>(std::move(rhs));
+            Mesh* tMesh = this;
+            *tMesh = static_cast<Mesh&&>(std::move(rhs));
+        }
         return *this;
     }
 

@@ -38,7 +38,7 @@ namespace cgu {
             float farZ, const glm::vec3& camPos, ShaderBufferBindingPoints* uniformBindingPoints);
         CameraView(float fovY, float aspectRatio, float nearZ, float farZ, const glm::vec3& camPos, ShaderBufferBindingPoints* uniformBindingPoints);
         CameraView(const CameraView&);
-        CameraView& operator=(CameraView);
+        CameraView& operator=(const CameraView&);
         CameraView(CameraView&&);
         CameraView& operator=(CameraView&&);
         virtual ~CameraView();
@@ -47,6 +47,7 @@ namespace cgu {
         bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         cguMath::Frustum<float> SetView(const glm::mat4& modelM) const;
+        void SetViewMVPOnly(const glm::mat4& modelM) const;
         void UpdateCamera();
         const glm::mat4& GetViewMatrix() const { return view; }
         cguMath::Frustum<float> GetViewFrustum(const glm::mat4& modelM) const;

@@ -43,13 +43,14 @@ namespace cgu {
     /**
      *  Copy assignment operator.
      */
-    GLUniformBuffer& GLUniformBuffer::operator=(GLUniformBuffer rhs)
+    GLUniformBuffer& GLUniformBuffer::operator=(const GLUniformBuffer& rhs)
     {
-        std::swap(ubo, rhs.ubo);
-        std::swap(bufferSize, rhs.bufferSize);
-        std::swap(bindingPoints, rhs.bindingPoints);
-        std::swap(bindingPoint, rhs.bindingPoint);
-        std::swap(uboName, rhs.uboName);
+        GLUniformBuffer tmp{ rhs };
+        std::swap(ubo, tmp.ubo);
+        std::swap(bufferSize, tmp.bufferSize);
+        std::swap(bindingPoints, tmp.bindingPoints);
+        std::swap(bindingPoint, tmp.bindingPoint);
+        std::swap(uboName, tmp.uboName);
         return *this;
     }
 

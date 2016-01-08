@@ -14,6 +14,8 @@
 
 namespace cgu {
 
+    class ShadowMap;
+
     struct SpotLightParams
     {
         /** Holds the lights position. */
@@ -35,10 +37,14 @@ namespace cgu {
     class SpotLight
     {
     public:
-        SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, ShaderBufferBindingPoints* uniformBindingPoints);
+        SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, const glm::uvec2& smSize, ApplicationBase* app);
+        SpotLight(const SpotLight&);
+        SpotLight& operator=(const SpotLight&);
+        SpotLight(SpotLight&&);
+        SpotLight& operator=(SpotLight&&);
         ~SpotLight();
 
-        // void Resize(const glm::vec2 size); // TODO: add for shadow map. [12/17/2015 Sebastian Maisch]
+        // void Resize(const glm::uvec2 size); // TODO: add for shadow map. [12/17/2015 Sebastian Maisch]
         bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         void UpdateLight();
@@ -51,6 +57,10 @@ namespace cgu {
         const glm::vec3& GetIntensity() const { return intensity; }
         /** Returns the lights intensity. */
         glm::vec3& GetIntensity() { return intensity; }
+        /** Returns the camera view. */
+        const CameraView& GetCamera() const { return camera; }
+        /** Returns the shadow map. */
+        ShadowMap* GetShadowMap() const { return shadowMap.get(); }
 
     private:
         /** Holds the lights camera object. */
@@ -65,8 +75,12 @@ namespace cgu {
         float farPlane;
         /** Holds the shadow map bias. */
         float bias;
-        // TODO: add shadow map. [12/17/2015 Sebastian Maisch]
-        // ShadowMap *shadowMap;
+        /** Holds the shadow map. */
+        std::unique_ptr<ShadowMap> shadowMap;
+        /** Holds the shadow map size. */
+        glm::uvec2 shadowMapSize;
+        /** Holds the application base object. */
+        ApplicationBase* application;
     };
 
     class SpotLightArray

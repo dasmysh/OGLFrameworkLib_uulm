@@ -77,16 +77,18 @@ namespace cgu {
     }
     GLTexture3D& GLTexture3D::operator=(GLTexture3D&& rhs)
     {
-        this->~GLTexture3D();
-        texture = std::move(rhs.texture);
-        volumeSize = std::move(rhs.volumeSize);
-        cellSize = std::move(rhs.cellSize);
-        rawFileName = std::move(rhs.rawFileName);
-        scaleValue = std::move(rhs.scaleValue);
-        dataDim = std::move(rhs.dataDim);
-        texDesc = std::move(rhs.texDesc);
-        fileStream = std::move(rhs.fileStream);
-        data = std::move(rhs.data);
+        if (this != &rhs) {
+            this->~GLTexture3D();
+            texture = std::move(rhs.texture);
+            volumeSize = std::move(rhs.volumeSize);
+            cellSize = std::move(rhs.cellSize);
+            rawFileName = std::move(rhs.rawFileName);
+            scaleValue = std::move(rhs.scaleValue);
+            dataDim = std::move(rhs.dataDim);
+            texDesc = std::move(rhs.texDesc);
+            fileStream = std::move(rhs.fileStream);
+            data = std::move(rhs.data);
+        }
         return *this;
     }
 

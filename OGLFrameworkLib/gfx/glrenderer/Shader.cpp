@@ -78,10 +78,9 @@ namespace cgu {
     /** Move assignment operator. */
     Shader& Shader::operator =(Shader&& rhs)
     {
-        this->~Shader();
-        Resource* tRes = this;
-        *tRes = static_cast<Resource&&> (std::move(rhs));
         if (this != &rhs) {
+            this->~Shader();
+            Resource::operator=(std::move(rhs));
             shader = rhs.shader;
             type = rhs.type;
             strType = std::move(rhs.strType);

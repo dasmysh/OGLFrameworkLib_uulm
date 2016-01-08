@@ -44,9 +44,11 @@ namespace cgu {
     /** Move assignment operator. */
     OrthogonalView& OrthogonalView::operator=(OrthogonalView&& rhs)
     {
-        this->~OrthogonalView();
-        orthoBuffer = std::move(rhs.orthoBuffer);
-        orthoUBO = std::move(rhs.orthoUBO);
+        if (this != &rhs) {
+            this->~OrthogonalView();
+            orthoBuffer = std::move(rhs.orthoBuffer);
+            orthoUBO = std::move(rhs.orthoUBO);
+        }
         return *this;
     }
 

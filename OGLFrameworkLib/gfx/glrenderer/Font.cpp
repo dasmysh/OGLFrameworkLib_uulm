@@ -75,10 +75,10 @@ namespace cgu {
     /** Move assignment operator. */
     Font& Font::operator=(Font&& orig)
     {
-        this->~Font();
-        Resource* tRes = this;
-        *tRes = static_cast<Resource&&> (std::move(orig));
         if (this != &orig) {
+            this->~Font();
+            Resource* tRes = this;
+            *tRes = static_cast<Resource&&> (std::move(orig));
             fontPages = std::move(orig.fontPages);
             fm = std::move(orig.fm);
             fontMetrics = std::move(orig.fontMetrics);

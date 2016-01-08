@@ -74,17 +74,12 @@ namespace cgu {
     /**
      *  Copy assignment operator.
      */
-    cgu::CameraView& CameraView::operator=(CameraView rhs)
+    CameraView& CameraView::operator=(const CameraView& rhs)
     {
-        std::swap(fovY, rhs.fovY);
-        std::swap(aspectRatio, rhs.aspectRatio);
-        std::swap(nearZ, rhs.nearZ);
-        std::swap(farZ, rhs.farZ);
-        std::swap(camPos, rhs.camPos);
-        std::swap(camOrient, rhs.camOrient);
-        std::swap(camUp, rhs.camUp);
-        std::swap(camArcball, rhs.camArcball);
-        std::swap(perspectiveUBO, rhs.perspectiveUBO);
+        if (this != &rhs) {
+            CameraView tmp{ rhs };
+            std::swap(*this, tmp);
+        }
         return *this;
     }
 
@@ -107,7 +102,7 @@ namespace cgu {
     /**
      *  Move assignment operator.
      */
-    cgu::CameraView& CameraView::operator=(CameraView&& rhs)
+    CameraView& CameraView::operator=(CameraView&& rhs)
     {
         if (this != &rhs) {
             this->~CameraView();
@@ -163,6 +158,16 @@ namespace cgu {
         }
 
         return std::move(CalcViewFrustum(perspectiveBuffer.mat_mvp));
+    }
+
+    void CameraView::SetViewMVPOnly(const glm::mat4& modelM) const
+    {
+        auto mvp = perspective * view * modelM;
+
+        if (perspectiveUBO) {
+            perspectiveUBO->UploadData(sizeof(glm::mat4), sizeof(glm::mat4), &mvp);
+            perspectiveUBO->BindBuffer();
+        }
     }
 
     cguMath::Frustum<float> CameraView::GetViewFrustum(const glm::mat4& modelM) const

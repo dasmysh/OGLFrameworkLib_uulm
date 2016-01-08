@@ -89,9 +89,10 @@ namespace cgu {
      */
     GPUProgram& GPUProgram::operator =(GPUProgram&& rhs)
     {
-        Resource* tRes = this;
-        *tRes = static_cast<Resource&&> (std::move(rhs));
         if (this != &rhs) {
+            this->~GPUProgram();
+            Resource* tRes = this;
+            *tRes = static_cast<Resource&&> (std::move(rhs));
             program = rhs.program;
             rhs.program = 0;
             knownVABindings = std::move(rhs.knownVABindings);
