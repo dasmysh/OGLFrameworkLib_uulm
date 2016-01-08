@@ -39,7 +39,7 @@ namespace cgu {
         params.toeNumerator = 0.1f;
         params.toeDenominator = 0.3f;
         params.white = 11.2f;
-        params.gamma = 2.2f;*/
+        params.exposure = 2.0f;*/
     }
 
     /** Default destructor. */

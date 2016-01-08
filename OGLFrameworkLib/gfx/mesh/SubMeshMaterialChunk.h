@@ -1,22 +1,22 @@
 /**
  * @file   SubMeshMaterialChunk.h
  * @author Sebastian Maisch <sebastian.maisch@googlemail.com>
- * @date   13. Januar 2014
+ * @date   2014.01.13
  *
- * @brief Contains descriptions of parts of submeshes that share a material.
+ * @brief Contains descriptions of parts of sub-meshes that share a material.
  */
 
 #ifndef SUBMESHMATERIALCHUNK_H
 #define SUBMESHMATERIALCHUNK_H
 
-#include "Material.h"
+#include "gfx/Material.h"
 
 namespace cgu {
 
     class SubMesh;
 
     /**
-     * Describes a part of a submesh that shares a material.
+     * Describes a part of a sub-mesh that shares a material.
      * Does not contain real mesh data, only index-buffer sequences are defined here.
      */
     class SubMeshMaterialChunk

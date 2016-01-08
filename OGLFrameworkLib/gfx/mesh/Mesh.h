@@ -9,7 +9,7 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "Vertices.h"
+#include "gfx/Vertices.h"
 #include "SubMesh.h"
 
 namespace cgu {

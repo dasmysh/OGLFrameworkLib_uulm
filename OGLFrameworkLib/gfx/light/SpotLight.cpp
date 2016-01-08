@@ -7,7 +7,7 @@
  */
 
 #include "SpotLight.h"
-#include "glrenderer/GLUniformBuffer.h"
+#include "gfx/glrenderer/GLUniformBuffer.h"
 
 namespace cgu {
 

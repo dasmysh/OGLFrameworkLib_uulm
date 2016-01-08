@@ -1,7 +1,7 @@
 /**
  * @file   MeshRenderable.h
  * @author Sebastian Maisch <sebastian.maisch@googlemail.com>
- * @date   19. Januar 2014
+ * @date   2014.01.19
  *
  * @brief  Contains the definition of MeshRenderable.
  */
@@ -9,7 +9,7 @@
 #ifndef MESHRENDERABLE_H
 #define MESHRENDERABLE_H
 
-#include "gfx/Mesh.h"
+#include "gfx/mesh/Mesh.h"
 #include "main.h"
 #include "GPUProgram.h"
 #include "gfx/glrenderer/ShaderMeshAttributes.h"

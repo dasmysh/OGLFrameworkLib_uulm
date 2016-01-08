@@ -10,7 +10,7 @@
 #define SUBMESH_H
 
 #include "SubMeshMaterialChunk.h"
-#include "FreeFormObjects.h"
+#include "gfx/FreeFormObjects.h"
 #include <set>
 #include <boost/geometry.hpp>
 #include "core/math/math.h"
