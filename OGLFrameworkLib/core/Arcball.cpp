@@ -32,7 +32,7 @@ namespace cgu {
             arcballOn = true;
             lastScreenNDC = currentScreenNDC = sender->GetMouseAbsoluteNDC();
             handled = true;
-        } else if (sender->GetMouseButtonState(buttonFlag)) {
+        } else if (arcballOn && sender->GetMouseButtonState(buttonFlag)) {
             currentScreenNDC = sender->GetMouseAbsoluteNDC();
             handled = true;
         } else if (!sender->GetMouseButtonState(buttonFlag)) {

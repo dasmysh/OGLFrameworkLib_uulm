@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.4)
 
 set(FWLIB_LIBNAME OGLFrameworkLib)
 set(FWLIB_LIBNAME ${FWLIB_LIBNAME} PARENT_SCOPE)
