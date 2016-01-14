@@ -10,6 +10,7 @@
 #include "app/ApplicationBase.h"
 #include "gfx/glrenderer/GLRenderTarget.h"
 #include "app/GLWindow.h"
+#include <imgui.h>
 
 namespace cgu {
 
@@ -50,12 +51,12 @@ namespace cgu {
 
     BloomEffect::~BloomEffect() = default;
 
-    void BloomEffect::AddParameterSlidersToBar(TwBar* bar)
+    void BloomEffect::RenderParameterSliders()
     {
-        TwAddVarRW(bar, "BLOOM_THRESH", TW_TYPE_FLOAT, &params.bloomThreshold, " label='Bloom Threshold' min=0.3 max=2.0 step=0.01");
-        TwAddVarRW(bar, "BLOOM_WIDTH", TW_TYPE_FLOAT, &params.bloomWidth, " label='Bloom Width' min=0.1 max=2 step=0.1");
-        TwAddVarRW(bar, "BLOOM_DEFOCUS", TW_TYPE_FLOAT, &params.defocus, " label='Bloom Defocus' min=0.01 max=1 step=0.01");
-        TwAddVarRW(bar, "BLOOM_INTENSITY", TW_TYPE_FLOAT, &params.bloomIntensity, " label='Bloom Intensity' min=0.1 max=2 step=0.1");
+        ImGui::InputFloat("Bloom Threshold", &params.bloomThreshold, 0.01f);
+        ImGui::InputFloat("Bloom Width", &params.bloomWidth, 0.1f);
+        ImGui::InputFloat("Bloom Defocus", &params.defocus, 0.01f);
+        ImGui::InputFloat("Bloom Intensity", &params.bloomIntensity, 0.1f);
     }
 
     void BloomEffect::ApplyEffect(GLRenderTarget* sourceRT, GLRenderTarget* targetRT)

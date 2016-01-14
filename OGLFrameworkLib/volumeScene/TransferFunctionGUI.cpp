@@ -10,11 +10,11 @@
 #include "app/ApplicationBase.h"
 #include "gfx/glrenderer/GLTexture.h"
 #include "app/BaseGLWindow.h"
-#include <boost/assign.hpp>
 #include "gfx/glrenderer/GLUniformBuffer.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "app/GLWindow.h"
 #include "gfx/glrenderer/ScreenQuadRenderable.h"
+#include <imgui.h>
 
 namespace cgu {
 
@@ -28,8 +28,7 @@ namespace cgu {
         lastButtonAction(0),
         tfProgram(nullptr),
         orthoUBO(new GLUniformBuffer("tfOrthoProjection", sizeof(OrthoProjectionBuffer), app->GetUBOBindingPoints())),
-        tfVBO(0),
-        colorPicker()
+        tfVBO(0)
     {
         screenAlignedProg = app->GetGPUProgramManager()->GetResource("shader/gui/tfRenderGUI.vp|shader/gui/tfRenderGUI.fp");
         screenAlignedTextureUniform = screenAlignedProg->GetUniformLocation("guiTex");
@@ -50,18 +49,6 @@ namespace cgu {
         std::vector<unsigned int> quadIndices{ 0, 1, 2, 2, 1, 3 };*/
 
         quad.reset(new ScreenQuadRenderable());
-
-        std::stringstream options;
-        glm::uvec2 atbSize{ static_cast<unsigned int>(rectMax.x - rectMin.x), 115 };
-        glm::uvec2 atbPos{ static_cast<unsigned int>(rectMin.x), static_cast<unsigned int>(rectMax.y + 10.0f) };
-        if (rectMin.y >= static_cast<float>(atbSize.y + 20)) atbPos.y = static_cast<unsigned int>(rectMin.y) - (atbSize.y + 10);
-        options << " PickColor position='" << atbPos.x << " " << atbPos.y << "' " << "size='" << atbSize.x << " " << atbSize.y << "' ";
-
-        colorPicker = TwNewBar("PickColor");
-        TwAddVarCB(colorPicker, "TransferPointColor", TW_TYPE_COLOR3F, TransferFunctionGUI::SetColorCallback,
-            TransferFunctionGUI::GetColorCallback, this, " label='Point Color' ");
-        TwDefine(" PickColor visible=false ");
-        TwDefine(options.str().c_str());
 
         // Create default control points for TF
         tf::ControlPoint p0, p1;
@@ -85,12 +72,7 @@ namespace cgu {
         Resize(static_cast<float>(app->GetWindow()->GetWidth()), static_cast<float>(app->GetWindow()->GetHeight()));
     }
 
-
-    TransferFunctionGUI::~TransferFunctionGUI()
-    {
-    }
-
-
+    TransferFunctionGUI::~TransferFunctionGUI() = default;
 
     void TransferFunctionGUI::Resize(float width, float height)
     {
@@ -129,16 +111,30 @@ namespace cgu {
 
         glDepthMask(GL_TRUE);
         glEnable(GL_DEPTH_TEST);
+
+        ImGui::SetNextWindowSize(ImVec2(rectMax.x - rectMin.x, 115), ImGuiSetCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(rectMin.x, rectMax.y + 10.0f), ImGuiSetCond_FirstUseEver);
+        ImGui::Begin("PickColor");
+        if (selection != -1) {
+            auto selectionColor = tf_.points()[selection].GetColor();
+            ImGui::ColorEdit3("Point Color", reinterpret_cast<float*>(&selectionColor));
+            tf_.points()[selection].SetColor(selectionColor);
+            UpdateTF();
+        }
+        /*
+        TwAddVarRW(colorPicker, "TFSaveFilename", TW_TYPE_STDSTRING, &saveTFFilename, " label='TF Filename'");
+        TwAddButton(colorPicker, "TFSaveBtn", TransferFunctionGUI::SaveTFCallback, this, " label='Save TF'");
+        TwAddButton(colorPicker, "TFLoadBtn", TransferFunctionGUI::LoadTFCallback, this, " label='Load TF'");
+        TwAddButton(colorPicker, "TFInitHFBtn", TransferFunctionGUI::InitTFHFCallback, this, " label='Init TF High Freq'");
+        TwAddButton(colorPicker, "TFInitLFBtn", TransferFunctionGUI::InitTFLFCallback, this, " label='Init TF Low Freq'");*/
+        ImGui::End();
     }
 
     bool TransferFunctionGUI::HandleMouse(unsigned int buttonAction, float, BaseGLWindow* sender)
     {
         auto handled = false;
 
-        if (selection == -1) {
-            draggingSelection = false;
-            TwDefine(" PickColor visible=false ");
-        }
+        if (selection == -1) draggingSelection = false;
         // if (buttonAction == 0 && !draggingSelection) return handled;
 
         glm::vec2 screenSize(static_cast<float>(sender->GetWidth()), static_cast<float>(sender->GetHeight()));
@@ -187,11 +183,7 @@ namespace cgu {
     bool TransferFunctionGUI::SelectPoint(const glm::vec2& position, const glm::vec2&)
     {
         selection = GetControlPoint(position);
-        if (selection != -1) {
-            TwDefine(" PickColor visible=true ");
-            return true;
-        }
-        return false;
+        return selection != -1;
     }
 
     bool TransferFunctionGUI::AddPoint(const glm::vec2& position, const glm::vec2&)
@@ -205,7 +197,6 @@ namespace cgu {
             p.SetColor(glm::vec3(tf_.RGBA(p.val)));
             tf_.InsertControlPoint(p);
             selection = GetControlPoint(position);
-            TwDefine(" PickColor visible=true ");
             draggingSelection = false;
             return true;
         }
@@ -223,29 +214,6 @@ namespace cgu {
             return true;
         }
         return false;
-    }
-
-    void TW_CALL TransferFunctionGUI::SetColorCallback(const void *value, void *clientData)
-    {
-        static_cast<TransferFunctionGUI *>(clientData)->SetSelectionColor(static_cast<const glm::vec3*>(value));
-
-    }
-
-    void TW_CALL TransferFunctionGUI::GetColorCallback(void *value, void *clientData)
-    {
-        *static_cast<glm::vec3*>(value) = static_cast<const TransferFunctionGUI *>(clientData)->GetSelectionColor();
-    }
-
-    void TransferFunctionGUI::SetSelectionColor(const glm::vec3* color)
-    {
-        if (selection != -1) tf_.points()[selection].SetColor(*color);
-        UpdateTF();
-    }
-
-    glm::vec3 TransferFunctionGUI::GetSelectionColor() const
-    {
-        if (selection != -1) return tf_.points()[selection].GetColor();
-        return glm::vec3(0.0f);
     }
 
     void TransferFunctionGUI::UpdateTF(bool createVAO)
@@ -270,7 +238,7 @@ namespace cgu {
         glBufferSubData(GL_ARRAY_BUFFER, (tf_.points().size() + 1) * sizeof(tf::ControlPoint), sizeof(tf::ControlPoint), &last);
 
         if (createVAO) {
-            auto loc = tfProgram->GetAttributeLocations(boost::assign::list_of<std::string>("value")("color"));
+            auto loc = tfProgram->GetAttributeLocations({ "value", "color" });
             attribBind = tfProgram->CreateVertexAttributeArray(tfVBO, 0);
             attribBind->StartAttributeSetup();
             attribBind->AddVertexAttribute(loc[0], 1, GL_FLOAT, GL_FALSE, sizeof(tf::ControlPoint), 0);
