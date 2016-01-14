@@ -15,6 +15,7 @@
 #include "app/GLWindow.h"
 #include "gfx/glrenderer/ScreenQuadRenderable.h"
 #include <imgui.h>
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace cgu {
 
@@ -117,16 +118,29 @@ namespace cgu {
         ImGui::Begin("PickColor");
         if (selection != -1) {
             auto selectionColor = tf_.points()[selection].GetColor();
-            ImGui::ColorEdit3("Point Color", reinterpret_cast<float*>(&selectionColor));
-            tf_.points()[selection].SetColor(selectionColor);
+            if (ImGui::ColorEdit3("Point Color", reinterpret_cast<float*>(&selectionColor))) {
+                tf_.points()[selection].SetColor(selectionColor);
+                UpdateTF();
+            }
+        }
+        std::array<char, 1024> tmpFilename;
+        std::copy(saveTFFilename.begin(), saveTFFilename.end(), tmpFilename.begin());
+        if (ImGui::InputText("TF Filename", tmpFilename.data(), tmpFilename.size())) {
+            saveTFFilename = tmpFilename.data();
+        }
+        if (ImGui::Button("Save TF")) {
+            tf_.SaveToFile(saveTFFilename + ".tf");
+        }
+        if (ImGui::Button("Load TF")) {
+            tf_.LoadFromFile(saveTFFilename + ".tf");
             UpdateTF();
         }
-        /*
-        TwAddVarRW(colorPicker, "TFSaveFilename", TW_TYPE_STDSTRING, &saveTFFilename, " label='TF Filename'");
-        TwAddButton(colorPicker, "TFSaveBtn", TransferFunctionGUI::SaveTFCallback, this, " label='Save TF'");
-        TwAddButton(colorPicker, "TFLoadBtn", TransferFunctionGUI::LoadTFCallback, this, " label='Load TF'");
-        TwAddButton(colorPicker, "TFInitHFBtn", TransferFunctionGUI::InitTFHFCallback, this, " label='Init TF High Freq'");
-        TwAddButton(colorPicker, "TFInitLFBtn", TransferFunctionGUI::InitTFLFCallback, this, " label='Init TF Low Freq'");*/
+        if (ImGui::Button("Init TF High Freq")) {
+            InitTF(1.0f / 16.0f);
+        }
+        if (ImGui::Button("Init TF Low Freq")) {
+            InitTF(1.0f / 4.0f);
+        }
         ImGui::End();
     }
 
@@ -214,6 +228,21 @@ namespace cgu {
             return true;
         }
         return false;
+    }
+
+    void TransferFunctionGUI::InitTF(float freq)
+    {
+        tf_.InitWithFreqRGBA(freq / 2.0f, 1.0f - freq / 2.0f, 1.0f / ((1.0f / freq) + 1.0f));
+        UpdateTF();
+    }
+
+    void TransferFunctionGUI::LoadTransferFunctionFromFile(const std::string& filename)
+    {
+        if (boost::algorithm::ends_with(filename, ".tf")) saveTFFilename = filename.substr(0, filename.find_last_of("."));
+        else saveTFFilename = filename;
+
+        tf_.LoadFromFile(saveTFFilename + ".tf");
+        UpdateTF();
     }
 
     void TransferFunctionGUI::UpdateTF(bool createVAO)

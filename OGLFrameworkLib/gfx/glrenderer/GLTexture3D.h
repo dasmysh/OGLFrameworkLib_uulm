@@ -36,15 +36,23 @@ namespace cgu {
         void Load() override;
         void Unload() override;
 
-        GLTexture* LoadToSingleTexture();
+        GLTexture* LoadToSingleTexture(unsigned int mipLevels);
         GLTexture* GetTexture() const;
         const glm::vec3& GetScaling() const { return cellSize; }
 
-        std::unique_ptr<VolumeBrickOctree> GetBrickedVolume(const glm::vec3& scale);
-        void FillRaw(std::vector<uint8_t>& data, const glm::uvec3& pos, const glm::uvec3& dataSize, const glm::uvec3& texSize) const;
-        std::unique_ptr<GLTexture> CreateMinMaxTexture(const glm::uvec3& pos, const glm::uvec3& size, TextureDescriptor& minMaxDesc) const;
-        // const TextureDescriptor& GetTextureDescriptor() const;
+        GLTexture3D* GetMinMaxTexture() const;
+        GLTexture3D* GetHalfResTexture(bool denoise) const;
+        GLTexture3D* GetSpeedImage() const;
+        std::unique_ptr<VolumeBrickOctree> GetBrickedVolume(const glm::vec3& scale, int denoiseLevel) const;
+        const TextureDescriptor& GetTextureDescriptor() const;
         const glm::uvec3& GetSize() const { return volumeSize; }
+        glm::uvec3 GetBrickTextureSize(const glm::uvec3& pos, const glm::uvec3& size) const;
+
+
+        void ReadRaw(std::vector<uint8_t>& data, const glm::uvec3& pos, const glm::uvec3& dataSize,
+            const glm::uvec3& texSize) const;
+        static void WriteRaw(std::vector<uint8_t>& data, std::fstream& fileStream, const glm::uvec3& pos,
+            const glm::uvec3& dataSize, const glm::uvec3& volumeSize, unsigned int bytesPV);
 
     private:
         /** Holds the texture. */
@@ -61,8 +69,6 @@ namespace cgu {
         int dataDim;
         /** Holds the texture description. */
         TextureDescriptor texDesc;
-        /** Holds the open file stream. */
-        std::ifstream* fileStream;
         /** Holds the volumes raw data. */
         std::vector<int8_t> data;
 

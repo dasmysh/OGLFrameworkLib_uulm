@@ -30,6 +30,8 @@ namespace cgu {
         void Draw();
         void Resize(float width, float height);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
+        void LoadTransferFunctionFromFile(const std::string& filename);
+        void InitTF(float freq);
         const GLTexture* GetTexture() const { return tfTex.get(); };
 
     private:
@@ -81,6 +83,9 @@ namespace cgu {
         GLuint tfVBO;
         /** Holds the vertex attribute bindings for the shader. */
         GLVertexAttributeArray* attribBind;
+
+        /** Holds the filename to save the transfer function to. */
+        std::string saveTFFilename;
 
         void UpdateTexture() const;
         int GetControlPoint(const glm::vec2& p);

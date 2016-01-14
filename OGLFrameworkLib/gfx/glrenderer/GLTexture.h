@@ -64,7 +64,7 @@ namespace cgu {
         GLTexture(unsigned int size, const TextureDescriptor& desc);
         GLTexture(unsigned int width, unsigned int height, unsigned int arraySize, const TextureDescriptor& desc);
         GLTexture(unsigned int width, unsigned int height, const TextureDescriptor& desc, const void* data);
-        GLTexture(unsigned int width, unsigned int height, unsigned int depth, const TextureDescriptor& desc, const void* data);
+        GLTexture(unsigned int width, unsigned int height, unsigned int depth, unsigned int numMipLevels, const TextureDescriptor& desc, const void* data);
         virtual ~GLTexture();
 
         void ActivateTexture(GLenum textureUnit) const;
@@ -74,7 +74,10 @@ namespace cgu {
         void DownloadData(std::vector<uint8_t>& data) const;
         void UploadData(std::vector<uint8_t>& data) const;
         void GenerateMipMaps() const;
-        void GenerateMinMaxMaps(GPUProgram* minMaxProgram, const std::vector<BindingLocation>& uniformNames);
+        void GenerateMinMaxMaps(GPUProgram* minMaxProgram, const std::vector<BindingLocation>& uniformNames) const;
+        void ClearTexture(unsigned int mipLevel, const glm::vec4& data) const;
+        glm::uvec3 GetDimensions() const { return glm::uvec3(width, height, depth); }
+        const TextureDescriptor& GetDescriptor() const { return descriptor; }
 
         void SampleWrapMirror() const;
         void SampleWrapClamp() const;
@@ -95,8 +98,8 @@ namespace cgu {
         unsigned int height;
         /** Holds the depth or number of array slices. */
         unsigned int depth;
-        /** Holds whether the texture has mip maps. */
-        bool hasMipMaps;
+        /** Holds the number of MipMap levels the texture has. */
+        unsigned int mipMapLevels;
 
         void InitSampling() const;
     };

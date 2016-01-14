@@ -48,10 +48,10 @@ namespace cgu {
         fontManager.reset(new FontManager(this));
         win.RegisterApplication(*this);
         win.ShowWindow();
-        auto aspectRatio = static_cast<float> (win.GetWidth())
-            / static_cast<float> (win.GetHeight());
+        glm::vec2 screenSize(static_cast<float> (win.GetWidth()), static_cast<float> (win.GetHeight()));
+        auto aspectRatio = screenSize.x / screenSize.y;
         orthoView.reset(new OrthogonalView(static_cast<float>(win.GetWidth()), static_cast<float>(win.GetHeight()), &uniformBindingPoints));
-        cameraView.reset(new CameraView(60.0f, aspectRatio, 1.0f, 100.0f, camPos, &uniformBindingPoints));
+        cameraView.reset(new CameraView(60.0f, aspectRatio, screenSize, 1.0f, 100.0f, camPos, &uniformBindingPoints));
 
         imguiImpl::ImGui_ImplGL3_Init(win.GetHWnd());
         fontProgram = programManager->GetResource(fontProgramID);

@@ -35,10 +35,10 @@ namespace imguiImpl {
         GLint last_blend_equation_rgb; glGetIntegerv(GL_BLEND_EQUATION_RGB, &last_blend_equation_rgb);
         GLint last_blend_equation_alpha; glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &last_blend_equation_alpha);
         GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
-        GLboolean last_enable_blend = glIsEnabled(GL_BLEND);
-        GLboolean last_enable_cull_face = glIsEnabled(GL_CULL_FACE);
-        GLboolean last_enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
-        GLboolean last_enable_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
+        auto last_enable_blend = glIsEnabled(GL_BLEND);
+        auto last_enable_cull_face = glIsEnabled(GL_CULL_FACE);
+        auto last_enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
+        auto last_enable_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
 
         // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
         glEnable(GL_BLEND);
@@ -80,7 +80,7 @@ namespace imguiImpl {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ElementsHandle);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(cmd_list->IdxBuffer.size()) * sizeof(ImDrawIdx), reinterpret_cast<const GLvoid*>(&cmd_list->IdxBuffer.front()), GL_STREAM_DRAW);
 
-            for (const ImDrawCmd* pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++)
+            for (auto pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++)
             {
                 if (pcmd->UserCallback)
                 {
@@ -113,7 +113,7 @@ namespace imguiImpl {
     bool ImGui_ImplGL3_CreateFontsTexture()
     {
         // Build texture atlas
-        ImGuiIO& io = ImGui::GetIO();
+        auto& io = ImGui::GetIO();
         unsigned char* pixels;
         int width, height;
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.

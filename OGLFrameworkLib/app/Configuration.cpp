@@ -21,7 +21,9 @@ namespace cgu {
         pauseOnKillFocus(false),
         resourceBase("resources"),
         useCUDA(true),
-        cudaDevice(-1)
+        cudaDevice(-1),
+        sceneFile(""),
+        fixCamera(false)
     {
     }
 
