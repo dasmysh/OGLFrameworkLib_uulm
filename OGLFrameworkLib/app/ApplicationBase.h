@@ -51,7 +51,8 @@ namespace cgu {
         /** Called if the application is to end running. */
         void EndRun();
 
-        bool IsPaused() const { return m_pause; };
+        bool IsPaused() const { return m_pause; }
+        void SetPause(bool pause) { m_pause = pause; }
 
         virtual bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);

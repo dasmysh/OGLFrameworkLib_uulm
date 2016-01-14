@@ -55,6 +55,10 @@ namespace cgu {
         bool useCUDA;
         /** Holds the used CUDA device if CUDA is used. */
         int cudaDevice;
+        /** Holds the name of a scene file to use. */
+        std::string sceneFile;
+        /** Holds whether to fix the camera. */
+        bool fixCamera;
 
     private:
         /** Needed for serialization */
@@ -90,6 +94,10 @@ namespace cgu {
                 ar & BOOST_SERIALIZATION_NVP(useCUDA);
                 ar & BOOST_SERIALIZATION_NVP(cudaDevice);
             }
+            if (version >= 6) {
+                ar & BOOST_SERIALIZATION_NVP(sceneFile);
+                ar & BOOST_SERIALIZATION_NVP(fixCamera);
+            }
         }
 
         /**
@@ -122,12 +130,16 @@ namespace cgu {
                 ar & BOOST_SERIALIZATION_NVP(useCUDA);
                 ar & BOOST_SERIALIZATION_NVP(cudaDevice);
             }
+            if (version >= 6) {
+                ar & BOOST_SERIALIZATION_NVP(sceneFile);
+                ar & BOOST_SERIALIZATION_NVP(fixCamera);
+            }
         }
 
         BOOST_SERIALIZATION_SPLIT_MEMBER()
     };
 }
 
-BOOST_CLASS_VERSION(cgu::Configuration, 5)
+BOOST_CLASS_VERSION(cgu::Configuration, 6)
 
 #endif /* CONFIGURATION_H */

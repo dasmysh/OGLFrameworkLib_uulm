@@ -412,16 +412,12 @@ namespace cgu {
 
         this->m_lastElapsedTime = qwTime.QuadPart;
 
-        if (this->m_pause) {
-            Sleep(50);
-            return;
+        if (!this->m_pause) {
+            this->m_time = (qwTime.QuadPart - this->m_baseTime) / static_cast<double>(this->m_QPFTicksPerSec);
+
+            this->FrameMove(static_cast<float>(this->m_time), static_cast<float>(this->m_elapsedTime));
+            this->RenderScene();
         }
-
-        this->m_time = (qwTime.QuadPart - this->m_baseTime) / static_cast<double>(this->m_QPFTicksPerSec);
-
-        this->FrameMove(static_cast<float>(this->m_time), static_cast<float>(this->m_elapsedTime));
-        this->RenderScene();
-        TwDraw();
         this->win.Present();
     }
 }
