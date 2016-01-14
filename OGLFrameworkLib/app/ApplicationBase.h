@@ -54,6 +54,7 @@ namespace cgu {
         bool IsPaused() const { return m_pause; };
 
         virtual bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
+        virtual bool HandleKeyboardCharacters(unsigned int key, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         virtual bool HandleMouseApp(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender) = 0;
         virtual void OnResize(unsigned int width, unsigned int height);

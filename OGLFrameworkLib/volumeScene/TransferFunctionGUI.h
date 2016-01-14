@@ -11,7 +11,6 @@
 
 #include "main.h"
 #include "TransferFunction.h"
-#include <anttweakbar/AntTweakBar.h>
 #include "gfx/glrenderer/GLVertexAttributeArray.h"
 #include "gfx/OrthogonalView.h"
 
@@ -31,12 +30,7 @@ namespace cgu {
         void Draw();
         void Resize(float width, float height);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
-        void SetSelectionColor(const glm::vec3* color);
-        glm::vec3 GetSelectionColor() const;
         const GLTexture* GetTexture() const { return tfTex.get(); };
-
-        static void TW_CALL SetColorCallback(const void *value, void *clientData);
-        static void TW_CALL GetColorCallback(void *value, void *clientData);
 
     private:
         static const int PADDING = 10;
@@ -87,9 +81,6 @@ namespace cgu {
         GLuint tfVBO;
         /** Holds the vertex attribute bindings for the shader. */
         GLVertexAttributeArray* attribBind;
-
-        /** holds the color picker bar. */
-        TwBar* colorPicker;
 
         void UpdateTexture() const;
         int GetControlPoint(const glm::vec2& p);

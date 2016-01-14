@@ -39,8 +39,10 @@ namespace cgu {
 
         LRESULT HandleMessages(UINT message, WPARAM wParam, LPARAM lParam);
         void HandleRawKeyboard(const RAWKEYBOARD& raw);
+        void HandleCharInput(unsigned int key);
         void HandleRawMouse(const RAWMOUSE& raw);
         Configuration& GetConfig() const;
+        HWND GetHWnd() const { return hWnd; }
 
     private:
         HWND hWnd;

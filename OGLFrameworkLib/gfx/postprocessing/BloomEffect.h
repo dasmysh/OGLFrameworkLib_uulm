@@ -10,7 +10,6 @@
 #define BLOOMEFFECT_H
 
 #include "main.h"
-#include <anttweakbar/AntTweakBar.h>
 
 namespace cgu {
 
@@ -34,7 +33,7 @@ namespace cgu {
         explicit BloomEffect(ApplicationBase* app);
         ~BloomEffect();
 
-        void AddParameterSlidersToBar(TwBar* bar);
+        void RenderParameterSliders();
         void ApplyEffect(GLRenderTarget* sourceRT, GLRenderTarget* targetRT);
 
         void SetExposure(float exposure) { params.exposure = exposure; }
