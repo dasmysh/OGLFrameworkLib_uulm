@@ -6,31 +6,42 @@
  * @brief  Contains the implementation of GLTexture3D.
  */
 
-#include "GLTexture3D.h"
+#define GLM_SWIZZLE
+#include "Volume.h"
 #include "app/ApplicationBase.h"
 #include <codecvt>
 #include <fstream>
-#include "GLTexture.h"
+#include "gfx/glrenderer/GLTexture.h"
 #include <boost/assign.hpp>
-#include "gfx/volumes/VolumeBrickOctree.h"
 #include <ios>
 #include <boost/filesystem.hpp>
 #include "app/Configuration.h"
-#include <boost/algorithm/string/predicate.hpp>
+#include <limits>
 
 #undef min
 #undef max
 
 namespace cgu {
 
+    template<typename OT, typename OET, typename I>
+    static std::vector<OT> readModifyData(const std::vector<char>& rawData, unsigned int size, std::function<OET(const I&)> modify)
+    {
+        auto elementsToRead = size / static_cast<unsigned int>(sizeof(I));
+        auto ptr = reinterpret_cast<I*>(rawData.data());
+        std::vector<OT> data(elementsToRead * sizeof(OET) / sizeof(OT));
+        for (unsigned int i = 0; i < elementsToRead; ++i) {
+            reinterpret_cast<OET*>(data.data())[i] = modify(ptr[i]);
+        }
+        return std::move(data);
+    }
+
     /**
      * Constructor.
      * @param texFilename the textures file name
      * @param app the application object
      */
-    GLTexture3D::GLTexture3D(const std::string& texFilename, ApplicationBase* app) :
+    Volume::Volume(const std::string& texFilename, ApplicationBase* app) :
         Resource{ texFilename, app },
-        texture(),
         volumeSize(0),
         cellSize(1.0f),
         scaleValue(1),
@@ -40,63 +51,59 @@ namespace cgu {
     }
 
     /** Copy constructor. */
-    GLTexture3D::GLTexture3D(const GLTexture3D& rhs) : GLTexture3D(rhs.id, rhs.application)
+    Volume::Volume(const Volume& rhs) : Volume(rhs.id, rhs.application)
     {
-        if (rhs.IsLoaded()) GLTexture3D::Load();
+        if (rhs.IsLoaded()) Volume::Load();
     }
 
     /** Copy assignment operator. */
-    GLTexture3D& GLTexture3D::operator=(const GLTexture3D& rhs)
+    Volume& Volume::operator=(const Volume& rhs)
     {
         if (this != &rhs) {
             auto tmp(rhs);
-            std::swap(texture, tmp.texture);
-            std::swap(volumeSize, tmp.volumeSize);
-            std::swap(cellSize, tmp.cellSize);
-            std::swap(rawFileName, tmp.rawFileName);
-            std::swap(scaleValue, tmp.scaleValue);
-            std::swap(dataDim, tmp.dataDim);
-            std::swap(texDesc, tmp.texDesc);
-            std::swap(data, tmp.data);
+            std::swap(*this, tmp);
         }
         return *this;
     }
 
     /** Move constructor. */
-    GLTexture3D::GLTexture3D(GLTexture3D&& rhs) :
+    Volume::Volume(Volume&& rhs) :
         Resource(std::move(rhs)),
-        texture(std::move(rhs.texture)),
         volumeSize(std::move(rhs.volumeSize)),
         cellSize(std::move(rhs.cellSize)),
         rawFileName(std::move(rhs.rawFileName)),
         scaleValue(std::move(rhs.scaleValue)),
         dataDim(std::move(rhs.dataDim)),
-        texDesc(std::move(rhs.texDesc)),
-        data(std::move(rhs.data))
+        texDesc(std::move(rhs.texDesc))
     {
         
     }
-    GLTexture3D& GLTexture3D::operator=(GLTexture3D&& rhs)
+    Volume& Volume::operator=(Volume&& rhs)
     {
-        this->~GLTexture3D();
-        texture = std::move(rhs.texture);
+        this->~Volume();
         volumeSize = std::move(rhs.volumeSize);
         cellSize = std::move(rhs.cellSize);
         rawFileName = std::move(rhs.rawFileName);
         scaleValue = std::move(rhs.scaleValue);
         dataDim = std::move(rhs.dataDim);
         texDesc = std::move(rhs.texDesc);
-        data = std::move(rhs.data);
         return *this;
     }
 
     /** Destructor. */
-    GLTexture3D::~GLTexture3D()
+    Volume::~Volume() = default;
+
+    void Volume::Load()
     {
-        if (IsLoaded()) UnloadLocal();
+        LoadDatFile();
+
+        Resource::Load();
     }
 
-    void GLTexture3D::Load()
+    /**
+     *  Loads the dat file.
+     */
+    void Volume::LoadDatFile()
     {
         auto filename = FindResourceLocation(GetParameters()[0]);
         boost::filesystem::path datFile{ filename };
@@ -207,25 +214,9 @@ namespace cgu {
 
         scaleValue = (format_str == "USHORT_12") ? 16 : 1;
         rawFileName = path + "/" + raw_file;
-
-        Resource::Load();
     }
 
-    /**
-    * Unloads the local resources.
-    */
-    void GLTexture3D::UnloadLocal()
-    {
-        texture.reset();
-        data.clear();
-    }
-
-    /**
-     *  Loads the content of the volume to a single texture.
-     *  @param mipLevels the number of MipMap levels the texture should have.
-     *  @return the loaded texture.
-     */
-    GLTexture* GLTexture3D::LoadToSingleTexture(unsigned int mipLevels)
+    void Volume::LoadRawDataFromFile(unsigned& data_size, std::vector<char>& rawData) const
     {
         std::ifstream ifsRaw(rawFileName, std::ios::in | std::ios::binary);
         if (!ifsRaw || !ifsRaw.is_open()) {
@@ -235,56 +226,61 @@ namespace cgu {
         }
 
         ifsRaw.seekg(0, std::ios::end);
-        auto data_size = static_cast<unsigned int>(ifsRaw.tellg());
+        data_size = static_cast<unsigned int>(ifsRaw.tellg());
         ifsRaw.seekg(0, std::ios::beg);
 
-        std::vector<char> rawData(data_size, 9);
+        rawData = std::vector<char>(data_size, 9);
         ifsRaw.read(rawData.data(), data_size);
         ifsRaw.close();
+    }
 
+    /**
+         *  Loads the content of the volume to a 3D texture.
+         *  @param mipLevels the number of MipMap levels the texture should have.
+         *  @return the loaded texture.
+         */
+    std::unique_ptr<GLTexture> Volume::Load3DTexture(unsigned int mipLevels) const
+    {
+        unsigned data_size;
+        std::vector<char> rawData;
+        LoadRawDataFromFile(data_size, rawData);
+
+        std::vector<int8_t> data;
         auto volumeNumBytes = volumeSize.x * volumeSize.y * volumeSize.z * texDesc.bytesPP;
-        data.resize(volumeNumBytes);
 
+        int size = std::min(data_size, volumeNumBytes);
         if (texDesc.type == GL_UNSIGNED_BYTE) {
-            int size = std::min(data_size, volumeNumBytes);
-            auto ptr = reinterpret_cast<uint8_t*>(rawData.data());
-            for (auto i = 0; i < size; ++i) {
-                data[i] = ptr[i];
-            }
+            data = readModifyData<int8_t, uint8_t, uint8_t>(rawData, size, [](const uint8_t& val){ return val; });
         } else if (texDesc.type == GL_UNSIGNED_SHORT) {
-            auto elementSize = static_cast<unsigned int>(sizeof(uint16_t));
+            auto l_scaleValue = scaleValue;
+            data = readModifyData<int8_t, uint16_t, uint16_t>(rawData, size, [l_scaleValue](const uint16_t& val){ return val * l_scaleValue; });
+            /*auto elementSize = static_cast<unsigned int>(sizeof(uint16_t));
             auto size = std::min(data_size, volumeNumBytes) / elementSize;
             auto ptr = reinterpret_cast<uint16_t*>(rawData.data());
             for (unsigned int i = 0; i < size; ++i) {
                 reinterpret_cast<uint16_t*>(data.data())[i] = ptr[i] * scaleValue;
-            }
+            }*/
         } else if (texDesc.type == GL_UNSIGNED_INT) {
-            auto elementSize = static_cast<unsigned int>(sizeof(uint32_t));
+            data = readModifyData<int8_t, uint32_t, uint32_t>(rawData, size, [](const uint32_t& val){ return val; });
+            /*auto elementSize = static_cast<unsigned int>(sizeof(uint32_t));
             auto size = std::min(data_size, volumeNumBytes) / elementSize;
             auto ptr = reinterpret_cast<uint32_t*>(rawData.data());
             for (unsigned int i = 0; i < size; ++i) {
                 reinterpret_cast<uint32_t*>(data.data())[i] = ptr[i];
-            }
+            }*/
         }
 
-        texture = std::make_unique<GLTexture>(volumeSize.x, volumeSize.y, volumeSize.z, mipLevels, texDesc, data.data());
-
-        return texture.get();
+        auto volTex = std::make_unique<GLTexture>(volumeSize.x, volumeSize.y, volumeSize.z, mipLevels, texDesc, data.data());
+        volTex->GenerateMipMaps();
+        return std::move(volTex);
     }
 
-    /** Returns the texture object. */
-    GLTexture* GLTexture3D::GetTexture() const
+    void Volume::Unload()
     {
-        return texture.get();
-    }
-
-    void GLTexture3D::Unload()
-    {
-        UnloadLocal();
         Resource::Unload();
     }
 
-    GLTexture3D* GLTexture3D::GetMinMaxTexture() const
+    std::unique_ptr<MinMaxVolume> Volume::GetMinMaxTexture() const
     {
         assert(texDesc.format == GL_RED);
 
@@ -378,7 +374,7 @@ namespace cgu {
         return application->GetVolumeManager()->GetResource(newBaseFileName + ".dat");
     }
 
-    GLTexture3D* GLTexture3D::GetHalfResTexture(bool denoise) const
+    /*Volume* Volume::GetHalfResTexture(bool denoise) const
     {
         assert(texDesc.format == GL_RGBA);
         auto maxSize = glm::max(glm::max(volumeSize.x, volumeSize.y), volumeSize.z);
@@ -498,9 +494,9 @@ namespace cgu {
         }
 
         return application->GetVolumeManager()->GetResource(newBaseFileName + ".dat");
-    }
+    }*/
 
-    GLTexture3D* GLTexture3D::GetSpeedImage() const
+    Volume* Volume::GetSpeedVolume() const
     {
         assert(texDesc.format == GL_RGBA);
 
@@ -541,65 +537,45 @@ namespace cgu {
                 throw std::runtime_error("Could not open file '" + newRawFileName + "'.");
             }
 
-            auto newTexDesc = texDesc;
-            auto texDesc2 = texDesc;
-            newTexDesc.bytesPP = texDesc.bytesPP / 4;
-            newTexDesc.format = GL_RED;
-            newTexDesc.type = texDesc.type;
-            texDesc2.internalFormat = GL_RGBA16F;
+            unsigned data_size;
+            std::vector<char> rawData;
+            LoadRawDataFromFile(data_size, rawData);
 
-            GPUProgram* speedProg = nullptr;
+            std::vector<int8_t> data;
+            auto volumeNumBytes = volumeSize.x * volumeSize.y * volumeSize.z * texDesc.bytesPP;
+
+            int size = std::min(data_size, volumeNumBytes);
             if (texDesc.type == GL_UNSIGNED_BYTE) {
-                speedProg = application->GetGPUProgramManager()->GetResource("speed3DTex16.cp");
-                newTexDesc.internalFormat = GL_R16F;
+                data = readModifyData<int8_t, uint8_t, glm::u8vec4>(rawData, size, [](const glm::u8vec4& val)
+                {
+                    auto sval = glm::vec3(val.xyz()) / glm::vec3(std::numeric_limits<uint8_t>::max());
+                    return static_cast<uint8_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint8_t>::max()));
+                });
             } else if (texDesc.type == GL_UNSIGNED_SHORT) {
-                speedProg = application->GetGPUProgramManager()->GetResource("speed3DTex16.cp");
-                newTexDesc.internalFormat = GL_R16F;
+                auto l_scaleValue = scaleValue;
+                data = readModifyData<int8_t, uint16_t, glm::u16vec4>(rawData, size, [l_scaleValue](const glm::u16vec4& val)
+                {
+                    auto sval = glm::vec3(val.xyz() * glm::u16vec3(l_scaleValue)) / glm::vec3(std::numeric_limits<uint16_t>::max());
+                    return static_cast<uint16_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint16_t>::max()));
+                });
             } else if (texDesc.type == GL_UNSIGNED_INT) {
-                speedProg = application->GetGPUProgramManager()->GetResource("speed3DTex32.cp");
-                newTexDesc.internalFormat = GL_R32F;
-            } else throw std::runtime_error("Texture bit depth is not supported for min/max octrees.");
-            auto uniformNames = speedProg->GetUniformLocations(boost::assign::list_of<std::string>("origTex")("speedTex"));
-
-            speedProg->UseProgram();
-            speedProg->SetUniform(uniformNames[0], 0);
-            speedProg->SetUniform(uniformNames[1], 1);
-
-            glm::uvec3 chunkSize(256);
-            glm::uvec3 chunkPos(0);
-            for (; chunkPos.z < volumeSize.z; chunkPos.z += chunkSize.z) {
-                for (; chunkPos.y < volumeSize.y; chunkPos.y += chunkSize.y) {
-                    for (; chunkPos.x < volumeSize.x; chunkPos.x += chunkSize.x) {
-                        std::vector<uint8_t> chunkData;
-                        auto dataSize = glm::min(chunkSize, volumeSize - chunkPos);
-                        ReadRaw(chunkData, chunkPos, dataSize, dataSize);
-
-                        GLTexture chunkTex(dataSize.x, dataSize.y, dataSize.z, 1, texDesc2, chunkData.data());
-                        GLTexture speedChunkTex(dataSize.x, dataSize.y, dataSize.z, 1, newTexDesc, nullptr);
-
-                        auto numGroups = glm::ivec3(glm::ceil(glm::vec3(dataSize) / 8.0f));
-                        chunkTex.ActivateImage(0, 0, GL_READ_ONLY);
-                        speedChunkTex.ActivateImage(1, 0, GL_WRITE_ONLY);
-                        OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
-                        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-                        OGL_SCALL(glFinish);
-
-                        std::vector<uint8_t> speedChunkData;
-                        speedChunkTex.DownloadData(speedChunkData);
-
-                        WriteRaw(speedChunkData, rawOut, chunkPos, dataSize, volumeSize, newTexDesc.bytesPP);
-                    }
-                    chunkPos.x = 0;
-                }
-                chunkPos.y = 0;
+                data = readModifyData<int8_t, uint32_t, glm::u32vec4>(rawData, size, [](const glm::u32vec4& val)
+                {
+                    auto sval = glm::vec3(val.xyz()) / glm::vec3(static_cast<float>(std::numeric_limits<uint32_t>::max()));
+                    return static_cast<uint8_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint32_t>::max()));
+                });
             }
+
+            auto dataPtr = reinterpret_cast<char*>(data.data());
+            rawOut.seekp(0, std::ios::beg);
+            rawOut.write(dataPtr, size);
             rawOut.close();
         }
 
         return application->GetVolumeManager()->GetResource(newBaseFileName + ".dat");
     }
 
-    std::unique_ptr<VolumeBrickOctree> GLTexture3D::GetBrickedVolume(const glm::vec3& scale, int denoiseLevel) const
+    /*std::unique_ptr<VolumeBrickOctree> GLTexture3D::GetBrickedVolume(const glm::vec3& scale, int denoiseLevel) const
     {
         assert(texDesc.format == GL_RED || texDesc.format == GL_RED_INTEGER);
         std::ifstream ifs(rawFileName, std::ios::binary);
@@ -622,9 +598,9 @@ namespace cgu {
             scale * cellSize, denoiseLevel, minMaxProg, uniformNames) };
 
         return std::move(result);
-    }
+    }*/
 
-    void GLTexture3D::ReadRaw(std::vector<uint8_t>& data, const glm::uvec3& pos, const glm::uvec3& dataSize,
+    /*void GLTexture3D::ReadRaw(std::vector<uint8_t>& data, const glm::uvec3& pos, const glm::uvec3& dataSize,
         const glm::uvec3& texSize) const
     {
         data.resize(texSize.x * texSize.y * texSize.z * texDesc.bytesPP, 0);
@@ -669,7 +645,7 @@ namespace cgu {
                 }
             }
         }
-    }
+    }*/
 
     /**
      *  Writes data in 3D chunks to a file.
@@ -680,7 +656,7 @@ namespace cgu {
      *  @param volumeSize the dimensions of the complete volume.
      *  @param bytesPV the number of bytes per voxel.
      */
-    void GLTexture3D::WriteRaw(std::vector<uint8_t>& data, std::fstream& fileStream, const glm::uvec3& pos,
+    /*void GLTexture3D::WriteRaw(std::vector<uint8_t>& data, std::fstream& fileStream, const glm::uvec3& pos,
         const glm::uvec3& dataSize, const glm::uvec3& volumeSize, unsigned int bytesPV)
     {
         auto fileLineSize = volumeSize.x * bytesPV;
@@ -696,23 +672,5 @@ namespace cgu {
                 dataPtr += dataSize.x * bytesPV;
             }
         }
-    }
-
-    glm::uvec3 GLTexture3D::GetBrickTextureSize(const glm::uvec3& pos, const glm::uvec3& size) const
-    {
-        auto dataSize = glm::min(size, volumeSize - pos);
-        glm::uvec3 actualSize;
-        if (dataSize.x == 1) actualSize.x = 2;
-        else actualSize.x = cguMath::roundupPow2(dataSize.x);
-        if (dataSize.y == 1) actualSize.y = 2;
-        else actualSize.y = cguMath::roundupPow2(dataSize.y);
-        if (dataSize.z == 1) actualSize.z = 2;
-        else actualSize.z = cguMath::roundupPow2(dataSize.z);
-        return std::move(actualSize);
-    }
-
-    const TextureDescriptor& GLTexture3D::GetTextureDescriptor() const
-    {
-        return texDesc;
-    }
+    }*/
 }
