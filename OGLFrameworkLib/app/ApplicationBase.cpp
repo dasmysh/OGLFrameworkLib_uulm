@@ -321,8 +321,10 @@ namespace cgu {
         }
 
         imguiImpl::ImGui_ImplGL3_NewFrame(m_time);
-        this->RenderGUI();
-        ImGui::Render();
+        win.BatchDraw([&](GLBatchRenderTarget & rt) {
+            this->RenderGUI();
+            ImGui::Render();
+        });
         this->win.Present();
     }
 }

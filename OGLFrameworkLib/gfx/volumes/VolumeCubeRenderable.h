@@ -10,9 +10,11 @@
 #define VOLUMECUBERENDERABLE_H
 
 #include "main.h"
+#include <gfx/glrenderer/ShaderMeshAttributes.h>
 
 namespace cgu {
 
+    class ApplicationBase;
     class GLVertexAttributeArray;
     class GPUProgram;
 
@@ -25,15 +27,19 @@ namespace cgu {
     class VolumeCubeRenderable
     {
     public:
-        VolumeCubeRenderable(GPUProgram* backProg, GPUProgram* drawProg);
+        VolumeCubeRenderable(GPUProgram* drawProg, ApplicationBase* app);
         VolumeCubeRenderable(const VolumeCubeRenderable& orig);
         VolumeCubeRenderable(VolumeCubeRenderable&& orig);
         VolumeCubeRenderable& operator=(const VolumeCubeRenderable& orig);
         VolumeCubeRenderable& operator=(VolumeCubeRenderable&& orig);
         ~VolumeCubeRenderable();
 
-        void Draw() const;
-        void DrawBack() const;
+        void Draw(float stepSize, float mipLevel = 0.0f, const glm::vec4& texMin = glm::vec4(0.0f), const glm::vec4& texMax = glm::vec4(1.0f)) const;
+        void DrawBack(const glm::vec4& texMin = glm::vec4(0.0f), const glm::vec4& texMax = glm::vec4(1.0f)) const;
+
+    protected:
+        void Draw(GPUProgram* program, const ShaderMeshAttributes& attribBinds) const;
+        void FillVertexAttributeBindings(GPUProgram* program, ShaderMeshAttributes& attribBinds) const;
 
     private:
         /** Holds the vertex buffer object to use. */
@@ -42,17 +48,17 @@ namespace cgu {
         GLuint iBuffer;
         /** Holds the rendering GPU program for back faces. */
         GPUProgram* backProgram;
-        /** Holds the vertex attribute bindings for the back faces shader. */
-        GLVertexAttributeArray* backAttribBind;
+        /** Holds the shader attribute bindings for the back faces shader. */
+        ShaderMeshAttributes backAttribBinds;
         /** Holds the rendering GPU program for drawing. */
         GPUProgram* drawProgram;
-        /** Holds the vertex attribute bindings for the draw shader. */
-        GLVertexAttributeArray* drawAttribBind;
+        /** Holds the shader attribute bindings for the draw shader. */
+        ShaderMeshAttributes drawAttribBinds;
+        /** Holds the application object. */
+        ApplicationBase* application;
 
         void CreateVertexIndexBuffers();
         void DeleteVertexIndexBuffers();
-        void FillVertexAttributeBindings(GPUProgram& program, VertexAttributeBindings& bindings) const;
-        void Draw(const GLVertexAttributeArray* attribBinding) const;
     };
 }
 
