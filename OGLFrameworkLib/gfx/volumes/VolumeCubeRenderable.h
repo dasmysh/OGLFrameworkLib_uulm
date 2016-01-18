@@ -34,8 +34,8 @@ namespace cgu {
         VolumeCubeRenderable& operator=(VolumeCubeRenderable&& orig);
         ~VolumeCubeRenderable();
 
-        void Draw(float stepSize, float mipLevel = 0.0f, const glm::vec4& texMin = glm::vec4(0.0f), const glm::vec4& texMax = glm::vec4(1.0f)) const;
-        void DrawBack(const glm::vec4& texMin = glm::vec4(0.0f), const glm::vec4& texMax = glm::vec4(1.0f)) const;
+        void Draw(float stepSize, float mipLevel = 0.0f) const;
+        void DrawBack() const;
 
     protected:
         void Draw(GPUProgram* program, const ShaderMeshAttributes& attribBinds) const;

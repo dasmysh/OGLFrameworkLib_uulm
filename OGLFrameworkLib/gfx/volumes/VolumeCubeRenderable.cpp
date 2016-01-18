@@ -30,7 +30,7 @@ namespace cgu {
         drawProgram->UseProgram();
         drawProgram->BindUniformBlock(perspectiveProjectionUBBName, *app->GetUBOBindingPoints());
         drawAttribBinds.GetUniformIds() = drawProgram->GetUniformLocations({ "volume", "transferFunc", "back",
-            "minTexCoords", "maxTexCoords", "stepSize", "lodLevel" });
+            "stepSize", "lodLevel" });
         drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[0], 0);
         drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[1], 1);
         drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[2], 0);
@@ -162,26 +162,22 @@ namespace cgu {
     /**
      *  Draws the volumes back faces.
      */
-    void VolumeCubeRenderable::DrawBack(const glm::vec4& texMin, const glm::vec4& texMax) const
+    void VolumeCubeRenderable::DrawBack() const
     {
         glCullFace(GL_FRONT);
         backProgram->UseProgram();
-        backProgram->SetUniform(backAttribBinds.GetUniformIds()[0], texMin);
-        backProgram->SetUniform(backAttribBinds.GetUniformIds()[1], texMax);
         Draw(backProgram, backAttribBinds);
     }
 
     /**
      *  Draws the volume.
      */
-    void VolumeCubeRenderable::Draw(float stepSize, float mipLevel, const glm::vec4& texMin, const glm::vec4& texMax) const
+    void VolumeCubeRenderable::Draw(float stepSize, float mipLevel) const
     {
         glCullFace(GL_BACK);
         drawProgram->UseProgram();
-        drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[3], texMin);
-        drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[4], texMax);
-        drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[5], stepSize);
-        drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[6], mipLevel);
+        drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[3], stepSize);
+        drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[4], mipLevel);
         Draw(drawProgram, drawAttribBinds);
     }
 

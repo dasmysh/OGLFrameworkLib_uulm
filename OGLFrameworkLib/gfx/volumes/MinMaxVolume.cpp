@@ -7,7 +7,7 @@
  */
 
 #include "MinMaxVolume.h"
-#include "gfx/glrenderer/GLTexture3D.h"
+#include "gfx/volumes/Volume.h"
 #include "gfx/glrenderer/GLTexture.h"
 #include "app/ApplicationBase.h"
 #include <boost/assign.hpp>
@@ -15,183 +15,89 @@
 
 namespace cgu {
 
-    namespace cguOctreeMath {
-        inline unsigned int calculateOverlapPixels(unsigned int val) {
-            return (val / VolumeBrickOctree::MAX_SIZE) << 1;
-        }
-    }
-
-    MinMaxVolume::MinMaxVolume(const glm::uvec3& pos, const glm::uvec3& size, const glm::vec3& scale,
-        unsigned int lvl, GPUProgram* minMaxProg, const std::vector<BindingLocation> uniformNames, FILE* strFile) :
-        volumeData(nullptr),
-        posOffset(pos),
-        origSize(size),
-        voxelScale(scale),
-        level(lvl),
-        hasAnyData(true),
-        noOvlpPos(posOffset),
-        noOvlpSize(origSize),
-        minTexValue(0.0f),
-        maxTexValue(1.0f),
-        maxLevel(0),
-        texMax(static_cast<float>(MAX_SIZE)),
-        streamFile(strFile),
-        dataPos(0),
-        dataSize(0),
-        brickTextureDesc(4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE),
-        minMaxMapProgram(minMaxProg),
-        minMaxMapUniformNames(uniformNames)
+    static unsigned int calcMipLevelSize(unsigned int baseSz, unsigned int level)
     {
+        return static_cast<unsigned int>(glm::max(1.0f, glm::floor(static_cast<float>(baseSz)
+            / static_cast<float>(glm::pow(2, level)))));
     }
 
-    /**
-     *  Constructor.
-     *  @param texData the 3D texture resource to create the tree from.
-     *  @param pos the position in the texture.
-     *  @param size the size of this part of the tree (in voxels).
-     *  @param scale the scale of a voxel in this tree.
-     *  @param denoiseLevel the level of denoising to do.
-     *  @param minMaxProg the program used to create Min-/Max-Maps.
-     *  @param uniformNames the uniform names of the minMaxProg.
-     */
-    VolumeBrickOctree::VolumeBrickOctree(const GLTexture3D* texData, const glm::uvec3& pos, const glm::uvec3& size,
-        const glm::vec3& scale, int denoiseLevel, GPUProgram* minMaxProg, const std::vector<BindingLocation> uniformNames) :
-        VolumeBrickOctree(pos, size, scale, 0, minMaxProg, uniformNames, nullptr)
+    static unsigned int calcMipLevels(const glm::uvec3& volumeSize)
     {
-        tempPath = boost::filesystem::unique_path("volbricks-%%%%%%%-tmp");
-        boost::filesystem::create_directory(tempPath);
-        auto tmpPathStr = tempPath.string() + std::string("/streamfile.tmp");
-        streamFile = std::fopen(tmpPathStr.c_str(), "wb+");
-
-        if (origSize.x > MAX_SIZE || origSize.y > MAX_SIZE || origSize.z > MAX_SIZE) {
-            auto ovlp = cguOctreeMath::calculateOverlapPixels(glm::max(origSize.x, glm::max(origSize.y, origSize.z)));
-            glm::uvec3 sizeOverlap{ ovlp };
-            auto sizeWithOverlap = origSize + sizeOverlap;
-            glm::uvec3 sizePowerOfTwo{ cguMath::roundupPow2(origSize.x), cguMath::roundupPow2(origSize.y),
-                cguMath::roundupPow2(origSize.z) };
-            if (sizeWithOverlap.x > sizePowerOfTwo.x) {
-                sizeWithOverlap.x = cguMath::roundupPow2(sizeWithOverlap.x);
-                sizeOverlap <<= 1;
-            } else sizeWithOverlap.x = sizePowerOfTwo.x;
-            if (sizeWithOverlap.y > sizePowerOfTwo.y) {
-                sizeWithOverlap.y = cguMath::roundupPow2(sizeWithOverlap.y);
-                sizeOverlap <<= 1;
-            } else sizeWithOverlap.y = sizePowerOfTwo.y;
-            if (sizeWithOverlap.z > sizePowerOfTwo.z) {
-                sizeWithOverlap.z = cguMath::roundupPow2(sizeWithOverlap.z);
-                sizeOverlap <<= 1;
-            } else sizeWithOverlap.z = sizePowerOfTwo.z;
-            glm::uvec3 childSizeBase{ sizeWithOverlap.x >> 1, sizeWithOverlap.y >> 1, sizeWithOverlap.z >> 1 };
-
-            CreateNode(childSizeBase, denoiseLevel, texData);
-        } else {
-            CreateLeafTexture(texData);
-        }
+        auto maxSize = std::max(std::max(volumeSize.x, volumeSize.y), volumeSize.z);
+        auto fNumLevels = 1.0f + glm::floor(glm::log2(static_cast<float>(maxSize)));
+        return static_cast<unsigned int>(fNumLevels);
     }
 
-    VolumeBrickOctree::VolumeBrickOctree(const GLTexture3D* texData, const glm::uvec3& pos,
-        const glm::uvec3& size, unsigned int lvl, const glm::vec3& scale, int denoiseLevel, GPUProgram* minMaxProg,
-        const std::vector<BindingLocation> uniformNames, FILE* strFile) :
-        VolumeBrickOctree(pos, size, scale, lvl, minMaxProg, uniformNames, strFile)
+    MinMaxVolume::MinMaxVolume(const Volume* texData, ApplicationBase* app) :
+        volumeData(texData),
+        volumeTexture(nullptr),
+        minMaxTexture(nullptr),
+        minMaxProgram(nullptr),
+        minMaxLevelsProgram(nullptr)
     {
-        if (origSize.x * origSize.y * origSize.z == 0) {
-            dataSize = 0;
-            hasAnyData = false;
-            return;
+        auto volumeSize = volumeData->GetSize();
+        auto numLevels = calcMipLevels(volumeSize);
+
+        volumeTexture = volumeData->Load3DTexture(numLevels);
+
+        auto minMaxSize = glm::uvec3(calcMipLevelSize(volumeSize.x, 2),
+            calcMipLevelSize(volumeSize.y, 2),
+            calcMipLevelSize(volumeSize.z, 2));
+        auto minMaxLevels = calcMipLevels(minMaxSize);
+
+        std::string shaderDefines;
+        auto minMaxDesc = volumeTexture->GetDescriptor();
+        minMaxDesc.bytesPP *= 2;
+        minMaxDesc.format = GL_RG;
+        switch (minMaxDesc.internalFormat) {
+        case GL_R8:
+            minMaxDesc.internalFormat = GL_RG8;
+            shaderDefines = "AVGTEX r8,MMTEX rg8";
+            break;
+        case GL_R16F:
+            minMaxDesc.internalFormat = GL_RG16F;
+            shaderDefines = "AVGTEX r16f,MMTEX rg16f";
+            break;
+        case GL_R32F:
+            minMaxDesc.internalFormat = GL_RG32F;
+            shaderDefines = "AVGTEX r32f,MMTEX rg32f";
+            break;
+        default:
+            throw std::runtime_error("Texture format not allowed.");
         }
+        minMaxTexture = std::make_unique<GLTexture>(minMaxSize.x, minMaxSize.y, minMaxSize.z, minMaxLevels, minMaxDesc, nullptr);
+        minMaxProgram = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMax.cp," + shaderDefines);
+        minMaxUniformNames = minMaxProgram->GetUniformLocations({ "origTex", "minMaxTex" });
+        minMaxProgram->UseProgram();
+        minMaxProgram->SetUniform(minMaxUniformNames[0], 0);
+        minMaxProgram->SetUniform(minMaxUniformNames[1], 1);
 
-        if (origSize.x > MAX_SIZE || origSize.y > MAX_SIZE || origSize.z > MAX_SIZE) {
-            glm::uvec3 sizePowerOfTwo{ cguMath::roundupPow2(origSize.x), cguMath::roundupPow2(origSize.y),
-                cguMath::roundupPow2(origSize.z) };
-            glm::uvec3 childSizeBase{ sizePowerOfTwo.x >> 1, sizePowerOfTwo.y >> 1, sizePowerOfTwo.z >> 1 };
+        auto numGroups = glm::ivec3(glm::ceil(glm::vec3(minMaxSize) / 8.0f));
+        volumeTexture->ActivateImage(0, 0, GL_READ_ONLY);
+        minMaxTexture->ActivateImage(1, 0, GL_WRITE_ONLY);
+        OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
 
-            CreateNode(childSizeBase, denoiseLevel, texData);
+        minMaxLevelsProgram = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMaxLevels.cp," + shaderDefines);
+        minMaxLevelsUniformNames = minMaxProgram->GetUniformLocations({ "origLevel", "nextLevel" });
+        minMaxLevelsProgram->UseProgram();
+        minMaxLevelsProgram->SetUniform(minMaxLevelsUniformNames[0], 0);
+        minMaxLevelsProgram->SetUniform(minMaxLevelsUniformNames[1], 1);
 
-        } else {
-            CreateLeafTexture(texData);
+        for (unsigned int lvl = 1; lvl < minMaxLevels; ++lvl) {
+            numGroups = glm::ivec3(glm::ceil(glm::vec3(minMaxSize) / (8.0f * static_cast<float>(lvl + 1))));
+
+            OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
+            OGL_SCALL(glFinish);
+
+            minMaxTexture->ActivateImage(0, lvl - 1, GL_READ_ONLY);
+            minMaxTexture->ActivateImage(1, lvl, GL_WRITE_ONLY);
+            OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
         }
-    }
-    
-    void VolumeBrickOctree::CreateNode(const glm::uvec3& childSizeBase, int denoiseLevel, const GLTexture3D* texData)
-    {
-        glm::uvec3 posOffsets[8];
-        posOffsets[0] = glm::uvec3(0, 0, 0);
-        posOffsets[1] = glm::uvec3(0, 0, 1);
-        posOffsets[2] = glm::uvec3(0, 1, 0);
-        posOffsets[3] = glm::uvec3(0, 1, 1);
-        posOffsets[4] = glm::uvec3(1, 0, 0);
-        posOffsets[5] = glm::uvec3(1, 0, 1);
-        posOffsets[6] = glm::uvec3(1, 1, 0);
-        posOffsets[7] = glm::uvec3(1, 1, 1);
-
-        auto ovlp = cguOctreeMath::calculateOverlapPixels(glm::max(childSizeBase.x, glm::max(childSizeBase.y, childSizeBase.z)));
-
-        for (unsigned int i = 0; i < 8; ++i) {
-            auto childPosOffset = posOffsets[i] * (childSizeBase - glm::uvec3(ovlp));
-            auto childPos = posOffset + childPosOffset;
-            auto childSize = glm::uvec3(glm::max(glm::ivec3(0),
-                glm::ivec3(glm::min(origSize, childPosOffset + childSizeBase)) - glm::ivec3(childPosOffset)));
-
-            if (childSizeBase.x == ovlp) {
-                if (posOffsets[i].x == 0) childSize.x += ovlp;
-                else if (posOffsets[i].x == 1) childSize.x = 0;
-            }
-            if (childSizeBase.y == ovlp) {
-                if (posOffsets[i].y == 0) childSize.y += ovlp;
-                else if (posOffsets[i].y == 1) childSize.y = 0;
-            }
-            if (childSizeBase.z == ovlp) {
-                if (posOffsets[i].z == 0) childSize.z += ovlp;
-                else if (posOffsets[i].z == 1) childSize.z = 0;
-            }
-
-            children[i].reset(new VolumeBrickOctree(texData, childPos, childSize, level + 1, voxelScale, denoiseLevel,
-                minMaxMapProgram, minMaxMapUniformNames, streamFile));// , app));
-
-            maxLevel = glm::max(maxLevel, children[i]->maxLevel);
-        }
-
-        if (static_cast<int>(maxLevel - level) <= denoiseLevel) {
-            volumeData = children[0]->GetDownscaledVolume(true);
-        } else {
-            volumeData = children[0]->GetDownscaledVolume(false);
-        }
-        auto lowResPosOffset = posOffset >> (maxLevel - level);
-        auto lowResSize = origSize >> (maxLevel - level);
-        texSize = volumeData->GetBrickTextureSize(lowResPosOffset, lowResSize);
-        CalculateTexBorders(volumeData, lowResPosOffset, lowResSize, ovlp);
-
-        brickTextureDesc = volumeData->GetTextureDescriptor();
-        std::vector<uint8_t> data;
-        volumeData->ReadRaw(data, lowResPosOffset, lowResSize, texSize);
-        brickTexture.reset(new GLTexture(texSize.x, texSize.y, texSize.z, MAX_MIPLEVELS, brickTextureDesc, data.data()));
-        WriteBrickTextureToTempFile();
-
-        for (auto& child : children) child->ResetAllData();
+        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
+        OGL_SCALL(glFinish);
     }
 
-    void VolumeBrickOctree::CreateLeafTexture(const GLTexture3D* texData)
-    {
-        if (origSize.x * origSize.y * origSize.z == 0) {
-            dataSize = 0;
-            hasAnyData = false;
-            return;
-        }
-
-        maxLevel = level;
-        volumeData = texData;
-        texSize = volumeData->GetBrickTextureSize(posOffset, origSize);
-
-        CalculateTexBorders(volumeData, posOffset, origSize, 1);
-
-        brickTextureDesc = volumeData->GetTextureDescriptor();
-        std::vector<uint8_t> data;
-        volumeData->ReadRaw(data, posOffset, origSize, texSize);
-        brickTexture.reset(new GLTexture(texSize.x, texSize.y, texSize.z, MAX_MIPLEVELS, brickTextureDesc, data.data()));
-        WriteBrickTextureToTempFile();
-    }
-
-    void VolumeBrickOctree::CalculateTexBorders(const GLTexture3D* texData, const glm::uvec3& pos,
+    void MinMaxVolume::CalculateTexBorders(const GLTexture3D* texData, const glm::uvec3& pos,
         const glm::uvec3&, unsigned int overlap)
     {
         auto pixelOffset = 1.0f;
@@ -227,7 +133,7 @@ namespace cgu {
     /**
      *  Destructor.
      */
-    VolumeBrickOctree::~VolumeBrickOctree()
+    MinMaxVolume::~VolumeBrickOctree()
     {
         if (level == 0 && streamFile) {
             std::fclose(streamFile);
@@ -241,7 +147,7 @@ namespace cgu {
      *  @param denoise whether the volume data should be de-noised.
      *  @return the downscaled texture.
      */
-    const GLTexture3D* VolumeBrickOctree::GetDownscaledVolume(bool denoise) const
+    const GLTexture3D* MinMaxVolume::GetDownscaledVolume(bool denoise) const
     {
         return volumeData->GetHalfResTexture(denoise);
     }
@@ -249,7 +155,7 @@ namespace cgu {
     /**
      *  Reloads all data from this tree node.
      */
-    void VolumeBrickOctree::ReloadData()
+    void MinMaxVolume::ReloadData()
     {
         if (dataSize == 0) return;
         std::fseek(streamFile, dataPos, SEEK_SET);
@@ -267,7 +173,7 @@ namespace cgu {
     /**
      *  Releases all the data from this tree node.
      */
-    void VolumeBrickOctree::ResetData()
+    void MinMaxVolume::ResetData()
     {
         brickTexture.reset(nullptr);
     }
@@ -275,33 +181,13 @@ namespace cgu {
     /**
      *  Releases all the data from this tree node and its children.
      */
-    void VolumeBrickOctree::ResetAllData()
+    void MinMaxVolume::ResetAllData()
     {
         if (hasAnyData) {
             brickTexture.reset(nullptr);
             if (children[0]) for (auto& child : children) child->ResetAllData();
             hasAnyData = false;
         }
-    }
-
-    /**
-     *  Writes the brick texture to a temporary file.
-     */
-    void VolumeBrickOctree::WriteBrickTextureToTempFile()
-    {
-        if (texSize.x * texSize.y * texSize.z == 0) {
-            dataSize = 0;
-            hasAnyData = false;
-            return;
-        }
-        std::vector<uint8_t> data;
-        brickTexture->DownloadData(data);
-
-        dataSize = static_cast<unsigned int>(data.size());
-        std::fseek(streamFile, 0, SEEK_END);
-        dataPos = std::ftell(streamFile);
-        std::fwrite(data.data(), sizeof(uint8_t), dataSize, streamFile);
-        ReloadData();
     }
 
     /**
