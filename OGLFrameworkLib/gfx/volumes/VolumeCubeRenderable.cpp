@@ -20,7 +20,7 @@ namespace cgu {
     VolumeCubeRenderable::VolumeCubeRenderable(GPUProgram* drawProg, ApplicationBase* app) :
         vBuffer(0),
         iBuffer(0),
-        backProgram(app->GetGPUProgramManager()->GetResource("renderCubeCoordinates.vp|renderCubeCoordinates.fp")),
+        backProgram(app->GetGPUProgramManager()->GetResource("shader/volume/renderCubeCoordinates.vp|shader/volume/renderCubeCoordinates.fp")),
         drawProgram(drawProg),
         application(app)
     {

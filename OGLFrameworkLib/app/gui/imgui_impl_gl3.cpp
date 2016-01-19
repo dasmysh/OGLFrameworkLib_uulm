@@ -225,10 +225,15 @@ namespace imguiImpl {
     bool ImGui_ImplGL3_HandleMouse(unsigned buttonAction, float mouseWheelDelta)
     {
         if (buttonAction & RI_MOUSE_LEFT_BUTTON_DOWN) g_MousePressed[0] = true;
+        else if (buttonAction & RI_MOUSE_LEFT_BUTTON_UP) g_MousePressed[0] = false;
         if (buttonAction & RI_MOUSE_RIGHT_BUTTON_DOWN) g_MousePressed[1] = true;
+        if (buttonAction & RI_MOUSE_RIGHT_BUTTON_UP) g_MousePressed[1] = false;
         if (buttonAction & RI_MOUSE_MIDDLE_BUTTON_DOWN) g_MousePressed[2] = true;
+        if (buttonAction & RI_MOUSE_MIDDLE_BUTTON_UP) g_MousePressed[2] = false;
         if (buttonAction & RI_MOUSE_BUTTON_4_DOWN) g_MousePressed[3] = true;
+        if (buttonAction & RI_MOUSE_BUTTON_4_UP) g_MousePressed[3] = false;
         if (buttonAction & RI_MOUSE_BUTTON_5_DOWN) g_MousePressed[4] = true;
+        if (buttonAction & RI_MOUSE_BUTTON_5_UP) g_MousePressed[4] = false;
         g_MouseWheel += static_cast<float>(mouseWheelDelta); // Use fractional mouse wheel, 1.0 unit 5 lines.
 
         auto& io = ImGui::GetIO();
@@ -348,7 +353,7 @@ namespace imguiImpl {
         for (auto i = 0; i < 5; i++)
         {
             io.MouseDown[i] = g_MousePressed[i];    // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-            g_MousePressed[i] = false;
+            // g_MousePressed[i] = false;
         }
 
         io.MouseWheel = g_MouseWheel;

@@ -38,18 +38,13 @@ namespace cgu {
         tfProgram = app->GetGPUProgramManager()->GetResource("shader/gui/tfPicker.vp|shader/gui/tfPicker.fp");
         tfProgram->BindUniformBlock("tfOrthoProjection", *app->GetUBOBindingPoints());
 
-        /*std::vector<GUIVertex> quadVerts(4);
-        quadVerts[0].pos = glm::vec3(0.0f);
-        quadVerts[0].texCoords = glm::vec2(0.0f, 1.0f);
-        quadVerts[1].pos = glm::vec3(0.0f, 1.0f, 0.0f);
-        quadVerts[1].texCoords = glm::vec2(0.0f, 0.0f);
-        quadVerts[2].pos = glm::vec3(1.0f, 0.0f, 0.0f);
-        quadVerts[2].texCoords = glm::vec2(1.0f, 1.0f);
-        quadVerts[3].pos = glm::vec3(1.0f, 1.0f, 0.0f);
-        quadVerts[3].texCoords = glm::vec2(1.0f, 0.0f);
-        std::vector<unsigned int> quadIndices{ 0, 1, 2, 2, 1, 3 };*/
+        std::array<glm::vec2, 4> quadVerts;
+        quadVerts[0] = glm::vec2(0.0f);
+        quadVerts[1] = glm::vec2(0.0f, 1.0f);
+        quadVerts[2] = glm::vec2(1.0f, 0.0f);
+        quadVerts[3] = glm::vec2(1.0f, 1.0f);
 
-        quad.reset(new ScreenQuadRenderable());
+        quad.reset(new ScreenQuadRenderable(quadVerts, screenAlignedProg));
 
         // Create default control points for TF
         tf::ControlPoint p0, p1;
@@ -124,7 +119,8 @@ namespace cgu {
             }
         }
         std::array<char, 1024> tmpFilename;
-        std::copy(saveTFFilename.begin(), saveTFFilename.end(), tmpFilename.begin());
+        auto lastPos = saveTFFilename.copy(tmpFilename.data(), 1023, 0);
+        tmpFilename[lastPos] = '\0';
         if (ImGui::InputText("TF Filename", tmpFilename.data(), tmpFilename.size())) {
             saveTFFilename = tmpFilename.data();
         }

@@ -169,16 +169,14 @@ namespace cgu {
         vao->StartAttributeSetup();
         // pos
         if (shaderPositions[0]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[0], 3, GL_FLOAT, GL_FALSE, sizeof(FaceVertex), 0);
+            vao->AddVertexAttribute(shaderPositions[0], 3, GL_FLOAT, GL_FALSE, sizeof(FaceVertex), offsetof(FaceVertex, pos));
         }
 
         if (subMesh->faceHasTexture && shaderPositions[1]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[1], 2, GL_FLOAT, GL_FALSE,
-                sizeof(FaceVertex), sizeof(glm::vec3));
+            vao->AddVertexAttribute(shaderPositions[1], 2, GL_FLOAT, GL_FALSE, sizeof(FaceVertex), offsetof(FaceVertex, tex));
         }
         if (subMesh->faceHasNormal && shaderPositions[2]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[2], 3, GL_FLOAT, GL_FALSE,
-                sizeof(FaceVertex), sizeof(glm::vec3) + sizeof(glm::vec2));
+            vao->AddVertexAttribute(shaderPositions[2], 3, GL_FLOAT, GL_FALSE, sizeof(FaceVertex), offsetof(FaceVertex, normal));
         }
         vao->EndAttributeSetup();
     }

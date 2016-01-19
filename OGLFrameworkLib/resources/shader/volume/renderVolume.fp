@@ -52,10 +52,5 @@ void main()
         t += stepSize;
     }
 
-    colorAccValue = vec4(C, A);
-    imageStore(colorAcc, imgCoords, colorAccValue);
-    overShoot = t - t1;
-    imageStore(overShootAdj, imgCoords, vec4(overShoot));
-
     outputColor = vec4(C, 1);
 }

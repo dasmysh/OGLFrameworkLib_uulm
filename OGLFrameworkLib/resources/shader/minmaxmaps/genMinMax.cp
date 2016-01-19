@@ -26,5 +26,5 @@ void main() {
         }
     }
 
-    imageStore(minMaxTex, storePos, vec2(minValue, maxValue));
+    imageStore(minMaxTex, storePos, vec4(minValue, maxValue, 0, 0));
 }
