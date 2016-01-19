@@ -12,14 +12,13 @@
 #include <codecvt>
 #include <fstream>
 #include "gfx/glrenderer/GLTexture.h"
-#include <boost/assign.hpp>
 #include <ios>
 #include <boost/filesystem.hpp>
 #include "app/Configuration.h"
 #include <limits>
 
-#undef min
-#undef max
+/*#undef min
+#undef max*/
 
 namespace cgu {
 
@@ -27,7 +26,7 @@ namespace cgu {
     static std::vector<OT> readModifyData(const std::vector<char>& rawData, unsigned int size, std::function<OET(const I&)> modify)
     {
         auto elementsToRead = size / static_cast<unsigned int>(sizeof(I));
-        auto ptr = reinterpret_cast<I*>(rawData.data());
+        auto ptr = reinterpret_cast<const I*>(rawData.data());
         std::vector<OT> data(elementsToRead * sizeof(OET) / sizeof(OT));
         for (unsigned int i = 0; i < elementsToRead; ++i) {
             reinterpret_cast<OET*>(data.data())[i] = modify(ptr[i]);
@@ -280,7 +279,7 @@ namespace cgu {
         Resource::Unload();
     }
 
-    std::unique_ptr<MinMaxVolume> Volume::GetMinMaxTexture() const
+    /*std::unique_ptr<MinMaxVolume> Volume::GetMinMaxTexture() const
     {
         assert(texDesc.format == GL_RED);
 
@@ -372,7 +371,7 @@ namespace cgu {
         }
 
         return application->GetVolumeManager()->GetResource(newBaseFileName + ".dat");
-    }
+    }*/
 
     /*Volume* Volume::GetHalfResTexture(bool denoise) const
     {

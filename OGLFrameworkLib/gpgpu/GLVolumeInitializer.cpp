@@ -29,7 +29,7 @@ namespace cgu {
         {
         }
 
-        GLTexture3D* GLVolumeInitializer::InitChecker(const std::string& filename, const glm::uvec3& checkerSize, ApplicationBase* app) const
+        Volume* GLVolumeInitializer::InitChecker(const std::string& filename, const glm::uvec3& checkerSize, ApplicationBase* app) const
         {
             auto initProg = app->GetGPUProgramManager()->GetResource("synthChecker.cp");
             auto uniformNames = initProg->GetUniformLocations(boost::assign::list_of<std::string>("resultImg")("checkerSize")("offset"));
@@ -127,7 +127,7 @@ namespace cgu {
             return app->GetVolumeManager()->GetResource(baseFileName + ".dat");*/
         }
 
-        GLTexture3D* GLVolumeInitializer::InitStripes(const std::string& filename, unsigned int stripeSize, ApplicationBase* app) const
+        Volume* GLVolumeInitializer::InitStripes(const std::string& filename, unsigned int stripeSize, ApplicationBase* app) const
         {
             auto initProg = app->GetGPUProgramManager()->GetResource("synthStripes.cp");
             auto uniformNames = initProg->GetUniformLocations(boost::assign::list_of<std::string>("resultImg")("stripeSize")("offset"));
@@ -152,7 +152,7 @@ namespace cgu {
         }
 
 
-        GLTexture3D* GLVolumeInitializer::InitSpherical(const std::string& filename, const glm::vec3& sphereCenter,
+        Volume* GLVolumeInitializer::InitSpherical(const std::string& filename, const glm::vec3& sphereCenter,
             const glm::vec3& sphereScale, ApplicationBase* app) const
         {
             auto initProg = app->GetGPUProgramManager()->GetResource("synthSpherical.cp");
@@ -179,7 +179,7 @@ namespace cgu {
         }
 
 
-        GLTexture3D* GLVolumeInitializer::InitGeneral(const std::string& filename, GPUProgram* initProg,
+        Volume* GLVolumeInitializer::InitGeneral(const std::string& filename, GPUProgram* initProg,
             const std::vector<BindingLocation>& uniformNames, ApplicationBase* app,
             std::function<void(const glm::uvec3&, const glm::uvec3&, const TextureDescriptor&, std::fstream&)> chunkInitialize) const
         {
