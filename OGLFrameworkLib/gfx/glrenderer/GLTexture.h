@@ -37,9 +37,9 @@ namespace cgu {
 
     class TextureGLIdentifierAccessor
     {
-        friend class cgu::gpgpu::CUDAImage;
-        friend class cgu::GLTexture;
-        friend class cgu::FrameBuffer;
+        friend class gpgpu::CUDAImage;
+        friend class GLTexture;
+        friend class FrameBuffer;
 
         TextureGLIdentifierAccessor(GLuint id, GLenum type) : textureId(id), textureType(type) {};
         GLuint textureId;
@@ -77,6 +77,7 @@ namespace cgu {
         void GenerateMinMaxMaps(GPUProgram* minMaxProgram, const std::vector<BindingLocation>& uniformNames) const;
         void ClearTexture(unsigned int mipLevel, const glm::vec4& data) const;
         glm::uvec3 GetDimensions() const { return glm::uvec3(width, height, depth); }
+        glm::uvec3 GetLevelDimensions(int level) const;
         const TextureDescriptor& GetDescriptor() const { return descriptor; }
 
         void SampleWrapMirror() const;

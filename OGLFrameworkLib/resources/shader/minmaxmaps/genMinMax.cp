@@ -19,7 +19,7 @@ void main() {
         for (int iy = 0; iy < baseReadSize.y; ++iy) {
             for (int iz = 0; iz < baseReadSize.z; ++iz) {
                 ivec3 readPos = baseReadPos + ivec3(ix, iy, iz);
-                float value = imageLoad(origTex, clamp(readPos, ivec3(0), origSize - ivec3(1))).x;;
+                float value = imageLoad(origTex, clamp(readPos, ivec3(0), origSize - ivec3(1))).x;
                 minValue = min(minValue, value);
                 maxValue = max(maxValue, value);
             }

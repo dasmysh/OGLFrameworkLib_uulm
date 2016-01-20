@@ -25,7 +25,6 @@ namespace cgu {
         application(app)
     {
         backProgram->BindUniformBlock(perspectiveProjectionUBBName, *app->GetUBOBindingPoints());
-        backAttribBinds.GetUniformIds() = backProgram->GetUniformLocations({ "minTexCoords", "maxTexCoords" });
 
         drawProgram->UseProgram();
         drawProgram->BindUniformBlock(perspectiveProjectionUBBName, *app->GetUBOBindingPoints());

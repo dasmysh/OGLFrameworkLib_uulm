@@ -45,14 +45,9 @@ namespace cgu {
 
         volumeTexture = volumeData->Load3DTexture(numLevels);
 
-        auto minMaxSize = glm::uvec3(calcMipLevelSize(volumeSize.x, 2),
-            calcMipLevelSize(volumeSize.y, 2),
-            calcMipLevelSize(volumeSize.z, 2));
-        auto minMaxLevels = calcMipLevels(calcTextureMaxSize(minMaxSize));
-
         std::string shaderDefines;
         auto minMaxDesc = volumeTexture->GetDescriptor();
-        minMaxDesc.bytesPP *= 2;
+        minMaxDesc.bytesPP *= 4;
         minMaxDesc.format = GL_RG;
         switch (minMaxDesc.internalFormat) {
         case GL_R8:
@@ -70,6 +65,30 @@ namespace cgu {
         default:
             throw std::runtime_error("Texture format not allowed.");
         }
+
+        mipLevelsProgram = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMipLevels.cp," + shaderDefines);
+        mipLevelsUniformNames = mipLevelsProgram->GetUniformLocations({ "origLevelTex", "nextLevelTex" });
+        mipLevelsProgram->UseProgram();
+        mipLevelsProgram->SetUniform(mipLevelsUniformNames[0], 0);
+        mipLevelsProgram->SetUniform(mipLevelsUniformNames[1], 1);
+
+        auto numGroups = glm::ivec3(glm::ceil(glm::vec3(volumeSize) / 8.0f));
+        for (unsigned int lvl = 1; lvl < numLevels; ++lvl) {
+            numGroups = glm::ivec3(glm::ceil(glm::vec3(numGroups) * 0.5f));
+
+            OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
+            OGL_SCALL(glFinish);
+
+            volumeTexture->ActivateImage(0, lvl - 1, GL_READ_ONLY);
+            volumeTexture->ActivateImage(1, lvl, GL_WRITE_ONLY);
+            OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
+        }
+        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
+        OGL_SCALL(glFinish);
+
+        auto minMaxSize = volumeTexture->GetLevelDimensions(2);
+        auto minMaxLevels = calcMipLevels(calcTextureMaxSize(minMaxSize));
+
         minMaxTexture = std::make_unique<GLTexture>(minMaxSize.x, minMaxSize.y, minMaxSize.z, minMaxLevels, minMaxDesc, nullptr);
         minMaxProgram = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMax.cp," + shaderDefines);
         minMaxUniformNames = minMaxProgram->GetUniformLocations({ "origTex", "minMaxTex" });
@@ -77,19 +96,20 @@ namespace cgu {
         minMaxProgram->SetUniform(minMaxUniformNames[0], 0);
         minMaxProgram->SetUniform(minMaxUniformNames[1], 1);
 
-        auto numGroups = glm::ivec3(glm::ceil(glm::vec3(minMaxSize) / 8.0f));
+        numGroups = glm::ivec3(glm::ceil(glm::vec3(volumeSize) / 8.0f));
         volumeTexture->ActivateImage(0, 0, GL_READ_ONLY);
         minMaxTexture->ActivateImage(1, 0, GL_WRITE_ONLY);
         OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
 
         minMaxLevelsProgram = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMaxLevels.cp," + shaderDefines);
-        minMaxLevelsUniformNames = minMaxProgram->GetUniformLocations({ "origLevel", "nextLevel" });
+        minMaxLevelsUniformNames = minMaxLevelsProgram->GetUniformLocations({ "origLevelTex", "nextLevelTex" });
         minMaxLevelsProgram->UseProgram();
         minMaxLevelsProgram->SetUniform(minMaxLevelsUniformNames[0], 0);
         minMaxLevelsProgram->SetUniform(minMaxLevelsUniformNames[1], 1);
 
+        numGroups = glm::ivec3(glm::ceil(glm::vec3(minMaxSize) / 8.0f));
         for (unsigned int lvl = 1; lvl < minMaxLevels; ++lvl) {
-            numGroups = glm::ivec3(glm::ceil(glm::vec3(minMaxSize) / (8.0f * static_cast<float>(lvl + 1))));
+            numGroups = glm::ivec3(glm::ceil(glm::vec3(numGroups) * 0.5f));
 
             OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
             OGL_SCALL(glFinish);

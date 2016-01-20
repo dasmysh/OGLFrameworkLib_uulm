@@ -253,24 +253,11 @@ namespace cgu {
         } else if (texDesc.type == GL_UNSIGNED_SHORT) {
             auto l_scaleValue = scaleValue;
             data = readModifyData<int8_t, uint16_t, uint16_t>(rawData, size, [l_scaleValue](const uint16_t& val){ return val * l_scaleValue; });
-            /*auto elementSize = static_cast<unsigned int>(sizeof(uint16_t));
-            auto size = std::min(data_size, volumeNumBytes) / elementSize;
-            auto ptr = reinterpret_cast<uint16_t*>(rawData.data());
-            for (unsigned int i = 0; i < size; ++i) {
-                reinterpret_cast<uint16_t*>(data.data())[i] = ptr[i] * scaleValue;
-            }*/
         } else if (texDesc.type == GL_UNSIGNED_INT) {
             data = readModifyData<int8_t, uint32_t, uint32_t>(rawData, size, [](const uint32_t& val){ return val; });
-            /*auto elementSize = static_cast<unsigned int>(sizeof(uint32_t));
-            auto size = std::min(data_size, volumeNumBytes) / elementSize;
-            auto ptr = reinterpret_cast<uint32_t*>(rawData.data());
-            for (unsigned int i = 0; i < size; ++i) {
-                reinterpret_cast<uint32_t*>(data.data())[i] = ptr[i];
-            }*/
         }
 
         auto volTex = std::make_unique<GLTexture>(volumeSize.x, volumeSize.y, volumeSize.z, mipLevels, texDesc, data.data());
-        volTex->GenerateMipMaps();
         return std::move(volTex);
     }
 

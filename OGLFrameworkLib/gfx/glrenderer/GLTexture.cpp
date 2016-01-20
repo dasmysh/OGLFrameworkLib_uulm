@@ -341,6 +341,20 @@ namespace cgu {
     }
 
     /**
+     *  Returns the dimensions of a mip map level.
+     */
+    glm::uvec3 GLTexture::GetLevelDimensions(int level) const
+    {
+        GLint w, h, d;
+        OGL_CALL(glBindTexture, id.textureType, id.textureId);
+        OGL_CALL(glGetTexLevelParameteriv, id.textureType, level, GL_TEXTURE_WIDTH, &w);
+        OGL_CALL(glGetTexLevelParameteriv, id.textureType, level, GL_TEXTURE_HEIGHT, &h);
+        OGL_CALL(glGetTexLevelParameteriv, id.textureType, level, GL_TEXTURE_DEPTH, &d);
+        OGL_CALL(glBindTexture, id.textureType, 0);
+        return glm::uvec3(static_cast<unsigned int>(w), static_cast<unsigned int>(h), static_cast<unsigned int>(d));
+    }
+
+    /**
      *  Sets the sampler parameters for mirroring.
      */
     void GLTexture::SampleWrapMirror() const
