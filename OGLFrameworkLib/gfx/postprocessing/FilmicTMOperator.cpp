@@ -11,6 +11,7 @@
 #include "gfx/glrenderer/GLRenderTarget.h"
 #include "gfx/glrenderer/GLUniformBuffer.h"
 #include "gfx/glrenderer/ScreenQuadRenderable.h"
+#include <imgui.h>
 
 namespace cgu {
 
@@ -45,15 +46,15 @@ namespace cgu {
     /** Default destructor. */
     FilmicTMOperator::~FilmicTMOperator() = default;
 
-    void FilmicTMOperator::AddParameterSlidersToBar(TwBar* bar)
+    void FilmicTMOperator::RenderParameterSliders()
     {
-        TwAddVarRW(bar, "FTMSStr", TW_TYPE_FLOAT, &params.sStrength, " label='Shoulder Strength' min=0.1 max=1 step=0.01");
-        TwAddVarRW(bar, "FTMLinStr", TW_TYPE_FLOAT, &params.linStrength, " label='Linear Strength' min=0.1 max=1 step=0.1");
-        TwAddVarRW(bar, "FTMLinAngle", TW_TYPE_FLOAT, &params.linAngle, " label='Linear Angle' min=0.01 max=1 step=0.01");
-        TwAddVarRW(bar, "FTMToeStr", TW_TYPE_FLOAT, &params.toeStrength, " label='Toe Strength' min=0.1 max=1 step=0.1");
-        TwAddVarRW(bar, "FTMToeNum", TW_TYPE_FLOAT, &params.toeNumerator, " label='Toe Numerator' min=0.01 max=0.1 step=0.01");
-        TwAddVarRW(bar, "FTMToeDenom", TW_TYPE_FLOAT, &params.toeDenominator, " label='Toe Denominator' min=0.1 max=1 step=0.1");
-        TwAddVarRW(bar, "FTMWhite", TW_TYPE_FLOAT, &params.white, " label='White' min=5.0 max=50 step=0.1");
+        ImGui::InputFloat("Shoulder Strength", &params.sStrength, 0.01f);
+        ImGui::InputFloat("Linear Strength", &params.linStrength, 0.1f);
+        ImGui::InputFloat("Linear Angle", &params.linAngle, 0.01f);
+        ImGui::InputFloat("Toe Strength", &params.toeStrength, 0.1f);
+        ImGui::InputFloat("Toe Numerator", &params.toeNumerator, 0.01f);
+        ImGui::InputFloat("Toe Denominator", &params.toeDenominator, 0.1f);
+        ImGui::InputFloat("White", &params.white, 0.1f);
         // no gamma on sRGB targets
         // TwAddVarRW(bar, "Gamma", TW_TYPE_FLOAT, &params.gamma, " label='Gamma' min=1.0 max=3.0 step=0.1");
     }

@@ -21,24 +21,11 @@ namespace cgu {
         pauseOnKillFocus(false),
         resourceBase("resources"),
         useCUDA(true),
-        cudaDevice(-1)
+        cudaDevice(-1),
+        sceneFile(""),
+        fixCamera(false)
     {
     }
 
-    Configuration::~Configuration()
-    {
-    }
-
-    /**
-     * Stream method used by boost serialization of the configuration.
-     * @param os the output stream
-     * @param config the configuration to serialize
-     * @return the output stream
-     */
-    /*std::ostream & operator<<(std::ostream &os, const Configuration &config)
-    {
-        return os << config.fullscreen << config.backbufferBits << config.windowLeft << config.windowTop
-            << config.windowWidth << config.windowHeight << config.useSRGB << config.pauseOnKillFocus
-            << config.resourceBase << config.resourceDirs << config.useCUDA << config.cudaDevice;
-    }*/
+    Configuration::~Configuration() = default;
 }

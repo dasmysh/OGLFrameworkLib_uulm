@@ -9,38 +9,51 @@
 #include "ScreenQuadRenderable.h"
 #include "gfx/glrenderer/GLVertexAttributeArray.h"
 #include <boost/assign.hpp>
+#include "gfx/glrenderer/GPUProgram.h"
 
 namespace cgu {
 
     /** Default constructor. */
     ScreenQuadRenderable::ScreenQuadRenderable() :
+        ScreenQuadRenderable(std::array<glm::vec2, 4>(), nullptr)
+    {
+    }
+
+    /**
+     *  Constructor for externally supplied vertices.
+     *  @param vertices the vertices to use.
+     *  @param prog the program to use (optional).
+     */
+    ScreenQuadRenderable::ScreenQuadRenderable(const std::array <glm::vec2, 4>& vertices, GPUProgram* prog) :
+        vertexData(vertices),
+        program(prog),
         vBuffer(0)
     {
-        std::array<glm::vec2, 4> vertexData;
         OGL_CALL(glGenBuffers, 1, &vBuffer);
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        OGL_CALL(glBufferData, GL_ARRAY_BUFFER, 4 * sizeof(glm::vec2), vertexData.data(), GL_STATIC_DRAW);
+        OGL_CALL(glBufferData, GL_ARRAY_BUFFER, 4 * sizeof(glm::vec2), vertices.data(), GL_STATIC_DRAW);
 
         FillAttributeBindings();
-
     }
 
     /** Copy constructor. */
-    ScreenQuadRenderable::ScreenQuadRenderable(const ScreenQuadRenderable&) :
-        ScreenQuadRenderable()
+    ScreenQuadRenderable::ScreenQuadRenderable(const ScreenQuadRenderable& rhs) :
+        ScreenQuadRenderable(rhs.vertexData, rhs.program)
     {
     }
 
     /** Copy assignment operator. */
-    ScreenQuadRenderable& ScreenQuadRenderable::operator=(ScreenQuadRenderable rhs)
+    ScreenQuadRenderable& ScreenQuadRenderable::operator=(const ScreenQuadRenderable& rhs)
     {
-        std::swap(vBuffer, rhs.vBuffer);
-        std::swap(vertexAttribs, rhs.vertexAttribs);
+        ScreenQuadRenderable tmp{ rhs };
+        std::swap(*this, tmp);
         return *this;
     }
 
     /** Move constructor. */
     ScreenQuadRenderable::ScreenQuadRenderable(ScreenQuadRenderable&& rhs) :
+        vertexData(std::move(rhs.vertexData)),
+        program(rhs.program),
         vBuffer(rhs.vBuffer),
         vertexAttribs(std::move(rhs.vertexAttribs))
     {
@@ -52,6 +65,8 @@ namespace cgu {
     {
         if (this != &rhs) {
             this->~ScreenQuadRenderable();
+            vertexData = std::move(rhs.vertexData);
+            program = rhs.program;
             vBuffer = rhs.vBuffer;
             vertexAttribs = std::move(rhs.vertexAttribs);
             rhs.vBuffer = 0;
@@ -72,6 +87,10 @@ namespace cgu {
         vertexAttribs.reset(new GLVertexAttributeArray(vBuffer, 0));
 
         vertexAttribs->StartAttributeSetup();
+        if (program != nullptr) {
+            auto shaderPositions = program->GetAttributeLocations({ "pos" });
+            vertexAttribs->AddVertexAttribute(shaderPositions[0], 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), 0);
+        }
         vertexAttribs->EndAttributeSetup();
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
     }

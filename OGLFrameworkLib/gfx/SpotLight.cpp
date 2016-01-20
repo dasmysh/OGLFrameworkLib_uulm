@@ -19,7 +19,7 @@ namespace cgu {
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
     SpotLight::SpotLight(const glm::vec3&  intensity, float theFov, const glm::vec3& pos, ShaderBufferBindingPoints* uniformBindingPoints) :
-        camera(RI_MOUSE_RIGHT_BUTTON_DOWN, MB_RGHT, theFov, 1.0f, 0.1f, 10.0f, pos, uniformBindingPoints),
+        camera(RI_MOUSE_RIGHT_BUTTON_DOWN, MB_RGHT, theFov, 1.0f, glm::vec2(256.0f), 0.1f, 10.0f, pos, uniformBindingPoints),
         falloffWidth(0.05f),
         intensity(intensity),
         attenuation(1.0f / 128.0f),

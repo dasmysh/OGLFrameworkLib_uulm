@@ -28,11 +28,11 @@ namespace cgu {
         width(w),
         height(h),
         depth(arraySize),
-        hasMipMaps(false)
+        mipMapLevels(1)
     {
         OGL_CALL(glGenTextures, 1, &id.textureId);
         OGL_CALL(glBindTexture, GL_TEXTURE_2D_ARRAY, id.textureId);
-        OGL_CALL(glTexStorage3D, GL_TEXTURE_2D_ARRAY, 1, descriptor.internalFormat, width, height, depth);
+        OGL_CALL(glTexStorage3D, GL_TEXTURE_2D_ARRAY, mipMapLevels, descriptor.internalFormat, width, height, depth);
         OGL_CALL(glBindTexture, GL_TEXTURE_2D_ARRAY, 0);
         InitSampling();
     }
@@ -43,11 +43,11 @@ namespace cgu {
         width(size),
         height(1),
         depth(1),
-        hasMipMaps(false)
+        mipMapLevels(1)
     {
         OGL_CALL(glGenTextures, 1, &id.textureId);
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
-        OGL_CALL(glTexStorage1D, id.textureType, 1, descriptor.internalFormat, width);
+        OGL_CALL(glTexStorage1D, id.textureType, mipMapLevels, descriptor.internalFormat, width);
         OGL_CALL(glBindTexture, id.textureType, 0);
         InitSampling();
     }
@@ -66,11 +66,11 @@ namespace cgu {
         width(w),
         height(h),
         depth(1),
-        hasMipMaps(false)
+        mipMapLevels(1)
     {
         OGL_CALL(glGenTextures, 1, &id.textureId);
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
-        OGL_CALL(glTexStorage2D, id.textureType, 1, descriptor.internalFormat, width, height);
+        OGL_CALL(glTexStorage2D, id.textureType, mipMapLevels, descriptor.internalFormat, width, height);
         if (data) {
             OGL_CALL(glTexSubImage2D, id.textureType, 0, 0, 0, width, height, descriptor.format,
                 descriptor.type, data);
@@ -85,20 +85,22 @@ namespace cgu {
     * @param w the textures width
     * @param h the textures height
     * @param d the textures depth
+    * @param numMipLevels the number of MipMap levels to create.
     * @param desc the textures format
     * @param data the textures data
     */
-    GLTexture::GLTexture(unsigned int w, unsigned int h, unsigned int d, const TextureDescriptor& desc, const void* data) :
+    GLTexture::GLTexture(unsigned int w, unsigned int h, unsigned int d, unsigned int numMipLevels, const TextureDescriptor& desc, const void* data) :
         id{ 0, GL_TEXTURE_3D },
         descriptor(desc),
         width(w),
         height(h),
         depth(d),
-        hasMipMaps(false)
+        mipMapLevels(numMipLevels)
     {
+        mipMapLevels = glm::min(mipMapLevels, glm::max(1U, static_cast<unsigned int>(glm::log2(static_cast<float>(glm::max(glm::max(width, height), depth)))) + 1));
         OGL_CALL(glGenTextures, 1, &id.textureId);
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
-        OGL_CALL(glTexStorage3D, id.textureType, 1, descriptor.internalFormat, width, height, depth);
+        OGL_CALL(glTexStorage3D, id.textureType, mipMapLevels, descriptor.internalFormat, width, height, depth);
         if (data) {
             OGL_CALL(glTexSubImage3D, id.textureType, 0, 0, 0, 0, width, height, depth,
                 descriptor.format, descriptor.type, data);
@@ -118,7 +120,7 @@ namespace cgu {
         width(0),
         height(0),
         depth(0),
-        hasMipMaps(false)
+        mipMapLevels(1)
     {
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         GLint qResult;
@@ -300,22 +302,22 @@ namespace cgu {
      *  @param minMaxProg the program for generating the Min/Max MipMaps
      *  @param uniformNames the names of the uniforms of the images used in the program
      */
-    void GLTexture::GenerateMinMaxMaps(GPUProgram* minMaxProg, const std::vector<BindingLocation>& uniformNames)
+    void GLTexture::GenerateMinMaxMaps(GPUProgram* minMaxProg, const std::vector<BindingLocation>& uniformNames) const
     {
         assert(descriptor.format == GL_RGBA || descriptor.format == GL_RGBA_INTEGER);
 
+        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glGenerateMipmap, id.textureType);
 
-        auto max_res = glm::max(width, glm::max(height, depth));
-        auto firstMipRes = glm::ivec3(glm::ceil(glm::vec3(width, height, depth) * 0.5f));
+        // unsigned int max_res = glm::max(width, glm::max(height, depth));
+        auto firstMipRes = glm::ivec3(width, height, depth);
         auto numGroups = glm::ivec3(glm::ceil(glm::vec3(firstMipRes) / 8.0f));
-        unsigned int levels = glm::max(1, static_cast<int>(glm::log2(static_cast<float>(max_res))) + 1);
 
         minMaxProg->UseProgram();
         minMaxProg->SetUniform(uniformNames[0], 0);
         minMaxProg->SetUniform(uniformNames[1], 1);
-        for (unsigned int i = 1; i < static_cast<unsigned int>(levels - 1); ++i) {
+        for (unsigned int i = 1; i < mipMapLevels; ++i) {
             numGroups = glm::ivec3(glm::ceil(glm::vec3(numGroups) * 0.5f));
             ActivateImage(0, i - 1, GL_READ_ONLY);
             ActivateImage(1, i, GL_WRITE_ONLY);
@@ -323,8 +325,33 @@ namespace cgu {
             OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
             OGL_SCALL(glFinish);
         }
-        hasMipMaps = true;
+
         InitSampling();
+    }
+
+    /**
+     *  Clears a texture.
+     *  @param mipLevel the MipMap level to clear.
+     *  @param data the clear color.
+     */
+    void GLTexture::ClearTexture(unsigned int mipLevel, const glm::vec4& data) const
+    {
+        assert(mipLevel < mipMapLevels);
+        OGL_CALL(glClearTexImage, id.textureId, mipLevel, descriptor.format, GL_FLOAT, &data);
+    }
+
+    /**
+     *  Returns the dimensions of a mip map level.
+     */
+    glm::uvec3 GLTexture::GetLevelDimensions(int level) const
+    {
+        GLint w, h, d;
+        OGL_CALL(glBindTexture, id.textureType, id.textureId);
+        OGL_CALL(glGetTexLevelParameteriv, id.textureType, level, GL_TEXTURE_WIDTH, &w);
+        OGL_CALL(glGetTexLevelParameteriv, id.textureType, level, GL_TEXTURE_HEIGHT, &h);
+        OGL_CALL(glGetTexLevelParameteriv, id.textureType, level, GL_TEXTURE_DEPTH, &d);
+        OGL_CALL(glBindTexture, id.textureType, 0);
+        return glm::uvec3(static_cast<unsigned int>(w), static_cast<unsigned int>(h), static_cast<unsigned int>(d));
     }
 
     /**
@@ -365,7 +392,7 @@ namespace cgu {
     void GLTexture::SampleLinear() const
     {
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
-        if (hasMipMaps) {
+        if (mipMapLevels > 1) {
             OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_BASE_LEVEL, 0);
@@ -382,7 +409,7 @@ namespace cgu {
     void GLTexture::SampleNearest() const
     {
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
-        if (hasMipMaps) {
+        if (mipMapLevels > 1) {
             OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
             OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_BASE_LEVEL, 0);

@@ -697,6 +697,11 @@ namespace cgu {
         }
     }
 
+    void GLWindow::HandleCharInput(unsigned key)
+    {
+        if (app != nullptr) app->HandleKeyboardCharacters(key, this);
+    }
+
     void GLWindow::HandleRawMouse(const RAWMOUSE& raw)
     {
         mouseRelative = glm::vec2(static_cast<float>(raw.lLastX), static_cast<float>(raw.lLastY));
@@ -829,6 +834,11 @@ namespace cgu {
             }
             DefRawInputProc(&raw, 1, sizeof(RAWINPUTHEADER));
         } break;
+        case WM_CHAR:
+        {
+            win->HandleCharInput(static_cast<unsigned int>(wParam));
+            break;
+        }
         case WM_PAINT:
             BeginPaint(hWnd, &ps);
             EndPaint(hWnd, &ps);

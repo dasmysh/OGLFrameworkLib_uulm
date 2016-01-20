@@ -1,14 +1,15 @@
 #version 450
 
-layout(rgba32f) uniform image3D origTex;
-layout(rgba32f) uniform image3D nextLevelTex;
+layout(MMTEX) uniform image3D origLevelTex;
+layout(MMTEX) uniform image3D nextLevelTex;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 void main() {
     ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
-    ivec3 origSize = imageSize(origTex);
     ivec3 nextLevelSize = imageSize(nextLevelTex);
     if (storePos.x >= nextLevelSize.x || storePos.y >= nextLevelSize.y || storePos.z >= nextLevelSize.z) return;
+
+    ivec3 origSize = imageSize(origLevelTex);
     vec3 ratio = vec3(origSize) / vec3(nextLevelSize);
 
     ivec3 readBasePos = ivec3(vec3(storePos) * ratio);
@@ -22,15 +23,13 @@ void main() {
     readPos[6] = readBasePos + ivec3(1, 1, 0);
     readPos[7] = readBasePos + ivec3(1, 1, 1);
 
-    float avg = 0.0f;
     float minimum = 1.0f;
     float maximum = 0.0f;
     for (int i = 0; i < 8; ++i) {
-        vec3 val = imageLoad(origTex, clamp(readPos[i], ivec3(0), origSize - ivec3(1))).xyz;
-        avg += val.x;
-        minimum = min(minimum, val.y);
-        maximum = max(maximum, val.z);
+        vec2 val = imageLoad(origLevelTex, clamp(readPos[i], ivec3(0), origSize - ivec3(1))).xy;
+        minimum = min(minimum, val.x);
+        maximum = max(maximum, val.y);
     }
-    avg /= 8.0f;
-    imageStore(nextLevelTex, clamp(storePos, ivec3(0), nextLevelSize - ivec3(1)), vec4(avg, minimum, maximum, 0.0f));
+
+    imageStore(nextLevelTex, storePos, vec4(minimum, maximum, 0, 0));
 }

@@ -26,9 +26,11 @@ namespace cgu {
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
     CameraView::CameraView(unsigned int theButtonDownFlag, unsigned int theButtonFlag, float theFovY, float theAspectRatio,
-        float theNearZ, float theFarZ, const glm::vec3& theCamPos, ShaderBufferBindingPoints* uniformBindingPoints) :
+        const glm::vec2& theScreenSize, float theNearZ, float theFarZ, const glm::vec3& theCamPos,
+        ShaderBufferBindingPoints* uniformBindingPoints) :
     fovY(theFovY),
     aspectRatio(theAspectRatio),
+    screenSize(theScreenSize),
     nearZ(theNearZ),
     farZ(theFarZ),
     camPos(theCamPos),
@@ -50,8 +52,9 @@ namespace cgu {
      *  @param theCamPos the cameras position.
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
-    CameraView::CameraView(float theFovY, float theAspectRatio, float theNearZ, float theFarZ, const glm::vec3& theCamPos, ShaderBufferBindingPoints* uniformBindingPoints) :
-        CameraView(RI_MOUSE_LEFT_BUTTON_DOWN, MB_LEFT, theFovY, theAspectRatio, theNearZ, theFarZ, theCamPos, uniformBindingPoints)
+    CameraView::CameraView(float theFovY, float theAspectRatio, const glm::vec2& theScreenSize, float theNearZ, float theFarZ,
+        const glm::vec3& theCamPos, ShaderBufferBindingPoints* uniformBindingPoints) :
+        CameraView(RI_MOUSE_LEFT_BUTTON_DOWN, MB_LEFT, theFovY, theAspectRatio, theScreenSize, theNearZ, theFarZ, theCamPos, uniformBindingPoints)
     {
     }
 
@@ -194,6 +197,34 @@ namespace cgu {
         f.nrpl() /= glm::length(glm::vec3(f.nrpl()));
         f.farp() /= glm::length(glm::vec3(f.farp()));
         return std::move(f);
+    }
+
+    float CameraView::GetSignedDistance2ToUnitAABB(const glm::mat4& world) const
+    {
+        auto localCamPos = glm::vec3(glm::inverse(world) * glm::vec4(camPos, 1.0f));
+        auto clampedCamPos = glm::vec3(world * glm::vec4(glm::clamp(localCamPos, glm::vec3(0.0f), glm::vec3(1.0f)), 1.0f));
+        return glm::dot(clampedCamPos - camPos, clampedCamPos - camPos);
+    }
+
+    glm::vec2 CameraView::CalculatePixelFootprintToUnitAABB(const glm::mat4& world) const
+    {
+        auto mvp = perspective * view * world;
+        glm::vec4 pmin, pmax;
+        pmin = pmax = mvp[3];
+        for (unsigned int i = 0; i < 4; ++i) {
+            for (unsigned int j = 0; j < 4; ++j) {
+                if (mvp[j][i] < 0.0f) pmin[i] += mvp[j][i];
+                else pmax[i] += mvp[j][i];
+            }
+        }
+        pmin /= pmin.w;
+        pmax /= pmax.w;
+
+        cguMath::AABB2<float> ssAABB{ { { glm::vec2(pmin), glm::vec2(pmax) } } };
+        ssAABB.minmax[0] = (ssAABB.minmax[0] + glm::vec2(1.0f)) * 0.5f * screenSize;
+        ssAABB.minmax[1] = (ssAABB.minmax[1] + glm::vec2(1.0f)) * 0.5f * screenSize;
+
+        return std::move(ssAABB.minmax[1] - ssAABB.minmax[0]);
     }
 
     float CameraView::GetSignedDistanceToUnitAABB2(const glm::mat4& world) const
