@@ -10,7 +10,6 @@
 #define FILMICTMOPERATOR_H
 
 #include "main.h"
-#include <anttweakbar/AntTweakBar.h>
 
 namespace cgu {
 
@@ -42,7 +41,7 @@ namespace cgu {
         explicit FilmicTMOperator(ApplicationBase* app);
         ~FilmicTMOperator();
 
-        void AddParameterSlidersToBar(TwBar* bar);
+        void RenderParameterSliders();
         void ApplyTonemapping(GLRenderTarget* sourceRT, GLRenderTarget* targetRT);
 
         void SetExposure(float exposure) { params.exposure = exposure; }

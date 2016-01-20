@@ -10,11 +10,12 @@
 #include "app/ApplicationBase.h"
 #include "gfx/glrenderer/GLTexture.h"
 #include "app/BaseGLWindow.h"
-#include <boost/assign.hpp>
 #include "gfx/glrenderer/GLUniformBuffer.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "app/GLWindow.h"
 #include "gfx/glrenderer/ScreenQuadRenderable.h"
+#include <imgui.h>
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace cgu {
 
@@ -28,8 +29,7 @@ namespace cgu {
         lastButtonAction(0),
         tfProgram(nullptr),
         orthoUBO(new GLUniformBuffer("tfOrthoProjection", sizeof(OrthoProjectionBuffer), app->GetUBOBindingPoints())),
-        tfVBO(0),
-        colorPicker()
+        tfVBO(0)
     {
         screenAlignedProg = app->GetGPUProgramManager()->GetResource("shader/gui/tfRenderGUI.vp|shader/gui/tfRenderGUI.fp");
         screenAlignedTextureUniform = screenAlignedProg->GetUniformLocation("guiTex");
@@ -38,30 +38,13 @@ namespace cgu {
         tfProgram = app->GetGPUProgramManager()->GetResource("shader/gui/tfPicker.vp|shader/gui/tfPicker.fp");
         tfProgram->BindUniformBlock("tfOrthoProjection", *app->GetUBOBindingPoints());
 
-        /*std::vector<GUIVertex> quadVerts(4);
-        quadVerts[0].pos = glm::vec3(0.0f);
-        quadVerts[0].texCoords = glm::vec2(0.0f, 1.0f);
-        quadVerts[1].pos = glm::vec3(0.0f, 1.0f, 0.0f);
-        quadVerts[1].texCoords = glm::vec2(0.0f, 0.0f);
-        quadVerts[2].pos = glm::vec3(1.0f, 0.0f, 0.0f);
-        quadVerts[2].texCoords = glm::vec2(1.0f, 1.0f);
-        quadVerts[3].pos = glm::vec3(1.0f, 1.0f, 0.0f);
-        quadVerts[3].texCoords = glm::vec2(1.0f, 0.0f);
-        std::vector<unsigned int> quadIndices{ 0, 1, 2, 2, 1, 3 };*/
+        std::array<glm::vec2, 4> quadVerts;
+        quadVerts[0] = glm::vec2(0.0f);
+        quadVerts[1] = glm::vec2(0.0f, 1.0f);
+        quadVerts[2] = glm::vec2(1.0f, 0.0f);
+        quadVerts[3] = glm::vec2(1.0f, 1.0f);
 
-        quad.reset(new ScreenQuadRenderable());
-
-        std::stringstream options;
-        glm::uvec2 atbSize{ static_cast<unsigned int>(rectMax.x - rectMin.x), 115 };
-        glm::uvec2 atbPos{ static_cast<unsigned int>(rectMin.x), static_cast<unsigned int>(rectMax.y + 10.0f) };
-        if (rectMin.y >= static_cast<float>(atbSize.y + 20)) atbPos.y = static_cast<unsigned int>(rectMin.y) - (atbSize.y + 10);
-        options << " PickColor position='" << atbPos.x << " " << atbPos.y << "' " << "size='" << atbSize.x << " " << atbSize.y << "' ";
-
-        colorPicker = TwNewBar("PickColor");
-        TwAddVarCB(colorPicker, "TransferPointColor", TW_TYPE_COLOR3F, TransferFunctionGUI::SetColorCallback,
-            TransferFunctionGUI::GetColorCallback, this, " label='Point Color' ");
-        TwDefine(" PickColor visible=false ");
-        TwDefine(options.str().c_str());
+        quad.reset(new ScreenQuadRenderable(quadVerts, screenAlignedProg));
 
         // Create default control points for TF
         tf::ControlPoint p0, p1;
@@ -85,12 +68,7 @@ namespace cgu {
         Resize(static_cast<float>(app->GetWindow()->GetWidth()), static_cast<float>(app->GetWindow()->GetHeight()));
     }
 
-
-    TransferFunctionGUI::~TransferFunctionGUI()
-    {
-    }
-
-
+    TransferFunctionGUI::~TransferFunctionGUI() = default;
 
     void TransferFunctionGUI::Resize(float width, float height)
     {
@@ -129,16 +107,44 @@ namespace cgu {
 
         glDepthMask(GL_TRUE);
         glEnable(GL_DEPTH_TEST);
+
+        ImGui::SetNextWindowSize(ImVec2(rectMax.x - rectMin.x, 115), ImGuiSetCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(rectMin.x, rectMax.y + 10.0f), ImGuiSetCond_FirstUseEver);
+        ImGui::Begin("PickColor");
+        if (selection != -1) {
+            auto selectionColor = tf_.points()[selection].GetColor();
+            if (ImGui::ColorEdit3("Point Color", reinterpret_cast<float*>(&selectionColor))) {
+                tf_.points()[selection].SetColor(selectionColor);
+                UpdateTF();
+            }
+        }
+        std::array<char, 1024> tmpFilename;
+        auto lastPos = saveTFFilename.copy(tmpFilename.data(), 1023, 0);
+        tmpFilename[lastPos] = '\0';
+        if (ImGui::InputText("TF Filename", tmpFilename.data(), tmpFilename.size())) {
+            saveTFFilename = tmpFilename.data();
+        }
+        if (ImGui::Button("Save TF")) {
+            tf_.SaveToFile(saveTFFilename + ".tf");
+        }
+        if (ImGui::Button("Load TF")) {
+            tf_.LoadFromFile(saveTFFilename + ".tf");
+            UpdateTF();
+        }
+        if (ImGui::Button("Init TF High Freq")) {
+            InitTF(1.0f / 16.0f);
+        }
+        if (ImGui::Button("Init TF Low Freq")) {
+            InitTF(1.0f / 4.0f);
+        }
+        ImGui::End();
     }
 
     bool TransferFunctionGUI::HandleMouse(unsigned int buttonAction, float, BaseGLWindow* sender)
     {
         auto handled = false;
 
-        if (selection == -1) {
-            draggingSelection = false;
-            TwDefine(" PickColor visible=false ");
-        }
+        if (selection == -1) draggingSelection = false;
         // if (buttonAction == 0 && !draggingSelection) return handled;
 
         glm::vec2 screenSize(static_cast<float>(sender->GetWidth()), static_cast<float>(sender->GetHeight()));
@@ -187,11 +193,7 @@ namespace cgu {
     bool TransferFunctionGUI::SelectPoint(const glm::vec2& position, const glm::vec2&)
     {
         selection = GetControlPoint(position);
-        if (selection != -1) {
-            TwDefine(" PickColor visible=true ");
-            return true;
-        }
-        return false;
+        return selection != -1;
     }
 
     bool TransferFunctionGUI::AddPoint(const glm::vec2& position, const glm::vec2&)
@@ -205,7 +207,6 @@ namespace cgu {
             p.SetColor(glm::vec3(tf_.RGBA(p.val)));
             tf_.InsertControlPoint(p);
             selection = GetControlPoint(position);
-            TwDefine(" PickColor visible=true ");
             draggingSelection = false;
             return true;
         }
@@ -225,27 +226,19 @@ namespace cgu {
         return false;
     }
 
-    void TW_CALL TransferFunctionGUI::SetColorCallback(const void *value, void *clientData)
+    void TransferFunctionGUI::InitTF(float freq)
     {
-        static_cast<TransferFunctionGUI *>(clientData)->SetSelectionColor(static_cast<const glm::vec3*>(value));
-
-    }
-
-    void TW_CALL TransferFunctionGUI::GetColorCallback(void *value, void *clientData)
-    {
-        *static_cast<glm::vec3*>(value) = static_cast<const TransferFunctionGUI *>(clientData)->GetSelectionColor();
-    }
-
-    void TransferFunctionGUI::SetSelectionColor(const glm::vec3* color)
-    {
-        if (selection != -1) tf_.points()[selection].SetColor(*color);
+        tf_.InitWithFreqRGBA(freq / 2.0f, 1.0f - freq / 2.0f, 1.0f / ((1.0f / freq) + 1.0f));
         UpdateTF();
     }
 
-    glm::vec3 TransferFunctionGUI::GetSelectionColor() const
+    void TransferFunctionGUI::LoadTransferFunctionFromFile(const std::string& filename)
     {
-        if (selection != -1) return tf_.points()[selection].GetColor();
-        return glm::vec3(0.0f);
+        if (boost::algorithm::ends_with(filename, ".tf")) saveTFFilename = filename.substr(0, filename.find_last_of("."));
+        else saveTFFilename = filename;
+
+        tf_.LoadFromFile(saveTFFilename + ".tf");
+        UpdateTF();
     }
 
     void TransferFunctionGUI::UpdateTF(bool createVAO)
@@ -270,7 +263,7 @@ namespace cgu {
         glBufferSubData(GL_ARRAY_BUFFER, (tf_.points().size() + 1) * sizeof(tf::ControlPoint), sizeof(tf::ControlPoint), &last);
 
         if (createVAO) {
-            auto loc = tfProgram->GetAttributeLocations(boost::assign::list_of<std::string>("value")("color"));
+            auto loc = tfProgram->GetAttributeLocations({ "value", "color" });
             attribBind = tfProgram->CreateVertexAttributeArray(tfVBO, 0);
             attribBind->StartAttributeSetup();
             attribBind->AddVertexAttribute(loc[0], 1, GL_FLOAT, GL_FALSE, sizeof(tf::ControlPoint), 0);

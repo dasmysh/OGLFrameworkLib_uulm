@@ -51,9 +51,11 @@ namespace cgu {
         /** Called if the application is to end running. */
         void EndRun();
 
-        bool IsPaused() const { return m_pause; };
+        bool IsPaused() const { return m_pause; }
+        void SetPause(bool pause) { m_pause = pause; }
 
         virtual bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
+        virtual bool HandleKeyboardCharacters(unsigned int key, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         virtual bool HandleMouseApp(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender) = 0;
         virtual void OnResize(unsigned int width, unsigned int height);
@@ -100,6 +102,8 @@ namespace cgu {
         virtual void FrameMove(float time, float elapsed) = 0;
         /** Renders the scene. */
         virtual void RenderScene() = 0;
+        /** Renders the scenes GUI. */
+        virtual void RenderGUI() = 0;
 
         /** Holds the applications main window. */
         GLWindow& win;

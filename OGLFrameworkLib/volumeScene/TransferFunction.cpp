@@ -8,6 +8,9 @@
 
 #include "TransferFunction.h"
 #include <algorithm>
+#include <fstream>
+#include <array>
+#include "main.h"
 
 namespace cgu {
     namespace tf {
@@ -97,6 +100,50 @@ namespace cgu {
                 auto x = static_cast<float>(i) / static_cast<float>(resolution - 1);
                 data[i] = RGBA(x);
             }
+        }
+
+        void TransferFunction::InitWithFreqRGBA(float start, float end, float freq)
+        {
+            points_.clear();
+            auto freqAcc = start;
+            points_.push_back(ControlPoint{ start, glm::vec4(0.0f) });
+            while (freqAcc < end) {
+                points_.push_back(ControlPoint{ freqAcc, glm::vec4(0.0f) });
+                points_.push_back(ControlPoint{ freqAcc + (freq * 0.25f), glm::vec4(1.0f, 0.0f, 0.0f, 0.3f) });
+                points_.push_back(ControlPoint{ freqAcc + (freq * 0.50f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) });
+                points_.push_back(ControlPoint{ freqAcc + (freq * 0.75f), glm::vec4(0.0f, 0.0f, 1.0f, 0.3f) });
+                freqAcc += freq;
+            }
+
+        }
+
+        void TransferFunction::SaveToFile(const std::string& filename) const
+        {
+            std::ofstream tfOut(filename, std::ios::binary | std::ios::out);
+            std::array<char, 5> formatID{ { 'c', 'g', 'u', 'T', 'F' } };
+            auto size = static_cast<unsigned int>(points_.size());
+            tfOut.write(formatID.data(), 5);
+            tfOut.write(reinterpret_cast<const char*>(&size), sizeof(unsigned int));
+            tfOut.write(reinterpret_cast<const char*>(points_.data()), points_.size() * sizeof(ControlPoint));
+        }
+
+        void TransferFunction::LoadFromFile(const std::string& filename)
+        {
+            std::ifstream tfIn(filename, std::ios::binary | std::ios::in);
+            std::array<char, 5> formatID;
+            tfIn.read(formatID.data(), 5);
+
+            if (formatID[0] != 'c' && formatID[1] != 'g' && formatID[2] != 'u'
+                && formatID[3] != 'T' && formatID[4] != 'F') {
+                LOG(ERROR) << "Wrong file format.";
+                throw std::runtime_error("Wrong file format.");
+            }
+
+            points_.clear();
+            unsigned int numCtrlPts = 0;
+            tfIn.read(reinterpret_cast<char*>(&numCtrlPts), sizeof(unsigned int));
+            points_.resize(numCtrlPts);
+            tfIn.read(reinterpret_cast<char*>(points_.data()), numCtrlPts * sizeof(ControlPoint));
         }
     }
 }

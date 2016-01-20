@@ -1,7 +1,7 @@
 /**
  * @file   ApplicationBase.cpp
  * @author Sebastian Maisch <sebastian.maisch@googlemail.com>
- * @date   17. Dezember 2013
+ * @date   2013.12.17
  *
  * @brief  Implements the application base class.
  */
@@ -11,8 +11,7 @@
 #include "core/FontManager.h"
 #include "app/GLWindow.h"
 #include "gfx/glrenderer/ScreenQuadRenderable.h"
-
-#include <anttweakbar/AntTweakBar.h>
+#include "app/gui/imgui_impl_gl3.h"
 
 namespace cgu {
     /**
@@ -49,12 +48,12 @@ namespace cgu {
         fontManager.reset(new FontManager(this));
         win.RegisterApplication(*this);
         win.ShowWindow();
-        auto aspectRatio = static_cast<float> (win.GetWidth())
-            / static_cast<float> (win.GetHeight());
+        glm::vec2 screenSize(static_cast<float> (win.GetWidth()), static_cast<float> (win.GetHeight()));
+        auto aspectRatio = screenSize.x / screenSize.y;
         orthoView.reset(new OrthogonalView(static_cast<float>(win.GetWidth()), static_cast<float>(win.GetHeight()), &uniformBindingPoints));
-        cameraView.reset(new CameraView(60.0f, aspectRatio, 1.0f, 100.0f, camPos, &uniformBindingPoints));
+        cameraView.reset(new CameraView(60.0f, aspectRatio, screenSize, 1.0f, 100.0f, camPos, &uniformBindingPoints));
 
-        TwInit(TW_OPENGL_CORE, nullptr);
+        imguiImpl::ImGui_ImplGL3_Init(win.GetHWnd());
         fontProgram = programManager->GetResource(fontProgramID);
         fontProgram->BindUniformBlock(orthoProjectionUBBName, uniformBindingPoints);
         screenQuadRenderable.reset(new ScreenQuadRenderable());
@@ -62,7 +61,7 @@ namespace cgu {
 
     ApplicationBase::~ApplicationBase()
     {
-        TwTerminate();
+        imguiImpl::ImGui_ImplGL3_Shutdown();
     }
 
     /**
@@ -190,119 +189,9 @@ namespace cgu {
      */
     bool ApplicationBase::HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender)
     {
-        auto handled = 0;
-        static unsigned __int64 s_PrevKeyDown = 0;
-        static __int64 s_PrevKeyDownMod = 0;
-        static auto s_PrevKeyDownHandled = 0;
+        auto handled = imguiImpl::ImGui_ImplGL3_HandleKey(vkCode, bKeyDown);
 
-        auto kmod = 0;
-        auto testkp = 0;
-        auto k = 0;
-        auto twVKCode = vkCode == VK_NUMRETURN ? VK_RETURN : vkCode;
-        if (sender->GetKeyboardModState(VK_MOD_SHIFT)) kmod |= TW_KMOD_SHIFT;
-        if (sender->GetKeyboardModState(VK_MOD_CTRL)) {
-            kmod |= TW_KMOD_CTRL; testkp = 1;
-        }
-        if (sender->GetKeyboardModState(VK_MOD_MENU)) {
-            kmod |= TW_KMOD_ALT;  testkp = 1;
-        }
-
-        if (twVKCode >= VK_F1 && twVKCode <= VK_F15)
-            k = TW_KEY_F1 + (twVKCode - VK_F1);
-        else if (testkp && twVKCode >= VK_NUMPAD0 && twVKCode <= VK_NUMPAD9)
-            k = '0' + (twVKCode - VK_NUMPAD0);
-        else switch (twVKCode)
-        {
-        case VK_UP:
-            k = TW_KEY_UP;
-            break;
-        case VK_DOWN:
-            k = TW_KEY_DOWN;
-            break;
-        case VK_LEFT:
-            k = TW_KEY_LEFT;
-            break;
-        case VK_RIGHT:
-            k = TW_KEY_RIGHT;
-            break;
-        case VK_INSERT:
-            k = TW_KEY_INSERT;
-            break;
-        case VK_DELETE:
-            k = TW_KEY_DELETE;
-            break;
-        case VK_PRIOR:
-            k = TW_KEY_PAGE_UP;
-            break;
-        case VK_NEXT:
-            k = TW_KEY_PAGE_DOWN;
-            break;
-        case VK_HOME:
-            k = TW_KEY_HOME;
-            break;
-        case VK_END:
-            k = TW_KEY_END;
-            break;
-        case VK_DIVIDE:
-            if (testkp)
-                k = '/';
-            break;
-        case VK_MULTIPLY:
-            if (testkp)
-                k = '*';
-            break;
-        case VK_SUBTRACT:
-            if (testkp)
-                k = '-';
-            break;
-        case VK_ADD:
-            if (testkp)
-                k = '+';
-            break;
-        case VK_DECIMAL:
-            if (testkp)
-                k = '.';
-            break;
-        default:
-            if ((kmod&TW_KMOD_CTRL) && (kmod&TW_KMOD_ALT))
-                k = MapVirtualKey(twVKCode, 2) & 0x0000FFFF;
-        }
-
-        if (bKeyDown) {
-            if (k != 0)
-                handled = TwKeyPressed(k, kmod);
-            else
-            {
-                // if the key will be handled at next WM_CHAR report this event as handled
-                auto key = static_cast<int>(MapVirtualKey(twVKCode, 2) & 0xff);
-                if (kmod&TW_KMOD_CTRL && key > 0 && key < 27)
-                    key += 'a' - 1;
-                if (key > 0 && key < 256)
-                    handled = TwKeyPressed(key, kmod);
-            }
-            s_PrevKeyDown = twVKCode;
-            s_PrevKeyDownMod = kmod;
-            s_PrevKeyDownHandled = handled;
-        } else {
-            // if the key has been handled at previous WM_KEYDOWN report this event as handled
-            if (s_PrevKeyDown == twVKCode && s_PrevKeyDownMod == kmod)
-                handled = s_PrevKeyDownHandled;
-            else
-            {
-                // if the key would have been handled report this event as handled
-                auto key = static_cast<int>(MapVirtualKey(twVKCode, 2) & 0xff);
-                if (kmod&TW_KMOD_CTRL && key > 0 && key < 27)
-                    key += 'a' - 1;
-                if (key > 0 && key < 256)
-                    handled = TwKeyTest(key, kmod);
-            }
-            // reset previous keydown
-            s_PrevKeyDown = 0;
-            s_PrevKeyDownMod = 0;
-            s_PrevKeyDownHandled = 0;
-        }
-
-        if (bKeyDown && handled == 0) {
+        if (bKeyDown && !handled) {
             switch (vkCode)
             {
             case VK_ESCAPE:
@@ -316,9 +205,29 @@ namespace cgu {
             }
         }
 
-        if (handled == 0 && IsRunning() && !IsPaused()) handled = cameraView->HandleKeyboard(vkCode, bKeyDown, sender);
+        if (!handled && IsRunning() && !IsPaused()) handled = cameraView->HandleKeyboard(vkCode, bKeyDown, sender);
 
-        return handled == 1;
+        return handled;
+    }
+
+    bool ApplicationBase::HandleKeyboardCharacters(unsigned key, BaseGLWindow*)
+    {
+        return imguiImpl::ImGui_ImplGL3_HandleChar(key);
+        /*switch (key)
+        {
+        case 0x08: // Process a backspace. 
+            break;
+        case 0x0A: // Process a linefeed.
+            break;
+        case 0x1B: // Process an escape. 
+            break;
+        case 0x09: // Process a tab. 
+            break;
+        case 0x0D: // Process a carriage return.
+            break;
+        default: // Process displayable characters.
+            break;
+        }*/
     }
 
     /**
@@ -330,26 +239,17 @@ namespace cgu {
      */
     bool ApplicationBase::HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender)
     {
-        auto handled = 0;
-        auto handledMovement = 0;
+        auto handledMovement = false;
         if (sender->HadPositionUpdate()) {
-            handledMovement = TwMouseMotion(static_cast<int>(sender->GetMouseAbsolute().x), static_cast<int>(sender->GetMouseAbsolute().y));
+            handledMovement = imguiImpl::ImGui_ImplGL3_HandleMousePosition(sender->GetMouseAbsolute().x, sender->GetMouseAbsolute().y);
             sender->HandledPositionUpdate();
         }
-        if (handled == 0 && buttonAction & RI_MOUSE_LEFT_BUTTON_DOWN) handled = TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
-        if (handled == 0 && buttonAction & RI_MOUSE_LEFT_BUTTON_UP) handled = TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
-        if (handled == 0 && buttonAction & RI_MOUSE_RIGHT_BUTTON_DOWN) handled = TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_RIGHT);
-        if (handled == 0 && buttonAction & RI_MOUSE_RIGHT_BUTTON_UP) handled = TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_RIGHT);
-        if (handled == 0 && buttonAction & RI_MOUSE_MIDDLE_BUTTON_DOWN) handled = TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_MIDDLE);
-        if (handled == 0 && buttonAction & RI_MOUSE_MIDDLE_BUTTON_UP) handled = TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_MIDDLE);
+        auto handled = imguiImpl::ImGui_ImplGL3_HandleMouse(buttonAction, mouseWheelDelta);
 
-        static auto s_WheelPos = 0;
-        s_WheelPos += static_cast<int>(mouseWheelDelta);
-        if (handled == 0) handled = TwMouseWheel(s_WheelPos);
-        if (handled == 0 && IsRunning() && !IsPaused()) handled = HandleMouseApp(buttonAction, mouseWheelDelta, sender);
+        if (!handled && IsRunning() && !IsPaused()) handled = HandleMouseApp(buttonAction, mouseWheelDelta, sender);
         // if (handledM)
-        if (handled == 0 && handledMovement == 0 && IsRunning() && !IsPaused()) handled = cameraView->HandleMouse(buttonAction, mouseWheelDelta, sender);
-        return handled == 1;
+        if (!handled && !handledMovement && IsRunning() && !IsPaused()) handled = cameraView->HandleMouse(buttonAction, mouseWheelDelta, sender);
+        return handled;
     }
 
     /**
@@ -357,8 +257,9 @@ namespace cgu {
      */
     void ApplicationBase::OnResize(unsigned int width, unsigned int height)
     {
-        auto aspectRatio = static_cast<float> (width) / static_cast<float> (height);
-        TwWindowSize(width, height);
+        auto fWidth = static_cast<float>(width), fHeight = static_cast<float>(height);
+        auto aspectRatio = fWidth / fHeight;
+        imguiImpl::ImGui_ImplGL3_Resize(fWidth, fHeight);
         if (orthoView) {
             orthoView->Resize(static_cast<float>(win.GetWidth()), static_cast<float> (win.GetHeight()));
             orthoView->SetView();
@@ -412,16 +313,18 @@ namespace cgu {
 
         this->m_lastElapsedTime = qwTime.QuadPart;
 
-        if (this->m_pause) {
-            Sleep(50);
-            return;
+        if (!this->m_pause) {
+            this->m_time = (qwTime.QuadPart - this->m_baseTime) / static_cast<double>(this->m_QPFTicksPerSec);
+
+            this->FrameMove(static_cast<float>(this->m_time), static_cast<float>(this->m_elapsedTime));
+            this->RenderScene();
         }
 
-        this->m_time = (qwTime.QuadPart - this->m_baseTime) / static_cast<double>(this->m_QPFTicksPerSec);
-
-        this->FrameMove(static_cast<float>(this->m_time), static_cast<float>(this->m_elapsedTime));
-        this->RenderScene();
-        TwDraw();
+        imguiImpl::ImGui_ImplGL3_NewFrame(m_time);
+        win.BatchDraw([&](GLBatchRenderTarget & rt) {
+            this->RenderGUI();
+            ImGui::Render();
+        });
         this->win.Present();
     }
 }

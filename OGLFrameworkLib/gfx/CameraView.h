@@ -34,9 +34,11 @@ namespace cgu {
     class CameraView
     {
     public:
-        CameraView(unsigned int theButtonDownFlag, unsigned int theButtonFlag, float fovY, float aspectRatio, float nearZ,
-            float farZ, const glm::vec3& camPos, ShaderBufferBindingPoints* uniformBindingPoints);
-        CameraView(float fovY, float aspectRatio, float nearZ, float farZ, const glm::vec3& camPos, ShaderBufferBindingPoints* uniformBindingPoints);
+        CameraView(unsigned int theButtonDownFlag, unsigned int theButtonFlag, float fovY, float aspectRatio,
+            const glm::vec2& theScreenSize, float nearZ, float farZ, const glm::vec3& camPos,
+            ShaderBufferBindingPoints* uniformBindingPoints);
+        CameraView(float fovY, float aspectRatio, const glm::vec2& theScreenSize, float nearZ, float farZ,
+            const glm::vec3& camPos, ShaderBufferBindingPoints* uniformBindingPoints);
         CameraView(const CameraView&);
         CameraView& operator=(const CameraView&);
         CameraView(CameraView&&);
@@ -50,10 +52,14 @@ namespace cgu {
         void SetViewMVPOnly(const glm::mat4& modelM) const;
         void UpdateCamera();
         const glm::mat4& GetViewMatrix() const { return view; }
+        glm::mat4 GetProjMatrix() const { return perspective; }
         cguMath::Frustum<float> GetViewFrustum(const glm::mat4& modelM) const;
         const glm::vec3& GetPosition() const { return camPos; }
+        float GetSignedDistance2ToUnitAABB(const glm::mat4& world) const;
+        glm::vec2 CalculatePixelFootprintToUnitAABB(const glm::mat4& world) const;
         float GetSignedDistanceToUnitAABB2(const glm::mat4& world) const;
         float GetFOV() const { return fovY; }
+        const glm::vec2& GetScreenSize() const { return screenSize; }
 
     private:
         cguMath::Frustum<float> CalcViewFrustum(const glm::mat4& mvp) const;
@@ -62,6 +68,8 @@ namespace cgu {
         float fovY;
         /** Holds the aspect ratio. */
         float aspectRatio;
+        /** Holds the screen size. */
+        glm::vec2 screenSize;
         /** Holds the near z plane. */
         float nearZ;
         /** Holds the far z plane. */
