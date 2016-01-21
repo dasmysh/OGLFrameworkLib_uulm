@@ -29,14 +29,14 @@ namespace cgu {
     class OrthogonalView
     {
     public:
-        OrthogonalView(float width, float height, ShaderBufferBindingPoints* uniformBindingPoints);
+        OrthogonalView(const glm::vec2& screenSize, ShaderBufferBindingPoints* uniformBindingPoints);
         OrthogonalView(const OrthogonalView&);
         OrthogonalView& operator=(const OrthogonalView&);
         OrthogonalView(OrthogonalView&&);
         OrthogonalView& operator=(OrthogonalView&&);
         virtual ~OrthogonalView();
 
-        void Resize(float width, float height);
+        void Resize(const glm::vec2& screenSize);
         void SetView() const;
 
     private:

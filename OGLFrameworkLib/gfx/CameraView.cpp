@@ -19,17 +19,17 @@ namespace cgu {
     /**
      *  Constructor.
      *  @param theFov the cameras field of view.
-     *  @param theAspectRatio the cameras aspect ratio.
+     *  @param theScreenSize the cameras screen size.
      *  @param theNearZ distance to the near clipping plane.
      *  @param theFarZ distance to the far clipping plane.
      *  @param theCamPos the cameras position.
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
-    CameraView::CameraView(unsigned int theButtonDownFlag, unsigned int theButtonFlag, float theFovY, float theAspectRatio,
-        const glm::vec2& theScreenSize, float theNearZ, float theFarZ, const glm::vec3& theCamPos,
+    CameraView::CameraView(unsigned int theButtonDownFlag, unsigned int theButtonFlag, float theFovY,
+        const glm::uvec2& theScreenSize, float theNearZ, float theFarZ, const glm::vec3& theCamPos,
         ShaderBufferBindingPoints* uniformBindingPoints) :
     fovY(theFovY),
-    aspectRatio(theAspectRatio),
+    aspectRatio(static_cast<float>(theScreenSize.x) / static_cast<float>(theScreenSize.y)),
     screenSize(theScreenSize),
     nearZ(theNearZ),
     farZ(theFarZ),
@@ -40,21 +40,21 @@ namespace cgu {
     perspectiveUBO(uniformBindingPoints == nullptr ? nullptr : std::make_unique<GLUniformBuffer>(perspectiveProjectionUBBName,
         static_cast<unsigned int>(sizeof(PerspectiveTransformBuffer)), uniformBindingPoints))
     {
-        Resize(aspectRatio);
+        Resize(screenSize);
     }
 
     /**
      *  Constructor.
      *  @param theFov the cameras field of view.
-     *  @param theAspectRatio the cameras aspect ratio.
+     *  @param theScreenSize the cameras screen size.
      *  @param theNearZ distance to the near clipping plane.
      *  @param theFarZ distance to the far clipping plane.
      *  @param theCamPos the cameras position.
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
-    CameraView::CameraView(float theFovY, float theAspectRatio, const glm::vec2& theScreenSize, float theNearZ, float theFarZ,
+    CameraView::CameraView(float theFovY, const glm::uvec2& theScreenSize, float theNearZ, float theFarZ,
         const glm::vec3& theCamPos, ShaderBufferBindingPoints* uniformBindingPoints) :
-        CameraView(RI_MOUSE_LEFT_BUTTON_DOWN, MB_LEFT, theFovY, theAspectRatio, theScreenSize, theNearZ, theFarZ, theCamPos, uniformBindingPoints)
+        CameraView(RI_MOUSE_LEFT_BUTTON_DOWN, MB_LEFT, theFovY, theScreenSize, theNearZ, theFarZ, theCamPos, uniformBindingPoints)
     {
     }
 
@@ -64,11 +64,14 @@ namespace cgu {
     CameraView::CameraView(const CameraView& rhs) :
         fovY(rhs.fovY),
         aspectRatio(rhs.aspectRatio),
+        screenSize(rhs.screenSize),
         nearZ(rhs.nearZ),
         farZ(rhs.farZ),
+        perspective(rhs.perspective),
         camPos(rhs.camPos),
         camOrient(rhs.camOrient),
         camUp(rhs.camUp),
+        view(rhs.view),
         camArcball(rhs.camArcball),
         perspectiveUBO(new GLUniformBuffer(*rhs.perspectiveUBO))
     {
@@ -92,11 +95,14 @@ namespace cgu {
     CameraView::CameraView(CameraView&& rhs) :
         fovY(std::move(rhs.fovY)),
         aspectRatio(std::move(rhs.aspectRatio)),
+        screenSize(std::move(rhs.screenSize)),
         nearZ(std::move(rhs.nearZ)),
         farZ(std::move(rhs.farZ)),
+        perspective(std::move(rhs.perspective)),
         camPos(std::move(rhs.camPos)),
         camOrient(std::move(rhs.camOrient)),
         camUp(std::move(rhs.camUp)),
+        view(std::move(rhs.view)),
         camArcball(std::move(rhs.camArcball)),
         perspectiveUBO(std::move(rhs.perspectiveUBO))
     {
@@ -111,11 +117,14 @@ namespace cgu {
             this->~CameraView();
             fovY = rhs.fovY;
             aspectRatio = rhs.aspectRatio;
+            screenSize = rhs.screenSize;
             nearZ = rhs.nearZ;
             farZ = rhs.farZ;
+            perspective = rhs.perspective;
             camPos = rhs.camPos;
             camOrient = rhs.camOrient;
             camUp = rhs.camUp;
+            view = rhs.view;
             camArcball = std::move(rhs.camArcball);
             perspectiveUBO = std::move(rhs.perspectiveUBO);
         }
@@ -125,9 +134,10 @@ namespace cgu {
     /** Default destructor. */
     CameraView::~CameraView() = default;
 
-    void CameraView::Resize(float theAspectRatio)
+    void CameraView::Resize(const glm::uvec2& theScreenSize)
     {
-        aspectRatio = theAspectRatio;
+        screenSize = theScreenSize;
+        aspectRatio = static_cast<float>(theScreenSize.x) / static_cast<float>(theScreenSize.y);
         perspective = glm::perspective(glm::radians(fovY), aspectRatio, nearZ, farZ);
         view = glm::lookAt(camPos, glm::vec3(0.0f), camUp);
     }
@@ -226,8 +236,8 @@ namespace cgu {
         pmax /= pmax.w;
 
         cguMath::AABB2<float> ssAABB{ { { glm::vec2(pmin), glm::vec2(pmax) } } };
-        ssAABB.minmax[0] = (ssAABB.minmax[0] + glm::vec2(1.0f)) * 0.5f * screenSize;
-        ssAABB.minmax[1] = (ssAABB.minmax[1] + glm::vec2(1.0f)) * 0.5f * screenSize;
+        ssAABB.minmax[0] = (ssAABB.minmax[0] + glm::vec2(1.0f)) * 0.5f * glm::vec2(screenSize);
+        ssAABB.minmax[1] = (ssAABB.minmax[1] + glm::vec2(1.0f)) * 0.5f * glm::vec2(screenSize);
 
         return std::move(ssAABB.minmax[1] - ssAABB.minmax[0]);
     }

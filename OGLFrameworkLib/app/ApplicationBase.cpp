@@ -49,9 +49,8 @@ namespace cgu {
         win.RegisterApplication(*this);
         win.ShowWindow();
         glm::vec2 screenSize(static_cast<float> (win.GetWidth()), static_cast<float> (win.GetHeight()));
-        auto aspectRatio = screenSize.x / screenSize.y;
-        orthoView.reset(new OrthogonalView(static_cast<float>(win.GetWidth()), static_cast<float>(win.GetHeight()), &uniformBindingPoints));
-        cameraView.reset(new CameraView(60.0f, aspectRatio, screenSize, 1.0f, 100.0f, camPos, &uniformBindingPoints));
+        orthoView.reset(new OrthogonalView(screenSize, &uniformBindingPoints));
+        cameraView.reset(new CameraView(60.0f, screenSize, 1.0f, 100.0f, camPos, &uniformBindingPoints));
 
         imguiImpl::ImGui_ImplGL3_Init(win.GetHWnd());
         fontProgram = programManager->GetResource(fontProgramID);
@@ -144,15 +143,6 @@ namespace cgu {
     {
         return fontManager.get();
     }
-
-    /**
-     * Returns the GUI theme manager.
-     * @return the GUI theme manager
-     */
-    //GUIThemeManager* ApplicationBase::GetGUIThemeManager()
-    //{
-    //    return guiThemeManager.get();
-    //}
 
     /**
      * Returns the main window.
@@ -257,15 +247,14 @@ namespace cgu {
      */
     void ApplicationBase::OnResize(unsigned int width, unsigned int height)
     {
-        auto fWidth = static_cast<float>(width), fHeight = static_cast<float>(height);
-        auto aspectRatio = fWidth / fHeight;
-        imguiImpl::ImGui_ImplGL3_Resize(fWidth, fHeight);
+        glm::uvec2 screenSize(width, height);
+        imguiImpl::ImGui_ImplGL3_Resize(static_cast<float>(width), static_cast<float>(height));
         if (orthoView) {
-            orthoView->Resize(static_cast<float>(win.GetWidth()), static_cast<float> (win.GetHeight()));
+            orthoView->Resize(screenSize);
             orthoView->SetView();
         }
         if (cameraView) {
-            cameraView->Resize(aspectRatio);
+            cameraView->Resize(screenSize);
         }
     }
 

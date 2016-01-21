@@ -44,7 +44,7 @@ namespace cgu {
         SpotLight& operator=(SpotLight&&);
         ~SpotLight();
 
-        // void Resize(const glm::uvec2 size); // TODO: add for shadow map. [12/17/2015 Sebastian Maisch]
+        void Resize(const glm::uvec2& shadowMapSize);
         bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         void UpdateLight();
@@ -77,8 +77,6 @@ namespace cgu {
         float bias;
         /** Holds the shadow map. */
         std::unique_ptr<ShadowMap> shadowMap;
-        /** Holds the shadow map size. */
-        glm::uvec2 shadowMapSize;
         /** Holds the application base object. */
         ApplicationBase* application;
     };

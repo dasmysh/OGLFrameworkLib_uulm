@@ -22,6 +22,7 @@ namespace cgu {
 
         virtual bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         virtual void Update(const CameraView& camera, float time, float elapsed);
+        virtual void Resize(const glm::uvec2& screenSize) = 0;
 
     protected:
         /** Constructor used for derivations that create their own renderables. */

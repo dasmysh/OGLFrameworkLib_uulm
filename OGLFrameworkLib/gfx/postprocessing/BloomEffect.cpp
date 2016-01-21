@@ -122,4 +122,19 @@ namespace cgu {
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_SCALL(glFinish);
     }
+
+    void BloomEffect::Resize(const glm::uvec2& screenSize)
+    {
+        TextureDescriptor texDesc{ 128, GL_RGBA32F, GL_RGBA, GL_FLOAT };
+        glm::uvec2 size(screenSize.x / 2, screenSize.y / 2);
+        glaresRT.reset(new GLTexture(size.x, size.y, texDesc, nullptr));
+
+        unsigned int base = 1;
+        for (auto& blurPassRTs : blurRTs) {
+            glm::uvec2 sizeBlurRT(glm::max(size.x / base, 1u), glm::max(size.y / base, 1u));
+            blurPassRTs[0].reset(new GLTexture(sizeBlurRT.x, sizeBlurRT.y, texDesc, nullptr));
+            blurPassRTs[1].reset(new GLTexture(sizeBlurRT.x, sizeBlurRT.y, texDesc, nullptr));
+            base *= 2;
+        }
+    }
 }

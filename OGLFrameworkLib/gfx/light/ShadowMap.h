@@ -27,10 +27,14 @@ namespace cgu {
         ~ShadowMap();
 
         void RenderShadowGeometry(std::function<void(const CameraView&, GLBatchRenderTarget&) > batch);
+        void Resize(const glm::uvec2& smSize);
+        const glm::uvec2& GetSize() const { return shadowMapSize; }
 
     private:
         /** Holds the spot light using this shadow map. */
         const SpotLight& spotLight;
+        /** Holds the size of the shadow map. */
+        glm::uvec2 shadowMapSize;
         /** Holds the render target for the shadow map. */
         std::unique_ptr<GLRenderTarget> shadowMapRT;
         /** Holds the shader used for rendering shadow map. */

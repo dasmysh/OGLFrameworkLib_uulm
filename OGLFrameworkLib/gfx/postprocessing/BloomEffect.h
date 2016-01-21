@@ -35,6 +35,7 @@ namespace cgu {
 
         void RenderParameterSliders();
         void ApplyEffect(GLRenderTarget* sourceRT, GLRenderTarget* targetRT);
+        void Resize(const glm::uvec2& screenSize);
 
         void SetExposure(float exposure) { params.exposure = exposure; }
         float GetExposure() const { return params.exposure; }

@@ -22,21 +22,20 @@ namespace cgu {
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
     SpotLight::SpotLight(const glm::vec3&  intensity, float theFov, const glm::vec3& pos, const glm::uvec2& smSize, ApplicationBase* app) :
-        camera(RI_MOUSE_RIGHT_BUTTON_DOWN, MB_RGHT, theFov, 1.0f, smSize, 0.1f, 100.0f, pos, app->GetUBOBindingPoints()),
+        camera(RI_MOUSE_RIGHT_BUTTON_DOWN, MB_RGHT, theFov, smSize, 0.1f, 100.0f, pos, app->GetUBOBindingPoints()),
         falloffWidth(0.05f),
         intensity(intensity),
         attenuation(1.0f / 128.0f),
         farPlane(10.0f),
         bias(-0.01f),
         shadowMap(new ShadowMap(smSize, *this, app)),
-        shadowMapSize(smSize),
         application(app)
     {
     }
 
     /** Copy constructor. */
     SpotLight::SpotLight(const SpotLight& rhs) :
-        SpotLight(rhs.intensity, rhs.GetCamera().GetFOV(), rhs.GetCamera().GetPosition(), rhs.shadowMapSize, rhs.application)
+        SpotLight(rhs.intensity, rhs.GetCamera().GetFOV(), rhs.GetCamera().GetPosition(), rhs.GetShadowMap()->GetSize(), rhs.application)
     {
     }
 
@@ -59,7 +58,6 @@ namespace cgu {
         farPlane(rhs.farPlane),
         bias(rhs.bias),
         shadowMap(std::move(rhs.shadowMap)),
-        shadowMapSize(rhs.shadowMapSize),
         application(rhs.application)
     {
 
@@ -76,7 +74,6 @@ namespace cgu {
             farPlane = rhs.farPlane;
             bias = rhs.bias;
             shadowMap = std::move(rhs.shadowMap);
-            shadowMapSize = rhs.shadowMapSize;
             application = rhs.application;
         }
         return *this;
@@ -84,6 +81,12 @@ namespace cgu {
 
     /** Default destructor. */
     SpotLight::~SpotLight() = default;
+
+    void SpotLight::Resize(const glm::uvec2& screenSize)
+    {
+        camera.Resize(screenSize);
+        shadowMap->Resize(screenSize);
+    }
 
     /**
      *  Handles keyboard input for light positioning.

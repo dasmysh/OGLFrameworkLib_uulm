@@ -34,18 +34,18 @@ namespace cgu {
     class CameraView
     {
     public:
-        CameraView(unsigned int theButtonDownFlag, unsigned int theButtonFlag, float fovY, float aspectRatio,
-            const glm::vec2& theScreenSize, float nearZ, float farZ, const glm::vec3& camPos,
+        CameraView(unsigned int theButtonDownFlag, unsigned int theButtonFlag, float fovY,
+            const glm::uvec2& theScreenSize, float nearZ, float farZ, const glm::vec3& camPos,
             ShaderBufferBindingPoints* uniformBindingPoints);
-        CameraView(float fovY, float aspectRatio, const glm::vec2& theScreenSize, float nearZ, float farZ,
-            const glm::vec3& camPos, ShaderBufferBindingPoints* uniformBindingPoints);
+        CameraView(float fovY, const glm::uvec2& theScreenSize, float nearZ, float farZ, const glm::vec3& camPos,
+            ShaderBufferBindingPoints* uniformBindingPoints);
         CameraView(const CameraView&);
         CameraView& operator=(const CameraView&);
         CameraView(CameraView&&);
         CameraView& operator=(CameraView&&);
         virtual ~CameraView();
 
-        void Resize(float aspectRatio);
+        void Resize(const glm::uvec2& screenSize);
         bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         cguMath::Frustum<float> SetView(const glm::mat4& modelM) const;
@@ -59,7 +59,7 @@ namespace cgu {
         glm::vec2 CalculatePixelFootprintToUnitAABB(const glm::mat4& world) const;
         float GetSignedDistanceToUnitAABB2(const glm::mat4& world) const;
         float GetFOV() const { return fovY; }
-        const glm::vec2& GetScreenSize() const { return screenSize; }
+        const glm::uvec2& GetScreenSize() const { return screenSize; }
 
     private:
         cguMath::Frustum<float> CalcViewFrustum(const glm::mat4& mvp) const;
@@ -69,7 +69,7 @@ namespace cgu {
         /** Holds the aspect ratio. */
         float aspectRatio;
         /** Holds the screen size. */
-        glm::vec2 screenSize;
+        glm::uvec2 screenSize;
         /** Holds the near z plane. */
         float nearZ;
         /** Holds the far z plane. */

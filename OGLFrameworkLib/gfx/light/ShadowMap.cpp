@@ -20,6 +20,7 @@ namespace cgu {
      */
     ShadowMap::ShadowMap(const glm::uvec2& size, const SpotLight& light, ApplicationBase* app) :
         spotLight(light),
+        shadowMapSize(size),
         shadowMapRT(nullptr),
         smProgram(app->GetGPUProgramManager()->GetResource("shader/shadowMap.vp|shader/shadowMap.fp"))
     {
@@ -39,5 +40,11 @@ namespace cgu {
 
             batch(spotLight.GetCamera(), brt);
         });
+    }
+
+    void ShadowMap::Resize(const glm::uvec2& smSize)
+    {
+        shadowMapSize = smSize;
+        shadowMapRT->Resize(shadowMapSize.x, shadowMapSize.y);
     }
 }
