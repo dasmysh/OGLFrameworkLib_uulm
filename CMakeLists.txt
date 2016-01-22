@@ -62,9 +62,9 @@ source_group("Extern" FILES ${EXTERN_SOURCES})
 
 file(GLOB LIB_CONFIGS CMakeLists.txt Readme.md .gitattributes .gitignore .gitmodules)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/ extern/glm/)
 cuda_add_library(${FWLIB_LIBNAME} ${LIB_TMP_FILES} ${LIB_TOP_FILES} ${LIB_RES_FILES} ${LIB_CONFIGS} ${EXTERN_SOURCES} SHARED)
-target_include_directories(${FWLIB_LIBNAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/)
+target_include_directories(${FWLIB_LIBNAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/ extern/glm/)
 
 target_link_libraries(${FWLIB_LIBNAME} FreeImage glew32 opengl32)
 set_property(TARGET ${FWLIB_LIBNAME} APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:DebugOpenGLCalls>:_OGL_DEBUG_MSGS> _CRT_SECURE_NO_WARNINGS)

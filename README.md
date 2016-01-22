@@ -5,11 +5,11 @@ Dependencies:
 - CUDA 7.0
 - OpenGL 4.4
 - Boost (http://www.boost.org/)
-- GLM (http://glm.g-truc.net/)
 - GLEW (http://glew.sourceforge.net/)
 - FreeImage (http://freeimage.sourceforge.net/)
 
 Dependencies included as submodules:
+- GLM (http://glm.g-truc.net/)
 - ImGUI (https://github.com/ocornut/imgui)
 
 To pull all submodules from remote do
