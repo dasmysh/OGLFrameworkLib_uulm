@@ -40,7 +40,7 @@ namespace cgu {
         params.toeNumerator = 0.1f;
         params.toeDenominator = 0.3f;
         params.white = 11.2f;
-        params.gamma = 2.2f;*/
+        params.exposure = 2.0f;*/
     }
 
     /** Default destructor. */
@@ -57,6 +57,12 @@ namespace cgu {
         ImGui::InputFloat("White", &params.white, 0.1f);
         // no gamma on sRGB targets
         // TwAddVarRW(bar, "Gamma", TW_TYPE_FLOAT, &params.gamma, " label='Gamma' min=1.0 max=3.0 step=0.1");
+    }
+
+    // ReSharper disable once CppMemberFunctionMayBeStatic
+    // ReSharper disable once CppMemberFunctionMayBeConst
+    void FilmicTMOperator::Resize(const glm::uvec2&)
+    {
     }
 
     void FilmicTMOperator::ApplyTonemapping(GLRenderTarget* sourceRT, GLRenderTarget* targetRT)

@@ -82,19 +82,21 @@ namespace cgu {
     /** Default move assignment operator. */
     Mesh& Mesh::operator=(Mesh&& rhs)
     {
-        this->~Mesh();
-        SubMesh* tMesh = this;
-        *tMesh = static_cast<SubMesh&&>(std::move(rhs));
-        vertices = std::move(rhs.vertices);
-        texCoords = std::move(rhs.texCoords);
-        normals = std::move(rhs.normals);
-        paramVertices = std::move(rhs.paramVertices);
-        lineVertices = std::move(rhs.lineVertices);
-        faceVertices = std::move(rhs.faceVertices);
-        subMeshMap = std::move(rhs.subMeshMap);
-        subMeshes = std::move(rhs.subMeshes);
-        triangleConnect = std::move(rhs.triangleConnect);
-        verticesConnect = std::move(rhs.verticesConnect);
+        if (this != &rhs) {
+            this->~Mesh();
+            SubMesh* tMesh = this;
+            *tMesh = static_cast<SubMesh&&>(std::move(rhs));
+            vertices = std::move(rhs.vertices);
+            texCoords = std::move(rhs.texCoords);
+            normals = std::move(rhs.normals);
+            paramVertices = std::move(rhs.paramVertices);
+            lineVertices = std::move(rhs.lineVertices);
+            faceVertices = std::move(rhs.faceVertices);
+            subMeshMap = std::move(rhs.subMeshMap);
+            subMeshes = std::move(rhs.subMeshes);
+            triangleConnect = std::move(rhs.triangleConnect);
+            verticesConnect = std::move(rhs.verticesConnect);
+        }
         return *this;
     }
 

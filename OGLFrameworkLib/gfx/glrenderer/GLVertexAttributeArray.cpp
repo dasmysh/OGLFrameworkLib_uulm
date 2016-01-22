@@ -40,6 +40,7 @@ namespace cgu {
     GLVertexAttributeArray& GLVertexAttributeArray::operator =(GLVertexAttributeArray&& orig)
     {
         if (this != &orig) {
+            this->~GLVertexAttributeArray();
             vao = orig.vao;
             i_buffer = orig.i_buffer;
             v_buffer = orig.v_buffer;

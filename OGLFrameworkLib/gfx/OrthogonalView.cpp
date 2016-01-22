@@ -11,10 +11,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace cgu {
-    OrthogonalView::OrthogonalView(float width, float height, ShaderBufferBindingPoints* uniformBindingPoints)
+    OrthogonalView::OrthogonalView(const glm::vec2& screenSize, ShaderBufferBindingPoints* uniformBindingPoints)
     {
         orthoUBO.reset(new GLUniformBuffer(orthoProjectionUBBName, sizeof(OrthoProjectionBuffer), uniformBindingPoints));
-        Resize(width, height);
+        Resize(screenSize);
     }
 
     /** Copy constructor. */
@@ -44,19 +44,21 @@ namespace cgu {
     /** Move assignment operator. */
     OrthogonalView& OrthogonalView::operator=(OrthogonalView&& rhs)
     {
-        this->~OrthogonalView();
-        orthoBuffer = std::move(rhs.orthoBuffer);
-        orthoUBO = std::move(rhs.orthoUBO);
+        if (this != &rhs) {
+            this->~OrthogonalView();
+            orthoBuffer = std::move(rhs.orthoBuffer);
+            orthoUBO = std::move(rhs.orthoUBO);
+        }
         return *this;
     }
 
     /** Default destructor. */
     OrthogonalView::~OrthogonalView() = default;
 
-    void OrthogonalView::Resize(float width, float height)
+    void OrthogonalView::Resize(const glm::vec2& screenSize)
     {
-        auto bottom = height;
-        auto right = width;
+        auto bottom = screenSize.y;
+        auto right = screenSize.x;
         orthoBuffer.orthoMatrix = glm::ortho(0.0f, right, bottom, 0.0f, 1.0f, -1.0f);
         orthoUBO->UploadData(0, sizeof(OrthoProjectionBuffer), &orthoBuffer);
     }

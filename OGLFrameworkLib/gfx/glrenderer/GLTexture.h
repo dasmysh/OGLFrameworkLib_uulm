@@ -85,6 +85,8 @@ namespace cgu {
         void SampleLinear() const;
         void SampleNearest() const;
 
+        void ActivateShadowMapComparison() const;
+
         const TextureGLIdentifierAccessor& GetGLIdentifier() const { return id; };
 
     private:

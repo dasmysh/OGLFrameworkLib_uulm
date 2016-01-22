@@ -139,26 +139,28 @@ namespace cgu {
     /** Move assignment operator. */
     ScreenText& ScreenText::operator=(ScreenText&& rhs)
     {
-        this->~ScreenText();
-        font = std::move(rhs.font);
-        fontWeight = std::move(rhs.fontWeight);
-        fontShearing = std::move(rhs.fontShearing);
-        fontSize = std::move(rhs.fontSize);
-        text = std::move(rhs.text);
-        position = std::move(rhs.position);
-        direction = std::move(rhs.direction);
-        color = std::move(rhs.color);
-        depthLayer = std::move(rhs.depthLayer);
-        textVBOs = std::move(rhs.textVBOs);
-        textVBOFences = std::move(rhs.textVBOFences);
-        textVBOSizes = std::move(rhs.textVBOSizes);
-        currentBuffer = std::move(rhs.currentBuffer);
-        fontProgram = std::move(rhs.fontProgram);
-        vertexAttribPos = std::move(rhs.vertexAttribPos);
-        attribBind = std::move(rhs.attribBind);
-        uniformNames = std::move(rhs.uniformNames);
-        fontMetricsBindingLocation = std::move(rhs.fontMetricsBindingLocation);
-        pixelLength = std::move(rhs.pixelLength);
+        if (this != &rhs) {
+            this->~ScreenText();
+            font = std::move(rhs.font);
+            fontWeight = std::move(rhs.fontWeight);
+            fontShearing = std::move(rhs.fontShearing);
+            fontSize = std::move(rhs.fontSize);
+            text = std::move(rhs.text);
+            position = std::move(rhs.position);
+            direction = std::move(rhs.direction);
+            color = std::move(rhs.color);
+            depthLayer = std::move(rhs.depthLayer);
+            textVBOs = std::move(rhs.textVBOs);
+            textVBOFences = std::move(rhs.textVBOFences);
+            textVBOSizes = std::move(rhs.textVBOSizes);
+            currentBuffer = std::move(rhs.currentBuffer);
+            fontProgram = std::move(rhs.fontProgram);
+            vertexAttribPos = std::move(rhs.vertexAttribPos);
+            attribBind = std::move(rhs.attribBind);
+            uniformNames = std::move(rhs.uniformNames);
+            fontMetricsBindingLocation = std::move(rhs.fontMetricsBindingLocation);
+            pixelLength = std::move(rhs.pixelLength);
+        }
         return *this;
     }
 

@@ -69,10 +69,12 @@ namespace cgu {
     /** Move assignment operator. */
     GLRenderTarget& GLRenderTarget::operator=(GLRenderTarget&& rhs)
     {
-        this->~GLRenderTarget();
-        fbo = std::move(rhs.fbo);
-        width = rhs.width;
-        height = rhs.height;
+        if (this != &rhs) {
+            this->~GLRenderTarget();
+            fbo = std::move(rhs.fbo);
+            width = rhs.width;
+            height = rhs.height;
+        }
         return *this;
     }
 

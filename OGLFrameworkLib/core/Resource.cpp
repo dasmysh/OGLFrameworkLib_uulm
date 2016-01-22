@@ -49,8 +49,8 @@ namespace cgu {
     /** Move assignment operator. */
     Resource& Resource::operator=(Resource&& orig)
     {
-        this->~Resource();
         if (this != &orig) {
+            this->~Resource();
             if (loaded) Unload();
             id = std::move(orig.id);
             application = orig.application;

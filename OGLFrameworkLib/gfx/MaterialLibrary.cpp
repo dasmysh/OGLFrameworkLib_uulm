@@ -40,11 +40,13 @@ namespace cgu {
     /** Default move assignment operator. */
     MaterialLibrary& MaterialLibrary::operator=(MaterialLibrary&& rhs)
     {
-        this->~MaterialLibrary();
-        Resource* tRes = this;
-        *tRes = static_cast<Resource&&>(std::move(rhs));
-        ResourceManagerBase* tResMan = this;
-        *tResMan = static_cast<ResourceManagerBase&&>(std::move(rhs));
+        if (this != &rhs) {
+            this->~MaterialLibrary();
+            Resource* tRes = this;
+            *tRes = static_cast<Resource&&>(std::move(rhs));
+            ResourceManagerBase* tResMan = this;
+            *tResMan = static_cast<ResourceManagerBase&&>(std::move(rhs));
+        }
         return *this;
     }
 

@@ -96,22 +96,24 @@ namespace cgu {
     /** Default move assignment operator. */
     SubMesh& SubMesh::operator=(SubMesh&& rhs)
     {
-        this->~SubMesh();
-        objectName = std::move(rhs.objectName);
-        mtlChunks = std::move(rhs.mtlChunks);
-        lineHasTexture = rhs.lineHasTexture;
-        faceHasTexture = rhs.faceHasTexture;
-        faceHasNormal = rhs.faceHasNormal;
-        pointIndices = std::move(rhs.pointIndices);
-        lineIndices = std::move(rhs.lineIndices);
-        curves = std::move(rhs.curves);
-        curv2es = std::move(rhs.curv2es);
-        surfaces = std::move(rhs.surfaces);
-        trianglePtsIndices = std::move(rhs.trianglePtsIndices);
-        firstTriIndex = rhs.firstTriIndex;
-        numTriangles = rhs.numTriangles;
-        aabb = std::move(rhs.aabb);
-        fastFindTree = std::move(rhs.fastFindTree);
+        if (this != &rhs) {
+            this->~SubMesh();
+            objectName = std::move(rhs.objectName);
+            mtlChunks = std::move(rhs.mtlChunks);
+            lineHasTexture = rhs.lineHasTexture;
+            faceHasTexture = rhs.faceHasTexture;
+            faceHasNormal = rhs.faceHasNormal;
+            pointIndices = std::move(rhs.pointIndices);
+            lineIndices = std::move(rhs.lineIndices);
+            curves = std::move(rhs.curves);
+            curv2es = std::move(rhs.curv2es);
+            surfaces = std::move(rhs.surfaces);
+            trianglePtsIndices = std::move(rhs.trianglePtsIndices);
+            firstTriIndex = rhs.firstTriIndex;
+            numTriangles = rhs.numTriangles;
+            aabb = std::move(rhs.aabb);
+            fastFindTree = std::move(rhs.fastFindTree);
+        }
         return *this;
     }
 

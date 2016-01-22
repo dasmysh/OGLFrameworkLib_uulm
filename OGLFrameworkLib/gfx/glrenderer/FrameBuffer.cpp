@@ -82,11 +82,13 @@ namespace cgu {
      */
     FrameBuffer& FrameBuffer::operator=(const FrameBuffer& orig)
     {
-        this->~FrameBuffer();
-        fbo = 0;
-        isBackbuffer = orig.isBackbuffer;
-        desc = orig.desc;
-        Resize(orig.width, orig.height);
+        if (this != &orig) {
+            this->~FrameBuffer();
+            fbo = 0;
+            isBackbuffer = orig.isBackbuffer;
+            desc = orig.desc;
+            Resize(orig.width, orig.height);
+        }
         return *this;
     }
 
@@ -96,21 +98,23 @@ namespace cgu {
      */
     FrameBuffer& FrameBuffer::operator=(FrameBuffer&& orig)
     {
-        this->~FrameBuffer();
-        fbo = orig.fbo;
-        orig.fbo = 0;
-        isBackbuffer = orig.isBackbuffer;
-        orig.isBackbuffer = false;
-        desc = orig.desc;
-        orig.desc = FrameBufferDescriptor();
-        textures = std::move(orig.textures);
-        orig.textures.clear();
-        renderBuffers = std::move(orig.renderBuffers);
-        orig.renderBuffers.clear();
-        width = orig.width;
-        orig.width = 0;
-        height = orig.height;
-        orig.height = 0;
+        if (this != &orig) {
+            this->~FrameBuffer();
+            fbo = orig.fbo;
+            orig.fbo = 0;
+            isBackbuffer = orig.isBackbuffer;
+            orig.isBackbuffer = false;
+            desc = orig.desc;
+            orig.desc = FrameBufferDescriptor();
+            textures = std::move(orig.textures);
+            orig.textures.clear();
+            renderBuffers = std::move(orig.renderBuffers);
+            orig.renderBuffers.clear();
+            width = orig.width;
+            orig.width = 0;
+            height = orig.height;
+            orig.height = 0;
+        }
         return *this;
     }
 
@@ -213,7 +217,7 @@ namespace cgu {
         for (unsigned int i = 0; i < drawBufferIndices.size(); ++i) drawBuffersReduced[i] = drawBuffers[drawBufferIndices[i]];
 
         OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
-        OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffersReduced.size()), drawBuffersReduced.data());        
+        OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffersReduced.size()), drawBuffersReduced.data());
         OGL_CALL(glViewport, 0, 0, width, height);
     }
 

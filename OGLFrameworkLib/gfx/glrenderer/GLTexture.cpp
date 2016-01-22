@@ -419,4 +419,12 @@ namespace cgu {
         }
         OGL_CALL(glBindTexture, id.textureType, 0);
     }
+
+    void GLTexture::ActivateShadowMapComparison() const
+    {
+        OGL_CALL(glBindTexture, id.textureType, id.textureId);
+        OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+        OGL_CALL(glBindTexture, id.textureType, 0);
+    }
 }

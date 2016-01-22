@@ -47,10 +47,12 @@ namespace cgu {
     /** Default move assignment operator. */
     GLTexture2D& GLTexture2D::operator=(GLTexture2D&& rhs)
     {
-        this->~GLTexture2D();
-        Resource* tRes = this;
-        *tRes = static_cast<Resource&&>(std::move(rhs));
-        texture = std::move(rhs.texture);
+        if (this != &rhs) {
+            this->~GLTexture2D();
+            Resource* tRes = this;
+            *tRes = static_cast<Resource&&>(std::move(rhs));
+            texture = std::move(rhs.texture);
+        }
         return *this;
     }
 
