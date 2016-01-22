@@ -10,6 +10,7 @@
 #include "app/ApplicationBase.h"
 #include "gfx/glrenderer/GLRenderTarget.h"
 #include "SpotLight.h"
+#include <glm/gtc/matrix_transform.inl>
 
 namespace cgu {
 
@@ -29,6 +30,7 @@ namespace cgu {
         FrameBufferDescriptor fbd;
         fbd.texDesc.emplace_back(32, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT);
         shadowMapRT.reset(new GLRenderTarget(size.x, size.y, fbd));
+        shadowMapRT->GetTextures()[0]->ActivateShadowMapComparison();
     }
 
     ShadowMap::~ShadowMap() = default;
@@ -46,5 +48,18 @@ namespace cgu {
     {
         shadowMapSize = smSize;
         shadowMapRT->Resize(shadowMapSize.x, shadowMapSize.y);
+        shadowMapRT->GetTextures()[0]->ActivateShadowMapComparison();
+    }
+
+    glm::mat4 ShadowMap::GetViewProjectionTextureMatrix(const glm::mat4& view, const glm::mat4& projection)
+    {
+        auto translate = glm::translate(glm::mat4(), glm::vec3(0.5f, 0.5f, 0.5f));
+        auto bias = glm::scale(translate, glm::vec3(0.5f, 0.5f, 0.5f));
+        return bias * projection * view;
+    }
+
+    const GLTexture* ShadowMap::GetShadowTexture() const
+    {
+        return shadowMapRT->GetTextures()[0].get();
     }
 }

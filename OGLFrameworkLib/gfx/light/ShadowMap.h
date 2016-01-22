@@ -19,6 +19,7 @@ namespace cgu {
     class SpotLight;
     class CameraView;
     class GPUProgram;
+    class GLTexture;
 
     class ShadowMap
     {
@@ -29,6 +30,8 @@ namespace cgu {
         void RenderShadowGeometry(std::function<void(const CameraView&, GLBatchRenderTarget&) > batch);
         void Resize(const glm::uvec2& smSize);
         const glm::uvec2& GetSize() const { return shadowMapSize; }
+        static glm::mat4 GetViewProjectionTextureMatrix(const glm::mat4& view, const glm::mat4& projection);
+        const GLTexture* GetShadowTexture() const;
 
     private:
         /** Holds the spot light using this shadow map. */

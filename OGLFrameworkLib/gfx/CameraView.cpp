@@ -173,9 +173,16 @@ namespace cgu {
         return std::move(CalcViewFrustum(perspectiveBuffer.mat_mvp));
     }
 
-    void CameraView::SetViewMVPOnly(const glm::mat4& modelM) const
+    void CameraView::SetViewShadowMap(const glm::mat4& modelM) const
     {
-        auto mvp = perspective * view * modelM;
+        /** see http://www.mvps.org/directx/articles/linear_z/linearz.htm */
+        auto projectionLinear = perspective;
+        // auto Q = perspective[2][2];
+        /*auto N = -perspective[3][2] / ( -perspective[2][2] + 1.0f);
+        auto F = -perspective[3][2] / ( -perspective[2][2] - 1.0f);
+        projectionLinear[2][2] /= F;
+        projectionLinear[3][2] /= F;*/
+        auto mvp = projectionLinear * view * modelM;
 
         if (perspectiveUBO) {
             perspectiveUBO->UploadData(sizeof(glm::mat4), sizeof(glm::mat4), &mvp);

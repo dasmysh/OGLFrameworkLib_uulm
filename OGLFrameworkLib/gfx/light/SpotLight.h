@@ -32,6 +32,8 @@ namespace cgu {
         float distAttenuation;
         /** Holds the z value of the far plane. */
         float farZ;
+        /** Holds the transformation matrix for the shadow map. */
+        glm::mat4 viewProjection;
     };
 
     class SpotLight
@@ -48,7 +50,7 @@ namespace cgu {
         bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         void UpdateLight();
-        void UpdateLightParameters(SpotLightParams& params) const;
+        int UpdateLightParameters(SpotLightParams& params, int nextTextureUnit) const;
         /** Returns the view matrix of the light. */
         const glm::mat4& GetViewMatrix() const { return camera.GetViewMatrix(); }
         /** Returns the lights position. */
@@ -87,7 +89,7 @@ namespace cgu {
         SpotLightArray(const std::string& lightArrayName, ShaderBufferBindingPoints* uniformBindingPoints);
         ~SpotLightArray();
 
-        void SetLightParameters();
+        int SetLightParameters(int firstTextureUnit, std::vector<int>& shadowMapTextureUnits);
 
         /** Returns the managed lights array (const). */
         const std::vector<SpotLight>& GetLights() const { return lights; }

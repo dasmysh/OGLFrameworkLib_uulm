@@ -121,8 +121,10 @@ namespace cgu {
     /**
      *  Updates the lights parameters.
      *  @param params the light parameters to update.
+     *  @param nextTextureUnit the texture unit to use for this lights shadow map.
+     *  @return the next texture unit.
      */
-    void SpotLight::UpdateLightParameters(SpotLightParams& params) const
+    int SpotLight::UpdateLightParameters(SpotLightParams& params, int nextTextureUnit) const
     {
         params.position = glm::vec4(camera.GetPosition(), 1.0f);
         params.direction = glm::vec4(glm::normalize(glm::vec3(0.0f) - camera.GetPosition()), 1.0f);
@@ -131,6 +133,9 @@ namespace cgu {
         params.angFalloffWidth = falloffWidth;
         params.distAttenuation = attenuation;
         params.farZ = farPlane;
+        params.viewProjection = shadowMap->GetViewProjectionTextureMatrix(camera.GetViewMatrix(), camera.GetProjMatrix());
+        shadowMap->GetShadowTexture()->ActivateTexture(GL_TEXTURE0 + nextTextureUnit);
+        return nextTextureUnit + 1;
     }
 
     /**
@@ -146,9 +151,13 @@ namespace cgu {
 
     /**
      *  Sets the light array parameters.
+     *  @param firstTextureUnit the first texture unit to use.
+     *  @return the next free texture unit.
      */
-    void SpotLightArray::SetLightParameters()
+    int SpotLightArray::SetLightParameters(int firstTextureUnit, std::vector<int>& shadowMapTextureUnits)
     {
+        assert(shadowMapTextureUnits.size() == lights.size());
+
         if (lights.size() != lightParams.size()) {
             auto uniformBindingPoints = lightsUBO->GetBindingPoints();
             auto lightArrayName = lightsUBO->GetUBOName();
@@ -156,11 +165,14 @@ namespace cgu {
             lightsUBO.reset(new GLUniformBuffer(lightArrayName, sizeof(SpotLightParams) * static_cast<unsigned int>(lightParams.size()), uniformBindingPoints));
         }
 
+        auto nextTexture = firstTextureUnit;
         for (unsigned int i = 0; i < lights.size(); ++i) {
-            lights[i].UpdateLightParameters(lightParams[i]);
+            shadowMapTextureUnits[i] = nextTexture;
+            nextTexture = lights[i].UpdateLightParameters(lightParams[i], nextTexture);
         }
 
         lightsUBO->UploadData(0, sizeof(SpotLightParams) * static_cast<unsigned int>(lightParams.size()), lightParams.data());
         lightsUBO->BindBuffer();
+        return nextTexture;
     }
 }

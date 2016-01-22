@@ -124,7 +124,7 @@ namespace cgu {
     {
         auto shaderDefinition = GetParameters();
         std::vector<std::string> defines(shaderDefinition.begin() + 1, shaderDefinition.end());
-        return CompileShader(FindResourceLocation(shaderDefinition[0]), defines, type, strType);
+        return CompileShader(shaderDefinition[0], defines, type, strType);
     }
 
     void Shader::UnloadLocal()
@@ -156,7 +156,7 @@ namespace cgu {
         }
         boost::filesystem::path sdrFile{ filename };
         auto currentPath = sdrFile.parent_path().string() + "/";
-        std::ifstream file(filename.c_str(), std::ifstream::in);
+        std::ifstream file(FindResourceLocation(filename), std::ifstream::in);
         std::string line;
         std::stringstream content;
         unsigned int lineCount = 1;
@@ -171,13 +171,13 @@ namespace cgu {
             boost::smatch matches;
             if (boost::regex_search(line, matches, re)) {
                 auto includeFile = currentPath + matches[1];
-                if (!boost::filesystem::exists(includeFile)) {
+                /*if (!boost::filesystem::exists(includeFile)) {
                     LOG(ERROR) << filename.c_str() << L"(" << lineCount << ") : fatal error: cannot open include file \""
                         << includeFile.c_str() << "\".";
                     throw resource_loading_error() << ::boost::errinfo_file_name(includeFile) << fileid_info(fileId)
                         << lineno_info(lineCount - 1) << resid_info(id)
                         << errdesc_info("Cannot open include file.");
-                }
+                }*/
                 content << "#line " << 1 << " " << nextFileId << std::endl;
                 content << LoadShaderFile(includeFile, std::vector<std::string>(), nextFileId, recursionDepth + 1);
                 content << "#line " << lineCount + 1 << " " << fileId << std::endl;
@@ -211,11 +211,11 @@ namespace cgu {
     GLuint Shader::CompileShader(const std::string& filename, const std::vector<std::string>& defines, GLenum type, const std::string& strType) const
     {
         unsigned int firstFileId = 0;
-        if (!boost::filesystem::exists(filename)) {
+        /*if (!boost::filesystem::exists(filename)) {
             LOG(ERROR) << "Cannot open shader file \"" << filename.c_str() << "\".";
             throw resource_loading_error() << ::boost::errinfo_file_name(filename) << fileid_info(firstFileId) << resid_info(id)
                 << errdesc_info("Cannot open shader file.");
-        }
+        }*/
         auto shaderText = LoadShaderFile(filename, defines, firstFileId, 0);
 
         auto shader = OGL_CALL(glCreateShader, type);

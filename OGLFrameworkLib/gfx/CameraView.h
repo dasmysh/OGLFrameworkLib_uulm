@@ -49,7 +49,7 @@ namespace cgu {
         bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         cguMath::Frustum<float> SetView(const glm::mat4& modelM) const;
-        void SetViewMVPOnly(const glm::mat4& modelM) const;
+        void SetViewShadowMap(const glm::mat4& modelM) const;
         void UpdateCamera();
         const glm::mat4& GetViewMatrix() const { return view; }
         glm::mat4 GetProjMatrix() const { return perspective; }
