@@ -157,7 +157,7 @@ namespace cgu {
      * Returns the GPU program for font rendering.
      * @return the font rendering program
      */
-    GPUProgram* ApplicationBase::GetFontProgram() const
+    std::shared_ptr<GPUProgram> ApplicationBase::GetFontProgram() const
     {
         return fontProgram;
     }

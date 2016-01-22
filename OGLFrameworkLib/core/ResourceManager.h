@@ -27,13 +27,13 @@ namespace cgu {
     template<typename rType>
     struct DefaultResourceLoadingPolicy
     {
-        static std::unique_ptr<rType> CreateResource(const std::string& resId, ApplicationBase* app)
+        static std::shared_ptr<rType> CreateResource(const std::string& resId, ApplicationBase* app)
         {
-            return std::move(std::make_unique<rType>(resId, app));
+            return std::move(std::make_shared<rType>(resId, app));
         }
 
-        static bool IsResourceLoaded(const rType* res) { return res->IsLoaded(); }
-        static void LoadResource(rType* res) { return res->Load(); }
+        // static bool IsResourceLoaded(const rType* res) { return res->IsLoaded(); }
+        // static void LoadResource(rType* res) { return res->Load(); }
     };
 
     /**
@@ -49,7 +49,7 @@ namespace cgu {
         /** The resource managers resource type. */
         using ResourceType = rType;
         /** The resource map type. */
-        using ResourceMap = std::unordered_map<std::string, std::unique_ptr<rType>>;
+        using ResourceMap = std::unordered_map<std::string, std::weak_ptr<rType>>;
         /** The type of this base class. */
         using ResourceManagerBase = ResourceManager<rType, reloadLoop, ResourceLoadingPolicy>;
 
@@ -61,9 +61,7 @@ namespace cgu {
         ResourceManager(const ResourceManager& rhs) : ResourceManager(rhs.application)
         {
             for (const auto& res : rhs.resources) {
-                std::unique_ptr<ResourceType> resourcePtr = std::move(ResourceLoadingPolicy::CreateResource(res.first, application));
-                ResourceLoadingPolicy::LoadResource(resourcePtr.get());
-                resources.insert(std::move(std::make_pair(res.first, std::move(resourcePtr))));
+                resources.emplace(res.first, std::weak_ptr<ResourceType>());
             }
         }
 
@@ -96,7 +94,7 @@ namespace cgu {
          * @param resId the resources id
          * @return the resource as a shared pointer
          */
-        ResourceType* GetResource(const std::string& resId)
+        std::shared_ptr<ResourceType> GetResource(const std::string& resId)
         {
             try {
                 return resources.at(resId).get();
@@ -105,7 +103,6 @@ namespace cgu {
                 std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
                 LOG(INFO) << L"No resource with id \"" << converter.from_bytes(resId) << L"\" found. Creating new one.";
                 std::unique_ptr<ResourceType> resourcePtr = std::move(ResourceLoadingPolicy::CreateResource(resId, application));
-                //(new ResourceType(resId, application));
                 ResourceType* resourceRawPtr = resourcePtr.get();
                 LoadResource(resId, resourceRawPtr);
                 while (reloadLoop && !ResourceLoadingPolicy::IsResourceLoaded(resourceRawPtr)) {
@@ -136,7 +133,7 @@ namespace cgu {
         virtual void LoadResource(const std::string& resId, ResourceType* resourcePtr)
         {
             try {
-                ResourceLoadingPolicy::LoadResource(resourcePtr);
+                //ResourceLoadingPolicy::LoadResource(resourcePtr);
             }
             catch (const resource_loading_error& loadingError) {
                 auto resid = boost::get_error_info<resid_info>(loadingError);

@@ -33,9 +33,6 @@ namespace cgu {
         GPUProgram& operator=(GPUProgram&&);
         virtual ~GPUProgram();
 
-        void Load() override final;
-        void Unload() override final;
-
         void RecompileProgram();
 
         GLVertexAttributeArray* CreateVertexAttributeArray(GLuint vBuffer, GLuint iBuffer);
@@ -80,8 +77,8 @@ namespace cgu {
         /** holds the vertex attribute arrays associated with this GPU program. */
         std::vector<std::unique_ptr<GLVertexAttributeArray> > vaos;
 
-        void UnloadLocal();
-        void LoadInternal(GLuint newProgram);
+        /*void UnloadLocal();
+        void LoadInternal(GLuint newProgram);*/
         GLuint LinkNewProgram(const std::string& name, const std::vector<GLuint>& shaders) const;
         static void ReleaseShaders(const std::vector<GLuint>& shaders);
     };

@@ -31,9 +31,6 @@ namespace cgu {
         GLTexture2D& operator=(GLTexture2D&&);
         virtual ~GLTexture2D();
 
-        void Load() override;
-        void Unload() override;
-
         GLTexture* GetTexture();
         const GLTexture* GetTexture() const;
 

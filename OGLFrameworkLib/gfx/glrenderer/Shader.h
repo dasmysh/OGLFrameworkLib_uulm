@@ -69,10 +69,7 @@ namespace cgu {
         Shader& operator=(Shader&&);
         virtual ~Shader();
 
-        void Load() override;
-        void Unload() override;
         void ResetShader(GLuint newShader);
-
         GLuint RecompileShader() const;
 
     private:
@@ -85,7 +82,7 @@ namespace cgu {
         /** Holds the shaders type as a string. */
         std::string strType;
 
-        void UnloadLocal();
+        // void UnloadLocal();
         GLuint CompileShader(const std::string& filename, const std::vector<std::string>& defines, GLenum type, const std::string& strType) const;
         std::string LoadShaderFile(const std::string& filename, const std::vector<std::string>& defines, unsigned int& fileId, unsigned int recursionDepth) const;
     };

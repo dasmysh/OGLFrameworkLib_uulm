@@ -32,9 +32,9 @@ namespace cgu {
         virtual ~Resource();
 
         const std::string& getId() const;
-        virtual void Load();
+        /*virtual void Load();
         virtual void Unload();
-        bool IsLoaded() const;
+        bool IsLoaded() const;*/
 
     protected:
         /** A list of sub-resources. */
