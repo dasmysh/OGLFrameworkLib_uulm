@@ -61,7 +61,7 @@ namespace cgu {
     private:
         typedef std::unique_ptr<shader_binding_desc> BindingLocationInternal;
         /** Holds the program. */
-        GLuint program;
+        ProgramRAII program;
         /** holds the known vertex attribute bindings. */
         std::unordered_map<std::string, BindingLocationInternal> knownVABindings;
         /** holds the known uniform locations. */
@@ -77,8 +77,7 @@ namespace cgu {
         /** holds the vertex attribute arrays associated with this GPU program. */
         std::vector<std::unique_ptr<GLVertexAttributeArray> > vaos;
 
-        /*void UnloadLocal();
-        void LoadInternal(GLuint newProgram);*/
+        void LoadInternal(GLuint newProgram);
         GLuint LinkNewProgram(const std::string& name, const std::vector<GLuint>& shaders) const;
         static void ReleaseShaders(const std::vector<GLuint>& shaders);
     };

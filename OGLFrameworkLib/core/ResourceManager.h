@@ -52,6 +52,8 @@ namespace cgu {
         using ResourceMap = std::unordered_map<std::string, std::weak_ptr<rType>>;
         /** The type of this base class. */
         using ResourceManagerBase = ResourceManager<rType, reloadLoop, ResourceLoadingPolicy>;
+        /** The resource loading policy used. */
+        using LoadingPolicy = ResourceLoadingPolicy;
 
     public:
         /** Constructor for resource managers. */
@@ -96,21 +98,25 @@ namespace cgu {
          */
         std::shared_ptr<ResourceType> GetResource(const std::string& resId)
         {
+            std::weak_ptr<ResourceType> wpResource;
             try {
-                return resources.at(resId).get();
+                wpResource = resources.at(resId);
             }
             catch (std::out_of_range e) {
                 std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
                 LOG(INFO) << L"No resource with id \"" << converter.from_bytes(resId) << L"\" found. Creating new one.";
-                std::unique_ptr<ResourceType> resourcePtr = std::move(ResourceLoadingPolicy::CreateResource(resId, application));
-                ResourceType* resourceRawPtr = resourcePtr.get();
-                LoadResource(resId, resourceRawPtr);
-                while (reloadLoop && !ResourceLoadingPolicy::IsResourceLoaded(resourceRawPtr)) {
-                    LoadResource(resId, resourceRawPtr);
-                }
-                resources.insert(std::move(std::make_pair(resId, std::move(resourcePtr))));
-                return resourceRawPtr;
             }
+            if (wpResource.expired()) {
+                std::shared_ptr<ResourceType> spResource(nullptr);
+                LoadResource(resId, spResource);
+                while (reloadLoop && !spResource) {
+                    LoadResource(resId, spResource);
+                }
+                wpResource = spResource;
+                resources.insert(std::move(std::make_pair(resId, wpResource)));
+                return std::move(spResource);
+            }
+            return wpResource.lock();
         }
 
         /**
@@ -130,10 +136,10 @@ namespace cgu {
          * Loads a new resource and handles errors.
          * @param resourcePtr pointer to the resource.
          */
-        virtual void LoadResource(const std::string& resId, ResourceType* resourcePtr)
+        virtual void LoadResource(const std::string& resId, std::shared_ptr<ResourceType>& spResource)
         {
             try {
-                //ResourceLoadingPolicy::LoadResource(resourcePtr);
+                spResource = std::move(LoadingPolicy::CreateResource(resId, application));
             }
             catch (const resource_loading_error& loadingError) {
                 auto resid = boost::get_error_info<resid_info>(loadingError);
@@ -154,10 +160,10 @@ namespace cgu {
          *  @param resource the new resource.
          *  @return a pointer to the new resource.
          */
-        ResourceType* SetResource(const std::string& resourceName, std::unique_ptr<ResourceType> resource)
+        std::shared_ptr<ResourceType> SetResource(const std::string& resourceName, std::shared_ptr<ResourceType>&& resource)
         {
             resources[resourceName] = std::move(resource);
-            return resources[resourceName].get();
+            return resources[resourceName].lock();
         }
 
         /** Holds the resources managed. */

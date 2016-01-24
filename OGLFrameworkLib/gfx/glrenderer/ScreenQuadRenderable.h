@@ -25,7 +25,7 @@ namespace cgu {
     {
     public:
         ScreenQuadRenderable();
-        ScreenQuadRenderable(const std::array <glm::vec2, 4>& vertices, GPUProgram* program);
+        ScreenQuadRenderable(const std::array <glm::vec2, 4>& vertices, std::shared_ptr<GPUProgram> program);
         ScreenQuadRenderable(const ScreenQuadRenderable&);
         ScreenQuadRenderable& operator=(const ScreenQuadRenderable&);
         ScreenQuadRenderable(ScreenQuadRenderable&& orig);
@@ -38,9 +38,9 @@ namespace cgu {
         /** Holds the vertex data in the buffer. */
         std::array<glm::vec2, 4> vertexData;
         /** Holds the (optional) program used for rendering. */
-        GPUProgram* program;
+        std::shared_ptr<GPUProgram> program;
         /** Holds the vertex buffer object to use. */
-        GLuint vBuffer;
+        BufferRAII vBuffer;
         /** Holds the vertex attribute bindings. */
         std::unique_ptr<GLVertexAttributeArray> vertexAttribs;
 

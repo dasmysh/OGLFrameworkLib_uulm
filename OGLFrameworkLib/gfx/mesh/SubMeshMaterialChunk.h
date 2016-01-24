@@ -38,8 +38,8 @@ namespace cgu {
          * Constructor.
          * @param mat the material to use
          */
-        explicit SubMeshMaterialChunk(const Material* mat) :
-            material(mat),
+        explicit SubMeshMaterialChunk(std::shared_ptr<const Material> mat) :
+            material(std::move(mat)),
             point_seq_begin(0),
             point_seq_num(0),
             line_seq_begin(0),
@@ -55,8 +55,8 @@ namespace cgu {
          * @param prevChunk the previous chunk
          * @param mat the material
          */
-        SubMeshMaterialChunk(const SubMeshMaterialChunk& prevChunk, const Material* mat) :
-            material(mat),
+        SubMeshMaterialChunk(const SubMeshMaterialChunk& prevChunk, std::shared_ptr<const Material> mat) :
+            material(std::move(mat)),
             point_seq_begin(prevChunk.point_seq_begin + prevChunk.point_seq_num),
             point_seq_num(0),
             line_seq_begin(prevChunk.line_seq_begin + prevChunk.line_seq_num),
@@ -87,7 +87,7 @@ namespace cgu {
         }
 
         /** Holds the chunks material. */
-        const Material* material;
+        std::shared_ptr<const Material> material;
         /** Holds the chunks point index sequence start. */
         unsigned int point_seq_begin;
         /** Holds the chunks point index sequence size. */

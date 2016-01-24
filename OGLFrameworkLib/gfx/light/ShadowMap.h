@@ -41,7 +41,7 @@ namespace cgu {
         /** Holds the render target for the shadow map. */
         std::unique_ptr<GLRenderTarget> shadowMapRT;
         /** Holds the shader used for rendering shadow map. */
-        GPUProgram* smProgram;
+        std::shared_ptr<GPUProgram> smProgram;
     };
 }
 

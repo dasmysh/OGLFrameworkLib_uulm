@@ -46,9 +46,9 @@ namespace cgu {
         /** Holds the materials index of refraction. */
         float N_i;
         /** Holds the materials diffuse texture. */
-        const GLTexture2D* diffuseTex;
+        std::shared_ptr<const GLTexture2D> diffuseTex;
         /** Holds the materials bump texture. */
-        const GLTexture2D* bumpTex;
+        std::shared_ptr<const GLTexture2D> bumpTex;
         /** Holds the materials bump multiplier. */
         float bumpMultiplier;
     };

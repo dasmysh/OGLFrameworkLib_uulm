@@ -22,7 +22,6 @@ namespace cgu {
      */
     GPUProgram::GPUProgram(const std::string programName, ApplicationBase* app) :
         Resource(programName, app),
-        program(0),
         knownVABindings(),
         knownUniformBindings(),
         knownUBBindings(),
@@ -31,36 +30,28 @@ namespace cgu {
         boundSSBOs(),
         vaos()
     {
-
+        auto programNames = GetSubresources();
+        std::vector<GLuint> shaders;
+        for (auto& progName : programNames) {
+            // ignore exception and reload whole program
+            shaders.push_back(application->GetShaderManager()->GetResource(progName)->shader);
+        }
+        LoadInternal(LinkNewProgram(id, shaders));
     }
 
     /** Destructor. */
-    GPUProgram::~GPUProgram()
-    {
-        if (IsLoaded()) UnloadLocal();
-    }
+    GPUProgram::~GPUProgram() = default;
 
     /** Copy constructor. */
     GPUProgram::GPUProgram(const GPUProgram& rhs) : GPUProgram(rhs.id, rhs.application)
     {
-        if (rhs.IsLoaded()) GPUProgram::Load();
     }
 
     /** Copy assignment operator. */
     GPUProgram& GPUProgram::operator=(const GPUProgram& rhs)
     {
-        this->~GPUProgram();
-        Resource* tRes = this;
-        *tRes = static_cast<const Resource&>(rhs);
         GPUProgram tmp{ rhs };
-        std::swap(program, tmp.program);
-        std::swap(knownVABindings, tmp.knownVABindings);
-        std::swap(knownUniformBindings, tmp.knownUniformBindings);
-        std::swap(knownUBBindings, tmp.knownUBBindings);
-        std::swap(boundUBlocks, tmp.boundUBlocks);
-        std::swap(knownSSBOBindings, tmp.knownSSBOBindings);
-        std::swap(boundSSBOs, tmp.boundSSBOs);
-        std::swap(vaos, tmp.vaos);
+        std::swap(*this, tmp);
         return *this;
     }
 
@@ -70,7 +61,7 @@ namespace cgu {
      */
     GPUProgram::GPUProgram(GPUProgram&& rhs) :
         Resource(std::move(rhs)),
-        program(rhs.program),
+        program(std::move(rhs.program)),
         knownVABindings(std::move(rhs.knownVABindings)),
         knownUniformBindings(std::move(rhs.knownUniformBindings)),
         knownUBBindings(std::move(rhs.knownUBBindings)),
@@ -79,7 +70,6 @@ namespace cgu {
         boundSSBOs(std::move(rhs.boundSSBOs)),
         vaos(std::move(rhs.vaos))
     {
-        rhs.program = 0;
     }
 
     /**
@@ -93,8 +83,7 @@ namespace cgu {
             this->~GPUProgram();
             Resource* tRes = this;
             *tRes = static_cast<Resource&&> (std::move(rhs));
-            program = rhs.program;
-            rhs.program = 0;
+            program = std::move(rhs.program);
             knownVABindings = std::move(rhs.knownVABindings);
             knownUniformBindings = std::move(rhs.knownUniformBindings);
             knownUBBindings = std::move(rhs.knownUBBindings);
@@ -106,24 +95,13 @@ namespace cgu {
         return *this;
     }
 
-    void GPUProgram::Load()
-    {
-        auto programNames = GetSubresources();
-        std::vector<GLuint> shaders;
-        for (auto& progName : programNames) {
-            // ignore exception and reload whole program
-            shaders.push_back(application->GetShaderManager()->GetResource(progName)->shader);
-        }
-        LoadInternal(LinkNewProgram(id, shaders));
-    }
-
     /**
      * Internal load function to be called after the program has been initialized.
      * @param newProgram the new initialized program to set
      */
     void GPUProgram::LoadInternal(GLuint newProgram)
     {
-        this->program = newProgram;
+        program.reset(newProgram);
 
         for (auto& ab : knownVABindings) {
             ab.second->iBinding = OGL_CALL(glGetAttribLocation, this->program, ab.first.c_str());
@@ -153,7 +131,6 @@ namespace cgu {
             vao->DisableAttributes();
             vao->UpdateVertexAttributes();
         }
-        Resource::Load();
     }
 
     /** Recompiles the program. */
@@ -163,12 +140,12 @@ namespace cgu {
         boost::split(progDefinition, id, boost::is_any_of(","));
         std::vector<std::string> programNames;
         boost::split(programNames, progDefinition[0], boost::is_any_of("|"));
-        std::vector<Shader*> shaders;
+        std::vector<std::shared_ptr<Shader>> shaders;
         std::vector<GLuint> newOGLShaders;
         for (auto& progName : programNames) {
             boost::trim(progName);
             for (unsigned int i = 1; i < progDefinition.size(); ++i) progName += "," + progDefinition[i];
-            shaders.push_back(application->GetShaderManager()->GetResource(progName));
+            shaders.emplace_back(std::move(application->GetShaderManager()->GetResource(progName)));
         }
         newOGLShaders.resize(shaders.size(), 0);
         for (unsigned int i = 0; i < shaders.size(); ++i) {
@@ -192,7 +169,7 @@ namespace cgu {
             throw;
         }
 
-        Unload();
+        program.reset();
         for (unsigned int i = 0; i < shaders.size(); ++i) {
             shaders[i]->ResetShader(newOGLShaders[i]);
         }
@@ -298,8 +275,8 @@ namespace cgu {
      */
     void GPUProgram::SetUniform(BindingLocation name, const glm::vec2& data) const
     {
-        GLint cProg;
-        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, &cProg);
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform2fv, name->iBinding, 1, reinterpret_cast<const GLfloat*> (&data));
     }
@@ -311,8 +288,8 @@ namespace cgu {
      */
     void GPUProgram::SetUniform(BindingLocation name, const glm::vec3& data) const
     {
-        GLint cProg;
-        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, &cProg);
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform3fv, name->iBinding, 1, reinterpret_cast<const GLfloat*> (&data));
     }
@@ -324,8 +301,8 @@ namespace cgu {
      */
     void GPUProgram::SetUniform(BindingLocation name, const glm::vec4& data) const
     {
-        GLint cProg;
-        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, &cProg);
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform4fv, name->iBinding, 1, reinterpret_cast<const GLfloat*> (&data));
     }
@@ -337,8 +314,8 @@ namespace cgu {
      */
     void GPUProgram::SetUniform(BindingLocation name, const std::vector<float>& data) const
     {
-        GLint cProg;
-        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, &cProg);
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform1fv, name->iBinding, static_cast<GLsizei>(data.size()), data.data());
     }
@@ -350,8 +327,8 @@ namespace cgu {
      */
     void GPUProgram::SetUniform(BindingLocation name, const std::vector<int>& data) const
     {
-        GLint cProg;
-        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, &cProg);
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform1iv, name->iBinding, static_cast<GLsizei>(data.size()), data.data());
     }
@@ -363,8 +340,8 @@ namespace cgu {
      */
     void GPUProgram::SetUniform(BindingLocation name, int data) const
     {
-        GLint cProg;
-        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, &cProg);
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform1i, name->iBinding, data);
     }
@@ -376,8 +353,8 @@ namespace cgu {
      */
     void GPUProgram::SetUniform(BindingLocation name, float data) const
     {
-        GLint cProg;
-        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, &cProg);
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform1f, name->iBinding, data);
     }
@@ -389,8 +366,8 @@ namespace cgu {
     */
     void GPUProgram::SetUniform(BindingLocation name, const glm::uvec3& data) const
     {
-        GLint cProg;
-        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, &cProg);
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform3ui, name->iBinding, data.x, data.y, data.z);
     }
@@ -425,7 +402,7 @@ namespace cgu {
      */
     void GPUProgram::BindUniformBlock(BindingLocation name, GLuint bindingPoint) const
     {
-        OGL_CALL(glUniformBlockBinding, this->program, name->uBinding, bindingPoint);
+        OGL_CALL(glUniformBlockBinding, program, name->uBinding, bindingPoint);
     }
 
     /**
@@ -477,7 +454,7 @@ namespace cgu {
     */
     void GPUProgram::BindShaderBuffer(BindingLocation name, GLuint bindingPoint) const
     {
-        OGL_CALL(glShaderStorageBlockBinding, this->program, name->uBinding, bindingPoint);
+        OGL_CALL(glShaderStorageBlockBinding, program, name->uBinding, bindingPoint);
     }
 
     /**
@@ -485,21 +462,7 @@ namespace cgu {
      */
     void GPUProgram::UseProgram() const
     {
-        OGL_CALL(glUseProgram, this->program);
-    }
-
-    void GPUProgram::UnloadLocal()
-    {
-        if (this->program != 0) {
-            OGL_CALL(glDeleteProgram, this->program);
-            this->program = 0;
-        }
-    }
-
-    void GPUProgram::Unload()
-    {
-        UnloadLocal();
-        Resource::Unload();
+        OGL_CALL(glUseProgram, program);
     }
 
     GLuint GPUProgram::LinkNewProgram(const std::string& name, const std::vector<GLuint>& shaders) const

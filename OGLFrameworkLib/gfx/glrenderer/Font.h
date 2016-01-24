@@ -48,8 +48,6 @@ namespace cgu {
         std::unique_ptr<GLUniformBuffer> fontMetrics;
         /** Holds the binding point for the font metrics buffer. */
         GLuint fontMetricsBindingPoint;
-
-        // void UnloadLocal();
     };
 }
 

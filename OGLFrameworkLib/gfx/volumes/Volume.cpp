@@ -47,12 +47,12 @@ namespace cgu {
         dataDim(1),
         texDesc(4, GL_R8, GL_RED, GL_UNSIGNED_BYTE)
     {
+        LoadDatFile();
     }
 
     /** Copy constructor. */
     Volume::Volume(const Volume& rhs) : Volume(rhs.id, rhs.application)
     {
-        if (rhs.IsLoaded()) Volume::Load();
     }
 
     /** Copy assignment operator. */
@@ -91,13 +91,6 @@ namespace cgu {
 
     /** Destructor. */
     Volume::~Volume() = default;
-
-    void Volume::Load()
-    {
-        LoadDatFile();
-
-        Resource::Load();
-    }
 
     /**
      *  Loads the dat file.
@@ -259,11 +252,6 @@ namespace cgu {
 
         auto volTex = std::make_unique<GLTexture>(volumeSize.x, volumeSize.y, volumeSize.z, mipLevels, texDesc, data.data());
         return std::move(volTex);
-    }
-
-    void Volume::Unload()
-    {
-        Resource::Unload();
     }
 
     std::shared_ptr<Volume> Volume::GetSpeedVolume() const

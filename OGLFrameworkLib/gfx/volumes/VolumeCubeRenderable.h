@@ -27,7 +27,7 @@ namespace cgu {
     class VolumeCubeRenderable
     {
     public:
-        VolumeCubeRenderable(GPUProgram* drawProg, ApplicationBase* app);
+        VolumeCubeRenderable(std::shared_ptr<GPUProgram> drawProg, ApplicationBase* app);
         VolumeCubeRenderable(const VolumeCubeRenderable& orig);
         VolumeCubeRenderable(VolumeCubeRenderable&& orig);
         VolumeCubeRenderable& operator=(const VolumeCubeRenderable& orig);
@@ -43,22 +43,21 @@ namespace cgu {
 
     private:
         /** Holds the vertex buffer object to use. */
-        GLuint vBuffer;
+        BufferRAII vBuffer;
         /** Holds the index buffer object name. */
-        GLuint iBuffer;
+        BufferRAII iBuffer;
         /** Holds the rendering GPU program for back faces. */
-        GPUProgram* backProgram;
+        std::shared_ptr<GPUProgram> backProgram;
         /** Holds the shader attribute bindings for the back faces shader. */
         ShaderMeshAttributes backAttribBinds;
         /** Holds the rendering GPU program for drawing. */
-        GPUProgram* drawProgram;
+        std::shared_ptr<GPUProgram> drawProgram;
         /** Holds the shader attribute bindings for the draw shader. */
         ShaderMeshAttributes drawAttribBinds;
         /** Holds the application object. */
         ApplicationBase* application;
 
         void CreateVertexIndexBuffers();
-        void DeleteVertexIndexBuffers();
     };
 }
 

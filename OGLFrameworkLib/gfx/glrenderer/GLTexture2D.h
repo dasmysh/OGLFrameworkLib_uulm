@@ -37,8 +37,6 @@ namespace cgu {
     private:
         /** Holds the texture. */
         std::unique_ptr<GLTexture> texture;
-
-        void UnloadLocal();
     };
 }
 

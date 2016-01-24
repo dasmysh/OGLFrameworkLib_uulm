@@ -27,13 +27,13 @@ namespace cgu {
     class ScreenText
     {
     public:
-        ScreenText(const Font& fnt, GPUProgram* fontProg, const std::string& txt,
+        ScreenText(std::shared_ptr<const Font> fnt, std::shared_ptr<GPUProgram> fontProg, const std::string& txt,
             const glm::vec2& pos, const glm::vec2& dir, const glm::vec2& fntSize = glm::vec2(10.0f, 10.0f),
             float fntWeight = 1.0f, float fntShearing = 0.0f, float depth = 0.0f);
-        ScreenText(const Font& fnt, GPUProgram* fontProg, const std::string& txt,
+        ScreenText(std::shared_ptr<const Font> fnt, std::shared_ptr<GPUProgram> fontProg, const std::string& txt,
             const glm::vec2& pos, const glm::vec2& dir, float fntSize = 10.0f,
             float fntWeight = 1.0f, float fntShearing = 0.0f, float depth = 0.0f);
-        ScreenText(const Font& fnt, GPUProgram* fontProg, const std::string& txt,
+        ScreenText(std::shared_ptr<const Font> fnt, std::shared_ptr<GPUProgram> fontProg, const std::string& txt,
             const glm::vec2& pos, float fntSize = 10.0f, float fntWeight = 1.0f,
             float fntShearing = 0.0f, float depth = 0.0f);
         ScreenText(const ScreenText&);
@@ -59,7 +59,7 @@ namespace cgu {
 
     private:
         /** Holds the font. */
-        const Font* font;
+        std::shared_ptr<const Font> font;
         /** Holds the boldness of the font. */
         float fontWeight;
         /** Holds the shearing of the font. */
@@ -77,7 +77,7 @@ namespace cgu {
         /** Holds the depth layer for this element. */
         float depthLayer;
         /** Holds the VBO chain for the text. */
-        std::vector<GLuint> textVBOs;
+        BuffersRAII<NUM_DYN_BUFFERS> textVBOs;
         /** Holds the font VBO fences. */
         std::vector<GLsync> textVBOFences;
         /** Holds the current sizes of the buffers. */
@@ -85,7 +85,7 @@ namespace cgu {
         /** Holds the currently used buffer. */
         unsigned int currentBuffer;
         /** Holds the font rendering GPU program. */
-        GPUProgram* fontProgram;
+        std::shared_ptr<GPUProgram> fontProgram;
         /** Holds the vertex attribute positions. */
         std::vector<BindingLocation> vertexAttribPos;
         /** Holds the vertex attribute bindings for the font shader. */
