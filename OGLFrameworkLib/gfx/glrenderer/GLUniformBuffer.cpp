@@ -19,14 +19,12 @@ namespace cgu {
      */
     GLUniformBuffer::GLUniformBuffer(const std::string& name, unsigned int size,
         ShaderBufferBindingPoints* bindings) :
-        ubo(0),
         bufferSize(size),
         bindingPoints(bindings),
         bindingPoint(bindingPoints->GetBindingPoint(name)),
         uboName(name)
     {
-        OGL_CALL(glGenBuffers, 1, &ubo);
-        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo);
+        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo.get());
         OGL_CALL(glBufferData, GL_UNIFORM_BUFFER, size, nullptr, GL_STREAM_DRAW);
         OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, 0);
         BindBuffer();
@@ -45,12 +43,10 @@ namespace cgu {
      */
     GLUniformBuffer& GLUniformBuffer::operator=(const GLUniformBuffer& rhs)
     {
-        GLUniformBuffer tmp{ rhs };
-        std::swap(ubo, tmp.ubo);
-        std::swap(bufferSize, tmp.bufferSize);
-        std::swap(bindingPoints, tmp.bindingPoints);
-        std::swap(bindingPoint, tmp.bindingPoint);
-        std::swap(uboName, tmp.uboName);
+        if (this != &rhs) {
+            GLUniformBuffer tmp{ rhs };
+            std::swap(*this, tmp);
+        }
         return *this;
     }
 
@@ -64,7 +60,6 @@ namespace cgu {
         bindingPoint(std::move(rhs.bindingPoint)),
         uboName(std::move(uboName))
     {
-        rhs.ubo = 0;
     }
 
     /**
@@ -79,19 +74,12 @@ namespace cgu {
             bindingPoints = std::move(rhs.bindingPoints);
             bindingPoint = std::move(rhs.bindingPoint);
             uboName = std::move(rhs.uboName);
-            rhs.ubo = 0;
         }
         return *this;
     }
 
     /** Destructor. */
-    GLUniformBuffer::~GLUniformBuffer()
-    {
-        if (ubo != 0) {
-            OGL_CALL(glDeleteBuffers, 1, &ubo);
-            ubo = 0;
-        }
-    }
+    GLUniformBuffer::~GLUniformBuffer() = default;
 
     /**
      * Upload data to the uniform buffer.
@@ -102,13 +90,13 @@ namespace cgu {
     void GLUniformBuffer::UploadData(unsigned int offset, unsigned int size, const void* data) const
     {
         assert((offset + size) <= bufferSize);
-        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo);
+        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo.get());
         OGL_CALL(glBufferSubData, GL_UNIFORM_BUFFER, offset, size, data);
         OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, 0);
     }
 
     void GLUniformBuffer::BindBuffer() const
     {
-        OGL_CALL(glBindBufferRange, GL_UNIFORM_BUFFER, bindingPoint, ubo, 0, bufferSize);
+        OGL_CALL(glBindBufferRange, GL_UNIFORM_BUFFER, bindingPoint, ubo.get(), 0, bufferSize);
     }
 }

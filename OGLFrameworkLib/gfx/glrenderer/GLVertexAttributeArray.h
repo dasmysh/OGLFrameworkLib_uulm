@@ -89,7 +89,7 @@ namespace cgu {
         void DisableVertexAttributeArray() const;
 
     private:
-        GLuint vao;
+        VertexArrayRAII vao;
         GLuint i_buffer;
         GLuint v_buffer;
         std::vector<vertex_attribute_desc> v_desc;

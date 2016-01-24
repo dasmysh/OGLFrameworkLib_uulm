@@ -24,7 +24,7 @@ namespace cgu {
         OpenGLRAIIWrapper& operator=(OpenGLRAIIWrapper&& rhs) { objs = std::move(rhs.objs); for (auto& obj : rhs.objs) obj = T::null_obj; return *this; }
         ~OpenGLRAIIWrapper() { T::Destroy<N>(objs); }
 
-        typename T::value_type operator[](size_t i) { return objs[i]; }
+        typename T::value_type operator[](size_t i) const { return objs[i]; }
 
     private:
         std::array<typename T::value_type, N> objs;
@@ -42,9 +42,9 @@ namespace cgu {
         OpenGLRAIIWrapper& operator=(OpenGLRAIIWrapper&& rhs) { obj = rhs.obj; rhs.obj = T::null_obj; return *this; }
         ~OpenGLRAIIWrapper() { obj = T::Destroy(obj); }
 
-        operator typename T::value_type() const { return obj; }
-        typename T::value_type get() { return obj; }
-        operator bool() { return T::null_obj != obj; }
+        explicit operator typename T::value_type() const { return obj; }
+        typename T::value_type get() const { return obj; }
+        explicit operator bool() const { return T::null_obj != obj; }
         bool operator==(const OpenGLRAIIWrapper& rhs) { return rhs.obj == obj; }
 
         friend bool operator==(typename T::value_type lhs, const OpenGLRAIIWrapper<T, 1>& rhs) { return lhs == rhs.obj; }
@@ -88,9 +88,73 @@ namespace cgu {
         }
     };
 
+    struct TextureObjectTraits
+    {
+        using value_type = GLuint;
+        static const value_type null_obj = 0;
+        static value_type Create() { value_type texture; OGL_CALL(glGenTextures, 1, &texture); return texture; }
+        template<int N> static void Create(std::array<value_type, N>& textures) { OGL_CALL(glGenTextures, static_cast<GLsizei>(N), textures.data()); }
+        static value_type Destroy(value_type texture) { OGL_CALL(glDeleteTextures, 1, &texture); return null_obj; }
+        template<int N> static void Destroy(std::array<value_type, N>& textures)
+        {
+            OGL_CALL(glDeleteTextures, static_cast<GLsizei>(N), textures.data());
+            for (auto& texture : textures) texture = null_obj;
+        }
+    };
+
+    struct FramebufferObjectTraits
+    {
+        using value_type = GLuint;
+        static const value_type null_obj = 0;
+        static value_type Create() { value_type fbo; OGL_CALL(glGenFramebuffers, 1, &fbo); return fbo; }
+        template<int N> static void Create(std::array<value_type, N>& fbos) { OGL_CALL(glGenFramebuffers, static_cast<GLsizei>(N), fbos.data()); }
+        static value_type Destroy(value_type fbo) { OGL_CALL(glDeleteFramebuffers, 1, &fbo); return null_obj; }
+        template<int N> static void Destroy(std::array<value_type, N>& fbos)
+        {
+            OGL_CALL(glDeleteFramebuffers, static_cast<GLsizei>(N), fbos.data());
+            for (auto& fbo : fbos) fbo = null_obj;
+        }
+    };
+
+    struct RenderbufferObjectTraits
+    {
+        using value_type = GLuint;
+        static const value_type null_obj = 0;
+        static value_type Create() { value_type rbo; OGL_CALL(glGenRenderbuffers, 1, &rbo); return rbo; }
+        template<int N> static void Create(std::array<value_type, N>& rbos) { OGL_CALL(glGenRenderbuffers, static_cast<GLsizei>(N), rbos.data()); }
+        static value_type Destroy(value_type rbo) { OGL_CALL(glDeleteRenderbuffers, 1, &rbo); return null_obj; }
+        template<int N> static void Destroy(std::array<value_type, N>& rbos)
+        {
+            OGL_CALL(glDeleteRenderbuffers, static_cast<GLsizei>(N), rbos.data());
+            for (auto& rbo : rbos) rbo = null_obj;
+        }
+    };
+
+    struct VertexArrayObjectTraits
+    {
+        using value_type = GLuint;
+        static const value_type null_obj = 0;
+        static value_type Create() { value_type vao; OGL_CALL(glGenVertexArrays, 1, &vao); return vao; }
+        template<int N> static void Create(std::array<value_type, N>& vaos) { OGL_CALL(glGenVertexArrays, static_cast<GLsizei>(N), vaos.data()); }
+        static value_type Destroy(value_type vao) { OGL_CALL(glDeleteVertexArrays, 1, &vao); return null_obj; }
+        template<int N> static void Destroy(std::array<value_type, N>& vaos)
+        {
+            OGL_CALL(glDeleteVertexArrays, static_cast<GLsizei>(N), vaos.data());
+            for (auto& vao : vaos) vao = null_obj;
+        }
+    };
+
     using ProgramRAII = OpenGLRAIIWrapper<ProgramObjectTraits, 1>;
     using ShaderRAII = OpenGLRAIIWrapper<ShaderObjectTraits, 1>;
     template<int N> using BuffersRAII = OpenGLRAIIWrapper<BufferObjectTraits, N>;
     using BufferRAII = OpenGLRAIIWrapper<BufferObjectTraits, 1>;
+    template<int N> using TexuturesRAII = OpenGLRAIIWrapper<TextureObjectTraits, N>;
+    using TextureRAII = OpenGLRAIIWrapper<TextureObjectTraits, 1>;
+    template<int N> using FramebuffersRAII = OpenGLRAIIWrapper<FramebufferObjectTraits, N>;
+    using FramebufferRAII = OpenGLRAIIWrapper<FramebufferObjectTraits, 1>;
+    template<int N> using RenderbuffersRAII = OpenGLRAIIWrapper<RenderbufferObjectTraits, N>;
+    using RenderbufferRAII = OpenGLRAIIWrapper<RenderbufferObjectTraits, 1>;
+    template<int N> using VertexArraysRAII = OpenGLRAIIWrapper<VertexArrayObjectTraits, N>;
+    using VertexArrayRAII = OpenGLRAIIWrapper<VertexArrayObjectTraits, 1>;
 }
 

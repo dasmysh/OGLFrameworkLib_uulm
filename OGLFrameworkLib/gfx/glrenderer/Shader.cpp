@@ -92,9 +92,9 @@ namespace cgu {
      * This is used to make sure an old shader is not lost if linking shaders to a program fails.
      * @param newShader the recompiled shader
      */
-    void Shader::ResetShader(GLuint newShader)
+    void Shader::ResetShader(ShaderRAII&& newShader)
     {
-        shader.reset(newShader);
+        shader = std::move(newShader);
     }
 
     /**
@@ -187,31 +187,31 @@ namespace cgu {
         }*/
         auto shaderText = LoadShaderFile(filename, defines, firstFileId, 0);
 
-        auto shader = ShaderRAII(OGL_CALL(glCreateShader, type));
-        if (shader) {
+        ShaderRAII shader{ OGL_CALL(glCreateShader, type) };
+        if (!shader) {
             LOG(ERROR) << L"Could not create shader!";
             throw std::runtime_error("Could not create shader!");
         }
         auto shaderTextArray = shaderText.c_str();
         auto shaderLength = static_cast<int>(shaderText.length());
-        OGL_CALL(glShaderSource, shader, 1, &shaderTextArray, &shaderLength);
-        OGL_CALL(glCompileShader, shader);
+        OGL_CALL(glShaderSource, shader.get(), 1, &shaderTextArray, &shaderLength);
+        OGL_CALL(glCompileShader, shader.get());
 
         GLint status;
-        OGL_CALL(glGetShaderiv, shader, GL_COMPILE_STATUS, &status);
+        OGL_CALL(glGetShaderiv, shader.get(), GL_COMPILE_STATUS, &status);
         if (status == GL_FALSE) {
             GLint infoLogLength;
-            OGL_CALL(glGetShaderiv, shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+            OGL_CALL(glGetShaderiv, shader.get(), GL_INFO_LOG_LENGTH, &infoLogLength);
 
             auto strInfoLog = new GLchar[infoLogLength + 1];
-            OGL_CALL(glGetShaderInfoLog, shader, infoLogLength, NULL, strInfoLog);
+            OGL_CALL(glGetShaderInfoLog, shader.get(), infoLogLength, NULL, strInfoLog);
 
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
             LOG(ERROR) << L"Compile failure in " << converter.from_bytes(strType) << L" shader ("
                 << filename.c_str() << "): " << std::endl << strInfoLog;
             std::string infoLog = strInfoLog;
             delete[] strInfoLog;
-            OGL_CALL(glDeleteShader, shader);
+            OGL_CALL(glDeleteShader, shader.get());
             throw shader_compiler_error() << ::boost::errinfo_file_name(filename)
                 << compiler_error_info(infoLog) << resid_info(id)
                 << errdesc_info("Shader compilation failed.");

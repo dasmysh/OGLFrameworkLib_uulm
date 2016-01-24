@@ -28,7 +28,7 @@ namespace cgu {
         vertexData(vertices),
         program(prog)
     {
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
         OGL_CALL(glBufferData, GL_ARRAY_BUFFER, 4 * sizeof(glm::vec2), vertices.data(), GL_STATIC_DRAW);
 
         FillAttributeBindings();
@@ -74,8 +74,8 @@ namespace cgu {
 
     void ScreenQuadRenderable::FillAttributeBindings()
     {
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        vertexAttribs.reset(new GLVertexAttributeArray(vBuffer, 0));
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
+        vertexAttribs.reset(new GLVertexAttributeArray(vBuffer.get(), 0));
 
         vertexAttribs->StartAttributeSetup();
         if (program != nullptr) {

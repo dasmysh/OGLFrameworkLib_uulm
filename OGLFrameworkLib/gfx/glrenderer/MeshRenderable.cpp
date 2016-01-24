@@ -20,22 +20,17 @@ namespace cgu {
      */
     MeshRenderable::MeshRenderable(const Mesh* renderMesh, GPUProgram* prog) :
         mesh(renderMesh),
-        vBuffer(0),
-        iBuffer(0),
         drawProgram(prog)
     {
-        OGL_CALL(glGenBuffers, 1, &vBuffer);
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
         OGL_CALL(glBufferData, GL_ARRAY_BUFFER, mesh->faceVertices.size() * sizeof(FaceVertex),
             mesh->faceVertices.data(), GL_STATIC_DRAW);
 
-        OGL_CALL(glGenBuffers, 1, &iBuffer);
-        FillIndexBuffer(iBuffer, mesh);
+        FillIndexBuffer(iBuffer.get(), mesh);
 
-        iBuffers.resize(mesh->subMeshes.size(), 0);
-        OGL_CALL(glGenBuffers, static_cast<GLsizei>(iBuffers.size()), iBuffers.data());
-        for (unsigned int idx = 0; idx < iBuffers.size(); ++idx) {
-            FillIndexBuffer(iBuffers[idx], mesh->subMeshes[idx]);
+        for (unsigned int idx = 0; idx < mesh->subMeshes.size(); ++idx) {
+            iBuffers.emplace_back(std::move(BufferRAII()));
+            FillIndexBuffer(iBuffers[idx].get(), mesh->subMeshes[idx]);
         }
 
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
@@ -48,19 +43,7 @@ namespace cgu {
      */
     MeshRenderable::~MeshRenderable()
     {
-        if (vBuffer != 0) {
-            OGL_CALL(glDeleteBuffers, 1, &vBuffer);
-        }
-
-        if (iBuffer != 0) {
-            OGL_CALL(glDeleteBuffers, 1, &iBuffer);
-        }
-
-        if (iBuffers.size() > 0) {
-            OGL_CALL(glDeleteBuffers, static_cast<GLsizei>(iBuffers.size()), iBuffers.data());
-            iBuffers.clear();
-        }
-        mesh = nullptr;
+        iBuffers.clear();
     }
 
     /**
@@ -78,17 +61,14 @@ namespace cgu {
      */
     MeshRenderable::MeshRenderable(MeshRenderable&& orig) :
         mesh(orig.mesh),
-        vBuffer(orig.vBuffer),
-        iBuffer(orig.iBuffer),
+        vBuffer(std::move(orig.vBuffer)),
+        iBuffer(std::move(orig.iBuffer)),
         iBuffers(std::move(orig.iBuffers)),
         drawProgram(orig.drawProgram),
         drawAttribBinds(std::move(orig.drawAttribBinds))
     {
         orig.mesh = nullptr;
-        orig.vBuffer = 0;
-        orig.iBuffer = 0;
         orig.drawProgram = nullptr;
-        iBuffers.clear();
     }
 
     /**
@@ -113,14 +93,12 @@ namespace cgu {
         if (this != &orig) {
             this->~MeshRenderable();
             mesh = orig.mesh;
-            vBuffer = orig.vBuffer;
-            iBuffer = orig.iBuffer;
+            vBuffer = std::move(orig.vBuffer);
+            iBuffer = std::move(orig.iBuffer);
             iBuffers = std::move(orig.iBuffers);
             drawProgram = orig.drawProgram;
             drawAttribBinds = std::move(orig.drawAttribBinds);
             orig.mesh = nullptr;
-            orig.vBuffer = 0;
-            orig.iBuffer = 0;
             orig.drawProgram = nullptr;
         }
         return *this;
@@ -132,11 +110,11 @@ namespace cgu {
         assert(attribBinds.GetVertexAttributes().size() == 0);
         auto shaderPositions = program->GetAttributeLocations({ "pos", "tex", "normal" });
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer, iBuffer));
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
+        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer.get(), iBuffer.get()));
         GenerateVertexAttribute(attribBinds.GetVertexAttributes().back(), mesh, shaderPositions);
         for (unsigned int idx = 0; idx < mesh->subMeshes.size(); ++idx) {
-            attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer, iBuffers[idx]));
+            attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer.get(), iBuffers[idx].get()));
             GenerateVertexAttribute(attribBinds.GetVertexAttributes().back(), mesh->subMeshes[idx], shaderPositions);
         }
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
@@ -153,7 +131,7 @@ namespace cgu {
     void MeshRenderable::Draw(GPUProgram* program, const ShaderMeshAttributes& attribBinds) const
     {
         program->UseProgram();
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
         DrawSubMesh<true>(program, attribBinds, attribBinds.GetVertexAttributes()[0], mesh);
         for (unsigned int idx = 0; idx < iBuffers.size(); ++idx) {
             DrawSubMesh<true>(program, attribBinds, attribBinds.GetVertexAttributes()[idx + 1], mesh->subMeshes[idx]);

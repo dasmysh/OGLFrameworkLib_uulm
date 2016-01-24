@@ -73,32 +73,6 @@ namespace cgu {
     };
 
     /**
-    * @brief Loads a resource. Call this method in derived classes Load method last.
-    */
-    /*void Resource::Load()
-    {
-        loaded = true;
-    }*/
-
-    /**
-    * @brief Unloads a resource. Call this method in derived classes Unload method last.
-    * This method should free all resources or memory obtained by the Load method.
-    */
-    /*void Resource::Unload()
-    {
-        loaded = false;
-    }*/
-
-    /**
-    * Checks if the resource is loaded.
-    * @return <code>true</code> if resource is currently loaded
-    */
-    /*bool Resource::IsLoaded() const
-    {
-        return loaded;
-    }*/
-
-    /**
      *  Returns the normalized resource id (no global parameters).
      *  @param the resource id.
      *  @return the normalized resource id.

@@ -41,8 +41,9 @@ namespace cgu {
         friend class GLTexture;
         friend class FrameBuffer;
 
-        TextureGLIdentifierAccessor(GLuint id, GLenum type) : textureId(id), textureType(type) {};
-        GLuint textureId;
+        TextureGLIdentifierAccessor(TextureRAII id, GLenum type) : textureId(std::move(id)), textureType(type) {};
+        TextureGLIdentifierAccessor(GLenum type) : textureType(type) {};
+        TextureRAII textureId;
         GLenum textureType;
     };
 
@@ -60,7 +61,7 @@ namespace cgu {
         GLTexture& operator=(const GLTexture&)  = delete;
 
     public:
-        GLTexture(GLuint texID, GLenum texType, const TextureDescriptor& desc);
+        GLTexture(TextureRAII texID, GLenum texType, const TextureDescriptor& desc);
         GLTexture(unsigned int size, const TextureDescriptor& desc);
         GLTexture(unsigned int width, unsigned int height, unsigned int arraySize, const TextureDescriptor& desc);
         GLTexture(unsigned int width, unsigned int height, const TextureDescriptor& desc, const void* data);

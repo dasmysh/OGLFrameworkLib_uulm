@@ -109,7 +109,7 @@ namespace cgu {
         vertices.push_back(VolumeCubeVertex{ glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 1.0f) });
         vertices.push_back(VolumeCubeVertex{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f) });
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
         OGL_CALL(glBufferData, GL_ARRAY_BUFFER, 8 * sizeof(VolumeCubeVertex), vertices.data(), GL_STATIC_DRAW);
 
         unsigned int indexData[36] = {
@@ -120,7 +120,7 @@ namespace cgu {
             1, 3, 5, 5, 3, 7,
             0, 4, 2, 2, 4, 6
         };
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer);
+        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer.get());
         OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned int), indexData, GL_STATIC_DRAW);
 
         FillVertexAttributeBindings(backProgram.get(), backAttribBinds);
@@ -172,8 +172,8 @@ namespace cgu {
         assert(attribBinds.GetVertexAttributes().size() == 0);
 
         auto loc = program->GetAttributeLocations({ "position", "texPosition" });
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer, iBuffer));
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
+        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer.get(), iBuffer.get()));
         attribBinds.GetVertexAttributes()[0]->StartAttributeSetup();
         attribBinds.GetVertexAttributes()[0]->AddVertexAttribute(loc[0], 4, GL_FLOAT, GL_FALSE, sizeof(VolumeCubeVertex), offsetof(VolumeCubeVertex, pos));
         attribBinds.GetVertexAttributes()[0]->AddVertexAttribute(loc[1], 3, GL_FLOAT, GL_FALSE, sizeof(VolumeCubeVertex), offsetof(VolumeCubeVertex, posTex));

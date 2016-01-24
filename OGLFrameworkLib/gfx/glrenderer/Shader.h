@@ -40,7 +40,7 @@ namespace cgu {
         Shader& operator=(Shader&&);
         virtual ~Shader();
 
-        void ResetShader(GLuint newShader);
+        void ResetShader(ShaderRAII&& newShader);
         ShaderRAII RecompileShader() const;
 
     private:

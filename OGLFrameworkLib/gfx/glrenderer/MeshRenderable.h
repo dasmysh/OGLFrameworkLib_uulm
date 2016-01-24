@@ -42,11 +42,11 @@ namespace cgu {
         /** Holds the mesh to render. */
         const Mesh* mesh;
         /** Holds the vertex buffer object name. */
-        GLuint vBuffer;
+        BufferRAII vBuffer;
         /** Holds the index buffer object name of the mesh base. */
-        GLuint iBuffer;
+        BufferRAII iBuffer;
         /** Holds the index buffer object names. */
-        std::vector<GLuint> iBuffers;
+        std::vector<BufferRAII> iBuffers;
         /** Holds the rendering GPU program for drawing. */
         GPUProgram* drawProgram;
         /** Holds the shader attribute bindings for the shader. */

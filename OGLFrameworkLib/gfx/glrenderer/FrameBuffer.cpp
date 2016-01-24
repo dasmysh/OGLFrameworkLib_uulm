@@ -35,7 +35,6 @@ namespace cgu {
      * @param d the frame buffers description.
      */
     FrameBuffer::FrameBuffer(unsigned int fbWidth, unsigned int fbHeight, const FrameBufferDescriptor& d) :
-        fbo(0),
         isBackbuffer(false),
         desc(d)
     {
@@ -47,7 +46,6 @@ namespace cgu {
      *  @param orig the original frame buffer.
      */
     FrameBuffer::FrameBuffer(const FrameBuffer& orig) :
-        fbo(0),
         isBackbuffer(false),
         desc(orig.desc)
     {
@@ -59,7 +57,7 @@ namespace cgu {
      *  @param orig the original frame buffer.
      */
     FrameBuffer::FrameBuffer(FrameBuffer&& orig) :
-        fbo(orig.fbo),
+        fbo(std::move(orig.fbo)),
         isBackbuffer(orig.isBackbuffer),
         desc(std::move(orig.desc)),
         textures(std::move(orig.textures)),
@@ -67,11 +65,8 @@ namespace cgu {
         width(orig.width),
         height(orig.height)
     {
-        orig.fbo = 0;
         orig.isBackbuffer = false;
         orig.desc = FrameBufferDescriptor();
-        orig.textures.clear();
-        orig.renderBuffers.clear();
         orig.width = 0;
         orig.height = 0;
     }
@@ -83,11 +78,8 @@ namespace cgu {
     FrameBuffer& FrameBuffer::operator=(const FrameBuffer& orig)
     {
         if (this != &orig) {
-            this->~FrameBuffer();
-            fbo = 0;
-            isBackbuffer = orig.isBackbuffer;
-            desc = orig.desc;
-            Resize(orig.width, orig.height);
+            FrameBuffer tmp{ orig };
+            std::swap(*this, tmp);
         }
         return *this;
     }
@@ -100,16 +92,13 @@ namespace cgu {
     {
         if (this != &orig) {
             this->~FrameBuffer();
-            fbo = orig.fbo;
-            orig.fbo = 0;
+            fbo = std::move(orig.fbo);
             isBackbuffer = orig.isBackbuffer;
             orig.isBackbuffer = false;
             desc = orig.desc;
             orig.desc = FrameBufferDescriptor();
             textures = std::move(orig.textures);
-            orig.textures.clear();
             renderBuffers = std::move(orig.renderBuffers);
-            orig.renderBuffers.clear();
             width = orig.width;
             orig.width = 0;
             height = orig.height;
@@ -123,29 +112,8 @@ namespace cgu {
      */
     FrameBuffer::~FrameBuffer()
     {
-        Destroy();
-    }
-
-    /**
-     *  Destroys the frame buffer object.
-     */
-    void FrameBuffer::Destroy()
-    {
-        for (auto& tex : textures) {
-            tex.release();
-        }
-        for (auto rb : renderBuffers) {
-            if (rb != 0) {
-                OGL_CALL(glDeleteRenderbuffers, 1, &rb);
-            }
-        }
         textures.clear();
         renderBuffers.clear();
-
-        if (fbo != 0) {
-            OGL_CALL(glDeleteFramebuffers, 1, &fbo);
-            fbo = 0;
-        }
     }
 
     /**
@@ -158,35 +126,31 @@ namespace cgu {
         width = fbWidth;
         height = fbHeight;
 
-        this->Destroy();
-
         if (isBackbuffer) return;
 
-        OGL_CALL(glGenFramebuffers, 1, &fbo);
-        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
+        fbo = std::move(FramebufferRAII());
+        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo.get());
         unsigned int colorAtt = 0;
         drawBuffers.clear();
         for (const auto& texDesc : desc.texDesc) {
-            GLuint tex;
-            OGL_CALL(glGenTextures, 1, &tex);
-            OGL_CALL(glBindTexture, GL_TEXTURE_2D, tex);
+            TextureRAII tex;
+            OGL_CALL(glBindTexture, GL_TEXTURE_2D, tex.get());
             OGL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, texDesc.internalFormat, width, height, 0, texDesc.format, texDesc.type, nullptr);
-            std::unique_ptr<GLTexture> texture{ new GLTexture{ tex, GL_TEXTURE_2D, texDesc } };
+            std::unique_ptr<GLTexture> texture{ new GLTexture{ std::move(tex), GL_TEXTURE_2D, texDesc } };
 
             auto attachment = findAttachment(texDesc.internalFormat, colorAtt, drawBuffers);
-            OGL_CALL(glFramebufferTexture, GL_FRAMEBUFFER, attachment, tex, 0);
-            textures.push_back(std::move(texture));
+            OGL_CALL(glFramebufferTexture, GL_FRAMEBUFFER, attachment, tex.get(), 0);
+            textures.emplace_back(std::move(texture));
         }
 
 
         for (const auto& rbDesc : desc.rbDesc) {
-            GLuint rb;
-            OGL_CALL(glGenRenderbuffers, 1, &rb);
-            OGL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, rb);
+            RenderbufferRAII rb;
+            OGL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, rb.get());
             OGL_CALL(glRenderbufferStorage, GL_RENDERBUFFER, rbDesc.internalFormat, width, height);
             auto attachment = findAttachment(rbDesc.internalFormat, colorAtt, drawBuffers);
-            OGL_CALL(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rb);
-            renderBuffers.push_back(rb);
+            OGL_CALL(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rb.get());
+            renderBuffers.emplace_back(std::move(rb));
         }
 
         OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
@@ -201,7 +165,7 @@ namespace cgu {
      */
     void FrameBuffer::UseAsRenderTarget()
     {
-        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
+        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo.get());
         if (!isBackbuffer) OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
         OGL_CALL(glViewport, 0, 0, width, height);
     }
@@ -216,7 +180,7 @@ namespace cgu {
         std::vector<GLenum> drawBuffersReduced(drawBuffers.size());
         for (unsigned int i = 0; i < drawBufferIndices.size(); ++i) drawBuffersReduced[i] = drawBuffers[drawBufferIndices[i]];
 
-        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
+        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo.get());
         OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffersReduced.size()), drawBuffersReduced.data());
         OGL_CALL(glViewport, 0, 0, width, height);
     }
@@ -245,7 +209,7 @@ namespace cgu {
             break;
         default:
             attachment = GL_COLOR_ATTACHMENT0 + colorAtt++;
-            drawBuffers.push_back(attachment);
+            drawBuffers.emplace_back(attachment);
             break;
         }
         return attachment;
