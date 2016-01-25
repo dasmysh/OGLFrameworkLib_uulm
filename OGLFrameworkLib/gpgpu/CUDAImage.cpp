@@ -24,7 +24,7 @@ namespace cgu {
             cudaResource(nullptr),
             mapped(false)
         {
-            CudaSafeCall(cudaGraphicsGLRegisterImage(&cudaResource, texture->GetGLIdentifier().textureId.get(),
+            CudaSafeCall(cudaGraphicsGLRegisterImage(&cudaResource, texture->GetGLIdentifier().textureId,
                 texture->GetGLIdentifier().textureType, flags));
         }
 

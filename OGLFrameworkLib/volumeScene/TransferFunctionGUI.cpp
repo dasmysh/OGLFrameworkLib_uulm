@@ -243,7 +243,7 @@ namespace cgu {
     {
         if (createVAO) tfVBO = std::move(BufferRAII());
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, tfVBO.get());
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, tfVBO);
         OGL_CALL(glBufferData, GL_ARRAY_BUFFER, (tf_.points().size() + 2) * sizeof(tf::ControlPoint),
             nullptr, GL_DYNAMIC_DRAW);
 
@@ -259,7 +259,7 @@ namespace cgu {
 
         if (createVAO) {
             auto loc = tfProgram->GetAttributeLocations({ "value", "color" });
-            attribBind = tfProgram->CreateVertexAttributeArray(tfVBO.get(), 0);
+            attribBind = tfProgram->CreateVertexAttributeArray(tfVBO, 0);
             attribBind->StartAttributeSetup();
             attribBind->AddVertexAttribute(loc[0], 1, GL_FLOAT, GL_FALSE, sizeof(tf::ControlPoint), 0);
             attribBind->AddVertexAttribute(loc[1], 4, GL_FLOAT, GL_FALSE, sizeof(tf::ControlPoint), sizeof(float));

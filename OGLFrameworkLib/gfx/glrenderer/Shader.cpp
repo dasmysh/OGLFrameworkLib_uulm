@@ -194,24 +194,24 @@ namespace cgu {
         }
         auto shaderTextArray = shaderText.c_str();
         auto shaderLength = static_cast<int>(shaderText.length());
-        OGL_CALL(glShaderSource, shader.get(), 1, &shaderTextArray, &shaderLength);
-        OGL_CALL(glCompileShader, shader.get());
+        OGL_CALL(glShaderSource, shader, 1, &shaderTextArray, &shaderLength);
+        OGL_CALL(glCompileShader, shader);
 
         GLint status;
-        OGL_CALL(glGetShaderiv, shader.get(), GL_COMPILE_STATUS, &status);
+        OGL_CALL(glGetShaderiv, shader, GL_COMPILE_STATUS, &status);
         if (status == GL_FALSE) {
             GLint infoLogLength;
-            OGL_CALL(glGetShaderiv, shader.get(), GL_INFO_LOG_LENGTH, &infoLogLength);
+            OGL_CALL(glGetShaderiv, shader, GL_INFO_LOG_LENGTH, &infoLogLength);
 
             auto strInfoLog = new GLchar[infoLogLength + 1];
-            OGL_CALL(glGetShaderInfoLog, shader.get(), infoLogLength, NULL, strInfoLog);
+            OGL_CALL(glGetShaderInfoLog, shader, infoLogLength, NULL, strInfoLog);
 
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-            LOG(ERROR) << L"Compile failure in " << converter.from_bytes(strType) << L" shader ("
+            LOG(ERROR) << L"Compile error in " << converter.from_bytes(strType) << L" shader ("
                 << filename.c_str() << "): " << std::endl << strInfoLog;
             std::string infoLog = strInfoLog;
             delete[] strInfoLog;
-            OGL_CALL(glDeleteShader, shader.get());
+            OGL_CALL(glDeleteShader, shader);
             throw shader_compiler_error() << ::boost::errinfo_file_name(filename)
                 << compiler_error_info(infoLog) << resid_info(id)
                 << errdesc_info("Shader compilation failed.");

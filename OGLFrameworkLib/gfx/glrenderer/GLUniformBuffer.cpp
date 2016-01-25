@@ -24,7 +24,7 @@ namespace cgu {
         bindingPoint(bindingPoints->GetBindingPoint(name)),
         uboName(name)
     {
-        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo.get());
+        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo);
         OGL_CALL(glBufferData, GL_UNIFORM_BUFFER, size, nullptr, GL_STREAM_DRAW);
         OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, 0);
         BindBuffer();
@@ -90,13 +90,13 @@ namespace cgu {
     void GLUniformBuffer::UploadData(unsigned int offset, unsigned int size, const void* data) const
     {
         assert((offset + size) <= bufferSize);
-        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo.get());
+        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo);
         OGL_CALL(glBufferSubData, GL_UNIFORM_BUFFER, offset, size, data);
         OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, 0);
     }
 
     void GLUniformBuffer::BindBuffer() const
     {
-        OGL_CALL(glBindBufferRange, GL_UNIFORM_BUFFER, bindingPoint, ubo.get(), 0, bufferSize);
+        OGL_CALL(glBindBufferRange, GL_UNIFORM_BUFFER, bindingPoint, ubo, 0, bufferSize);
     }
 }

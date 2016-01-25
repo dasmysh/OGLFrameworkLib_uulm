@@ -42,8 +42,8 @@ namespace cgu {
         OpenGLRAIIWrapper& operator=(OpenGLRAIIWrapper&& rhs) { obj = rhs.obj; rhs.obj = T::null_obj; return *this; }
         ~OpenGLRAIIWrapper() { obj = T::Destroy(obj); }
 
-        explicit operator typename T::value_type() const { return obj; }
-        typename T::value_type get() const { return obj; }
+        operator typename T::value_type() const { return obj; }
+        // typename T::value_type get() const { return obj; }
         explicit operator bool() const { return T::null_obj != obj; }
         bool operator==(const OpenGLRAIIWrapper& rhs) { return rhs.obj == obj; }
 

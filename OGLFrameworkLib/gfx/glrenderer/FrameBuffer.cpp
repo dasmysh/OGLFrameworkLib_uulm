@@ -129,27 +129,27 @@ namespace cgu {
         if (isBackbuffer) return;
 
         fbo = std::move(FramebufferRAII());
-        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo.get());
+        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
         unsigned int colorAtt = 0;
         drawBuffers.clear();
         for (const auto& texDesc : desc.texDesc) {
             TextureRAII tex;
-            OGL_CALL(glBindTexture, GL_TEXTURE_2D, tex.get());
+            OGL_CALL(glBindTexture, GL_TEXTURE_2D, tex);
             OGL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, texDesc.internalFormat, width, height, 0, texDesc.format, texDesc.type, nullptr);
             std::unique_ptr<GLTexture> texture{ new GLTexture{ std::move(tex), GL_TEXTURE_2D, texDesc } };
 
             auto attachment = findAttachment(texDesc.internalFormat, colorAtt, drawBuffers);
-            OGL_CALL(glFramebufferTexture, GL_FRAMEBUFFER, attachment, tex.get(), 0);
+            OGL_CALL(glFramebufferTexture, GL_FRAMEBUFFER, attachment, tex, 0);
             textures.emplace_back(std::move(texture));
         }
 
 
         for (const auto& rbDesc : desc.rbDesc) {
             RenderbufferRAII rb;
-            OGL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, rb.get());
+            OGL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, rb);
             OGL_CALL(glRenderbufferStorage, GL_RENDERBUFFER, rbDesc.internalFormat, width, height);
             auto attachment = findAttachment(rbDesc.internalFormat, colorAtt, drawBuffers);
-            OGL_CALL(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rb.get());
+            OGL_CALL(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rb);
             renderBuffers.emplace_back(std::move(rb));
         }
 
@@ -165,7 +165,7 @@ namespace cgu {
      */
     void FrameBuffer::UseAsRenderTarget()
     {
-        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo.get());
+        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
         if (!isBackbuffer) OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
         OGL_CALL(glViewport, 0, 0, width, height);
     }
@@ -180,7 +180,7 @@ namespace cgu {
         std::vector<GLenum> drawBuffersReduced(drawBuffers.size());
         for (unsigned int i = 0; i < drawBufferIndices.size(); ++i) drawBuffersReduced[i] = drawBuffers[drawBufferIndices[i]];
 
-        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo.get());
+        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
         OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffersReduced.size()), drawBuffersReduced.data());
         OGL_CALL(glViewport, 0, 0, width, height);
     }

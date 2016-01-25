@@ -22,15 +22,15 @@ namespace cgu {
         mesh(renderMesh),
         drawProgram(prog)
     {
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
         OGL_CALL(glBufferData, GL_ARRAY_BUFFER, mesh->faceVertices.size() * sizeof(FaceVertex),
             mesh->faceVertices.data(), GL_STATIC_DRAW);
 
-        FillIndexBuffer(iBuffer.get(), mesh);
+        FillIndexBuffer(iBuffer, mesh);
 
         for (unsigned int idx = 0; idx < mesh->subMeshes.size(); ++idx) {
             iBuffers.emplace_back(std::move(BufferRAII()));
-            FillIndexBuffer(iBuffers[idx].get(), mesh->subMeshes[idx]);
+            FillIndexBuffer(iBuffers[idx], mesh->subMeshes[idx]);
         }
 
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
@@ -110,11 +110,11 @@ namespace cgu {
         assert(attribBinds.GetVertexAttributes().size() == 0);
         auto shaderPositions = program->GetAttributeLocations({ "pos", "tex", "normal" });
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
-        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer.get(), iBuffer.get()));
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
+        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer, iBuffer));
         GenerateVertexAttribute(attribBinds.GetVertexAttributes().back(), mesh, shaderPositions);
         for (unsigned int idx = 0; idx < mesh->subMeshes.size(); ++idx) {
-            attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer.get(), iBuffers[idx].get()));
+            attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer, iBuffers[idx]));
             GenerateVertexAttribute(attribBinds.GetVertexAttributes().back(), mesh->subMeshes[idx], shaderPositions);
         }
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
@@ -131,7 +131,7 @@ namespace cgu {
     void MeshRenderable::Draw(GPUProgram* program, const ShaderMeshAttributes& attribBinds) const
     {
         program->UseProgram();
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer.get());
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
         DrawSubMesh<true>(program, attribBinds, attribBinds.GetVertexAttributes()[0], mesh);
         for (unsigned int idx = 0; idx < iBuffers.size(); ++idx) {
             DrawSubMesh<true>(program, attribBinds, attribBinds.GetVertexAttributes()[idx + 1], mesh->subMeshes[idx]);

@@ -32,7 +32,7 @@ namespace cgu {
         for (auto& progName : programNames) {
             // ignore exception and reload whole program
             auto shader = std::move(application->GetShaderManager()->GetResource(progName));
-            shaderObjs.emplace_back(shader->shader.get());
+            shaderObjs.emplace_back(static_cast<GLuint>(shader->shader));
             shaders.emplace_back(std::move(shader));
         }
         LoadInternal(LinkNewProgram(id, shaderObjs));
@@ -104,15 +104,15 @@ namespace cgu {
         program.reset(newProgram);
 
         for (auto& ab : knownVABindings) {
-            ab.second->iBinding = OGL_CALL(glGetAttribLocation, this->program.get(), ab.first.c_str());
+            ab.second->iBinding = OGL_CALL(glGetAttribLocation, this->program, ab.first.c_str());
         }
 
         for (auto& ub : knownUniformBindings) {
-            ub.second->iBinding = OGL_CALL(glGetUniformLocation, this->program.get(), ub.first.c_str());
+            ub.second->iBinding = OGL_CALL(glGetUniformLocation, this->program, ub.first.c_str());
         }
 
         for (auto& ubb : knownUBBindings) {
-            ubb.second->uBinding = OGL_CALL(glGetUniformBlockIndex, this->program.get(), ubb.first.c_str());
+            ubb.second->uBinding = OGL_CALL(glGetUniformBlockIndex, this->program, ubb.first.c_str());
         }
 
         for (auto& bublock : boundUBlocks) {
@@ -120,7 +120,7 @@ namespace cgu {
         }
 
         for (auto& ssbo : knownSSBOBindings) {
-            ssbo.second->uBinding = OGL_CALL(glGetProgramResourceIndex, this->program.get(), GL_SHADER_STORAGE_BLOCK, ssbo.first.c_str());
+            ssbo.second->uBinding = OGL_CALL(glGetProgramResourceIndex, this->program, GL_SHADER_STORAGE_BLOCK, ssbo.first.c_str());
         }
 
         for (auto& ssbo : boundSSBOs) {
@@ -183,7 +183,7 @@ namespace cgu {
             }
             catch (std::out_of_range e) {
                 BindingLocationInternal binding(new shader_binding_desc());
-                binding->iBinding = OGL_CALL(glGetAttribLocation, this->program.get(), name.c_str());
+                binding->iBinding = OGL_CALL(glGetAttribLocation, this->program, name.c_str());
                 result.push_back(knownVABindings.insert(std::make_pair(name, std::move(binding))).first->second.get());
             }
         }
@@ -214,7 +214,7 @@ namespace cgu {
         }
         catch (std::out_of_range e) {
             BindingLocationInternal binding(new shader_binding_desc());
-            binding->iBinding = OGL_CALL(glGetUniformLocation, this->program.get(), uniformName.c_str());
+            binding->iBinding = OGL_CALL(glGetUniformLocation, this->program, uniformName.c_str());
             return knownUniformBindings.insert(std::make_pair(uniformName, std::move(binding))).first->second.get();
         }
     }
@@ -234,7 +234,7 @@ namespace cgu {
             }
             catch (std::out_of_range e) {
                 BindingLocationInternal binding(new shader_binding_desc());
-                binding->iBinding = OGL_CALL(glGetUniformLocation, this->program.get(), name.c_str());
+                binding->iBinding = OGL_CALL(glGetUniformLocation, this->program, name.c_str());
                 result.push_back(knownUniformBindings.insert(std::make_pair(name, std::move(binding))).first->second.get());
             }
         }
@@ -253,7 +253,7 @@ namespace cgu {
         }
         catch (std::out_of_range e) {
             BindingLocationInternal binding(new shader_binding_desc());
-            binding->uBinding = OGL_CALL(glGetUniformBlockIndex, this->program.get(), uBufferName.c_str());
+            binding->uBinding = OGL_CALL(glGetUniformBlockIndex, this->program, uBufferName.c_str());
             if (binding->uBinding == GL_INVALID_INDEX)
                 throw std::out_of_range("Could not find uniform buffer \"" + uBufferName + "\".");
             return knownUBBindings.insert(std::make_pair(uBufferName, std::move(binding))).first->second.get();
@@ -394,7 +394,7 @@ namespace cgu {
      */
     void GPUProgram::BindUniformBlock(BindingLocation name, GLuint bindingPoint) const
     {
-        OGL_CALL(glUniformBlockBinding, program.get(), name->uBinding, bindingPoint);
+        OGL_CALL(glUniformBlockBinding, program, name->uBinding, bindingPoint);
     }
 
     /**
@@ -409,7 +409,7 @@ namespace cgu {
         }
         catch (std::out_of_range e) {
             BindingLocationInternal binding(new shader_binding_desc());
-            binding->uBinding = OGL_CALL(glGetProgramResourceIndex, this->program.get(), GL_SHADER_STORAGE_BLOCK, sBufferName.c_str());
+            binding->uBinding = OGL_CALL(glGetProgramResourceIndex, this->program, GL_SHADER_STORAGE_BLOCK, sBufferName.c_str());
             if (binding->uBinding == GL_INVALID_INDEX)
                 throw std::out_of_range("Could not find uniform buffer \"" + sBufferName + "\".");
             return knownSSBOBindings.insert(std::make_pair(sBufferName, std::move(binding))).first->second.get();
@@ -446,7 +446,7 @@ namespace cgu {
     */
     void GPUProgram::BindShaderBuffer(BindingLocation name, GLuint bindingPoint) const
     {
-        OGL_CALL(glShaderStorageBlockBinding, program.get(), name->uBinding, bindingPoint);
+        OGL_CALL(glShaderStorageBlockBinding, program, name->uBinding, bindingPoint);
     }
 
     /**
@@ -454,7 +454,7 @@ namespace cgu {
      */
     void GPUProgram::UseProgram() const
     {
-        OGL_CALL(glUseProgram, program.get());
+        OGL_CALL(glUseProgram, program);
     }
 
     GLuint GPUProgram::LinkNewProgram(const std::string& name, const std::vector<ShaderRAII>& shdrs) const
@@ -466,7 +466,7 @@ namespace cgu {
                 << errdesc_info("Cannot create program.");
         }
         for (const auto& shader : shdrs) {
-            OGL_CALL(glAttachShader, program, shader.get());
+            OGL_CALL(glAttachShader, program, shader);
         }
         OGL_CALL(glLinkProgram, program);
 
@@ -483,7 +483,7 @@ namespace cgu {
             delete[] strInfoLog;
 
             for (const auto& shader : shdrs) {
-                OGL_CALL(glDetachShader, program, shader.get());
+                OGL_CALL(glDetachShader, program, shader);
             }
             OGL_CALL(glDeleteProgram, program);
 
@@ -492,17 +492,8 @@ namespace cgu {
                 << errdesc_info("Program linking failed.");
         }
         for (const auto& shader : shdrs) {
-            OGL_CALL(glDetachShader, program, shader.get());
+            OGL_CALL(glDetachShader, program, shader);
         }
         return program;
     }
-
-    /*void GPUProgram::ReleaseShaders(const std::vector<GLuint>& shaders)
-    {
-        for (auto shader : shaders) {
-            if (shader != 0) {
-                OGL_CALL(glDeleteShader, shader);
-            }
-        }
-    }*/
 }

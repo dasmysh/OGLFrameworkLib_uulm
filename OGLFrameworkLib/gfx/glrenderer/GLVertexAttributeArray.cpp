@@ -53,7 +53,7 @@ namespace cgu {
     /** Disables all vertex attributes in the array. */
     void GLVertexAttributeArray::DisableAttributes()
     {
-        OGL_CALL(glBindVertexArray, vao.get());
+        OGL_CALL(glBindVertexArray, vao);
         OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, 0);
 
         for (const auto& desc : v_desc) {
@@ -68,7 +68,7 @@ namespace cgu {
     /** Initializes the vertex attribute setup. */
     void GLVertexAttributeArray::StartAttributeSetup() const
     {
-        OGL_CALL(glBindVertexArray, vao.get());
+        OGL_CALL(glBindVertexArray, vao);
         OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
@@ -83,7 +83,7 @@ namespace cgu {
     /** Enables the vertex attribute array. */
     void GLVertexAttributeArray::EnableVertexAttributeArray() const
     {
-        OGL_CALL(glBindVertexArray, vao.get());
+        OGL_CALL(glBindVertexArray, vao);
     }
 
     // ReSharper disable once CppMemberFunctionMayBeStatic
@@ -100,7 +100,7 @@ namespace cgu {
     void GLVertexAttributeArray::UpdateVertexAttributes()
     {
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, v_buffer);
-        OGL_CALL(glBindVertexArray, vao.get());
+        OGL_CALL(glBindVertexArray, vao);
         OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, i_buffer);
 
         for (const auto& desc : v_desc) {

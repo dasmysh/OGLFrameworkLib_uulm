@@ -22,7 +22,7 @@ namespace cgu {
         bindingPoint(bindingPoints.GetBindingPoint(name))
     {
         if (bufferSize > 0) {
-            OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, ssbo.get());
+            OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, ssbo);
             OGL_CALL(glBufferData, GL_SHADER_STORAGE_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
             OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, 0);
             BindBuffer();
@@ -43,12 +43,12 @@ namespace cgu {
 
     void ShaderBufferObject::BindBuffer() const
     {
-        OGL_CALL(glBindBufferBase, GL_SHADER_STORAGE_BUFFER, bindingPoint, ssbo.get());
+        OGL_CALL(glBindBufferBase, GL_SHADER_STORAGE_BUFFER, bindingPoint, ssbo);
     }
 
     void ShaderBufferObject::UploadData(unsigned int offset, unsigned int size, const void* data) const
     {
-        OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, ssbo.get());
+        OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, ssbo);
         if (offset + size > bufferSize) {
             std::vector<int8_t> tmp(offset);
             OGL_CALL(glGetBufferSubData, GL_SHADER_STORAGE_BUFFER, 0, offset, tmp.data());
