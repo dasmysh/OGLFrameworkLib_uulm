@@ -186,7 +186,7 @@ namespace cgu {
         }
 
         texDesc.bytesPP = dataDim * componentSize;
-        if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RED)
+        /*if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RED)
             texDesc.internalFormat = GL_R8;
         else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RG)
             texDesc.internalFormat = GL_RG8;
@@ -209,7 +209,15 @@ namespace cgu {
         else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RGB)
             texDesc.internalFormat = GL_RGB32F;
         else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RGBA)
-            texDesc.internalFormat = GL_RGBA32F;
+            texDesc.internalFormat = GL_RGBA32F;*/
+        if (texDesc.format == GL_RED)
+            texDesc.internalFormat = GL_R8;
+        else if (texDesc.format == GL_RG)
+            texDesc.internalFormat = GL_RG8;
+        else if (texDesc.format == GL_RGB)
+            texDesc.internalFormat = GL_RGB8;
+        else if (texDesc.format == GL_RGBA)
+            texDesc.internalFormat = GL_RGBA8;
 
         scaleValue = (format_str == "USHORT_12") ? 16 : 1;
         rawFileName = path + "/" + raw_file;
