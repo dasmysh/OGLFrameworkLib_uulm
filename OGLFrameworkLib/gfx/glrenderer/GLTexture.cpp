@@ -23,14 +23,13 @@ namespace cgu {
      * @param arraySize the array size
      */
     GLTexture::GLTexture(unsigned int w, unsigned int h, unsigned int arraySize, const TextureDescriptor& desc) :
-        id{ 0, GL_TEXTURE_2D_ARRAY },
+        id{ GL_TEXTURE_2D_ARRAY },
         descriptor(desc),
         width(w),
         height(h),
         depth(arraySize),
         mipMapLevels(1)
     {
-        OGL_CALL(glGenTextures, 1, &id.textureId);
         OGL_CALL(glBindTexture, GL_TEXTURE_2D_ARRAY, id.textureId);
         OGL_CALL(glTexStorage3D, GL_TEXTURE_2D_ARRAY, mipMapLevels, descriptor.internalFormat, width, height, depth);
         OGL_CALL(glBindTexture, GL_TEXTURE_2D_ARRAY, 0);
@@ -38,14 +37,13 @@ namespace cgu {
     }
 
     GLTexture::GLTexture(unsigned int size, const TextureDescriptor& desc) :
-        id{ 0, GL_TEXTURE_1D },
+        id{ GL_TEXTURE_1D },
         descriptor(desc),
         width(size),
         height(1),
         depth(1),
         mipMapLevels(1)
     {
-        OGL_CALL(glGenTextures, 1, &id.textureId);
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glTexStorage1D, id.textureType, mipMapLevels, descriptor.internalFormat, width);
         OGL_CALL(glBindTexture, id.textureType, 0);
@@ -61,14 +59,13 @@ namespace cgu {
      * @param data the textures data
      */
     GLTexture::GLTexture(unsigned int w, unsigned int h, const TextureDescriptor& desc, const void* data) :
-        id{ 0, GL_TEXTURE_2D },
+        id{ GL_TEXTURE_2D },
         descriptor(desc),
         width(w),
         height(h),
         depth(1),
         mipMapLevels(1)
     {
-        OGL_CALL(glGenTextures, 1, &id.textureId);
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glTexStorage2D, id.textureType, mipMapLevels, descriptor.internalFormat, width, height);
         if (data) {
@@ -90,7 +87,7 @@ namespace cgu {
     * @param data the textures data
     */
     GLTexture::GLTexture(unsigned int w, unsigned int h, unsigned int d, unsigned int numMipLevels, const TextureDescriptor& desc, const void* data) :
-        id{ 0, GL_TEXTURE_3D },
+        id{ GL_TEXTURE_3D },
         descriptor(desc),
         width(w),
         height(h),
@@ -98,7 +95,6 @@ namespace cgu {
         mipMapLevels(numMipLevels)
     {
         mipMapLevels = glm::min(mipMapLevels, glm::max(1U, static_cast<unsigned int>(glm::log2(static_cast<float>(glm::max(glm::max(width, height), depth)))) + 1));
-        OGL_CALL(glGenTextures, 1, &id.textureId);
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glTexStorage3D, id.textureType, mipMapLevels, descriptor.internalFormat, width, height, depth);
         if (data) {
@@ -114,8 +110,8 @@ namespace cgu {
      * @param texID the texture id
      * @param texType the textures type
      */
-    GLTexture::GLTexture(GLuint texID, GLenum texType, const TextureDescriptor& desc) :
-        id{ texID, texType },
+    GLTexture::GLTexture(TextureRAII texID, GLenum texType, const TextureDescriptor& desc) :
+        id{ std::move(texID), texType },
         descriptor(desc),
         width(0),
         height(0),
@@ -134,14 +130,7 @@ namespace cgu {
     }
 
     /** Destructor. */
-    GLTexture::~GLTexture()
-    {
-        if (id.textureId != 0) {
-            OGL_CALL(glBindTexture, id.textureType, 0);
-            OGL_CALL(glDeleteTextures, 1, &id.textureId);
-            id.textureId = 0;
-        }
-    }
+    GLTexture::~GLTexture() = default;
 
     /** Initializes the sampler. */
     void GLTexture::InitSampling() const
@@ -233,8 +222,7 @@ namespace cgu {
         assert(data.size() != 0);
 
         // TODO: create external PBOs for real asynchronous up-/download [8/19/2015 Sebastian Maisch]
-        GLuint pbo;
-        OGL_CALL(glGenBuffers, 1, &pbo);
+        BufferRAII pbo;
         OGL_CALL(glBindBuffer, GL_PIXEL_PACK_BUFFER, pbo);
         OGL_CALL(glBufferData, GL_PIXEL_PACK_BUFFER, data.size(), nullptr, GL_STREAM_READ);
 
@@ -250,7 +238,6 @@ namespace cgu {
 
         OGL_CALL(glBindTexture, id.textureType, 0);
         OGL_CALL(glBindBuffer, GL_PIXEL_PACK_BUFFER, 0);
-        OGL_CALL(glDeleteBuffers, 1, &pbo);
     }
 
     /**
@@ -261,9 +248,8 @@ namespace cgu {
     {
         assert(data.size() != 0);
 
-        // TODO: create external PBOs for real asynchronus up-/download [8/19/2015 Sebastian Maisch]
-        GLuint pbo;
-        OGL_CALL(glGenBuffers, 1, &pbo);
+        // TODO: create external PBOs for real asynchronous up-/download [8/19/2015 Sebastian Maisch]
+        BufferRAII pbo;
         OGL_CALL(glBindBuffer, GL_PIXEL_UNPACK_BUFFER, pbo);
         OGL_CALL(glBufferData, GL_PIXEL_UNPACK_BUFFER, data.size(), nullptr, GL_STREAM_DRAW);
 
@@ -284,7 +270,6 @@ namespace cgu {
 
         OGL_CALL(glBindTexture, id.textureType, 0);
         OGL_CALL(glBindBuffer, GL_PIXEL_UNPACK_BUFFER, 0);
-        OGL_CALL(glDeleteBuffers, 1, &pbo);
     }
 
     /**

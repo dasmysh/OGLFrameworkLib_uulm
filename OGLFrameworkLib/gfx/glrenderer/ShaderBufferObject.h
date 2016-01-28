@@ -34,7 +34,7 @@ namespace cgu {
 
     private:
         /** holds the buffer id. */
-        GLuint ssbo;
+        BufferRAII ssbo;
         /** Holds the current size of the buffer. */
         unsigned int bufferSize;
         /** holds the shader buffer objects binding points. */

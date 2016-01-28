@@ -54,15 +54,15 @@ namespace cgu {
         /** Holds the screen quad renderable. */
         cgu::ScreenQuadRenderable* renderable;
         /** Holds the GPU program used for glare detection. */
-        GPUProgram* glareDetectProgram;
+        std::shared_ptr<GPUProgram> glareDetectProgram;
         /** Holds the glare program uniform ids. */
         std::vector<BindingLocation> glareUniformIds;
         /** Holds the GPU program used for blurring. */
-        GPUProgram* blurProgram;
+        std::shared_ptr<GPUProgram> blurProgram;
         /** Holds the blur program uniform ids. */
         std::vector<BindingLocation> blurUniformIds;
         /** Holds the GPU program used for combining the final image. */
-        GPUProgram* combineProgram;
+        std::shared_ptr<GPUProgram> combineProgram;
         /** Holds the combine program uniform ids. */
         std::vector<BindingLocation> combineUniformIds;
         /** Holds the number of compute groups. */

@@ -17,11 +17,9 @@ namespace cgu {
      *  @param drawProg the GPU program for drawing the volume
      *  @param app the application object
      */
-    VolumeCubeRenderable::VolumeCubeRenderable(GPUProgram* drawProg, ApplicationBase* app) :
-        vBuffer(0),
-        iBuffer(0),
+    VolumeCubeRenderable::VolumeCubeRenderable(std::shared_ptr<GPUProgram> drawProg, ApplicationBase* app) :
         backProgram(app->GetGPUProgramManager()->GetResource("shader/volume/renderCubeCoordinates.vp|shader/volume/renderCubeCoordinates.fp")),
-        drawProgram(drawProg),
+        drawProgram(std::move(drawProg)),
         application(app)
     {
         backProgram->BindUniformBlock(perspectiveProjectionUBBName, *app->GetUBOBindingPoints());
@@ -51,19 +49,15 @@ namespace cgu {
      *  @param orig the original VolumeCubeRenderable
      */
     VolumeCubeRenderable::VolumeCubeRenderable(VolumeCubeRenderable&& orig) :
-        vBuffer(orig.vBuffer),
-        iBuffer(orig.iBuffer),
-        backProgram(orig.backProgram),
+        vBuffer(std::move(orig.vBuffer)),
+        iBuffer(std::move(orig.iBuffer)),
+        backProgram(std::move(orig.backProgram)),
         backAttribBinds(std::move(orig.backAttribBinds)),
-        drawProgram(orig.drawProgram),
+        drawProgram(std::move(orig.drawProgram)),
         drawAttribBinds(std::move(orig.drawAttribBinds)),
         application(orig.application)
 
     {
-        orig.vBuffer = 0;
-        orig.iBuffer = 0;
-        orig.backProgram = nullptr;
-        orig.drawProgram = nullptr;
     }
 
     /**
@@ -88,24 +82,17 @@ namespace cgu {
         this->~VolumeCubeRenderable();
         backAttribBinds = std::move(orig.backAttribBinds);
         drawAttribBinds = std::move(orig.drawAttribBinds);
-        backProgram = orig.backProgram;
-        orig.backProgram = nullptr;
-        drawProgram = orig.drawProgram;
-        orig.drawProgram = nullptr;
-        vBuffer = orig.vBuffer;
-        orig.vBuffer = 0;
-        iBuffer = orig.iBuffer;
-        orig.iBuffer = 0;
+        backProgram = std::move(orig.backProgram);
+        drawProgram = std::move(orig.drawProgram);
+        vBuffer = std::move(orig.vBuffer);
+        iBuffer = std::move(orig.iBuffer);
         return *this;
     }
 
     /**
      *  Destructor.
      */
-    VolumeCubeRenderable::~VolumeCubeRenderable()
-    {
-        DeleteVertexIndexBuffers();
-    }
+    VolumeCubeRenderable::~VolumeCubeRenderable() = default;
 
     /**
      *  Creates the vertex- and index-buffers and their vertex attribute bindings.
@@ -122,7 +109,6 @@ namespace cgu {
         vertices.push_back(VolumeCubeVertex{ glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 1.0f) });
         vertices.push_back(VolumeCubeVertex{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f) });
 
-        OGL_CALL(glGenBuffers, 1, &vBuffer);
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
         OGL_CALL(glBufferData, GL_ARRAY_BUFFER, 8 * sizeof(VolumeCubeVertex), vertices.data(), GL_STATIC_DRAW);
 
@@ -134,28 +120,11 @@ namespace cgu {
             1, 3, 5, 5, 3, 7,
             0, 4, 2, 2, 4, 6
         };
-        OGL_CALL(glGenBuffers, 1, &iBuffer);
         OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer);
         OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned int), indexData, GL_STATIC_DRAW);
 
-        FillVertexAttributeBindings(backProgram, backAttribBinds);
-        FillVertexAttributeBindings(drawProgram, drawAttribBinds);
-    }
-
-    /**
-     *  Deletes the vertex- and index-buffers.
-     */
-    void VolumeCubeRenderable::DeleteVertexIndexBuffers()
-    {
-        if (vBuffer != 0) {
-            OGL_CALL(glDeleteBuffers, 1, &vBuffer);
-            vBuffer = 0;
-        }
-
-        if (iBuffer != 0) {
-            OGL_CALL(glDeleteBuffers, 1, &iBuffer);
-            iBuffer = 0;
-        }
+        FillVertexAttributeBindings(backProgram.get(), backAttribBinds);
+        FillVertexAttributeBindings(drawProgram.get(), drawAttribBinds);
     }
 
     /**
@@ -165,7 +134,7 @@ namespace cgu {
     {
         glCullFace(GL_FRONT);
         backProgram->UseProgram();
-        Draw(backProgram, backAttribBinds);
+        Draw(backProgram.get(), backAttribBinds);
     }
 
     /**
@@ -177,7 +146,7 @@ namespace cgu {
         drawProgram->UseProgram();
         drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[3], stepSize);
         drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[4], mipLevel);
-        Draw(drawProgram, drawAttribBinds);
+        Draw(drawProgram.get(), drawAttribBinds);
     }
 
 

@@ -41,10 +41,10 @@ namespace cgu {
 
     GPUProgramManager::~GPUProgramManager() = default;
 
-    void GPUProgramManager::LoadResource(const std::string& resId, ResourceType* resourcePtr)
+    void GPUProgramManager::LoadResource(const std::string& resId, std::shared_ptr<ResourceType>& spResource)
     {
         try {
-            resourcePtr->Load();
+            spResource = std::move(LoadingPolicy::CreateResource(resId, application));
         }
         catch (const shader_compiler_error& compilerError) {
             auto filename = boost::get_error_info<boost::errinfo_file_name>(compilerError);
@@ -83,7 +83,7 @@ namespace cgu {
     {
         for (auto& program : resources) {
             try {
-                program.second->RecompileProgram();
+                if (!program.second.expired()) program.second.lock()->RecompileProgram();
             }
             catch (shader_compiler_error compilerError) {
                 HandleShaderCompileException(compilerError);

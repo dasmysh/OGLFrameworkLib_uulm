@@ -90,6 +90,31 @@ namespace cgu {
     OBJMesh::OBJMesh(const std::string& objFilename, ApplicationBase* app) :
         Resource(objFilename, app)
     {
+        std::string currLine;
+        auto filename = FindResourceLocation(GetParameters()[0]);
+        std::ifstream inFile(filename);
+
+        if (!inFile.is_open()) {
+            LOG(ERROR) << "Cannot open file \"" << filename.c_str() << "\".";
+            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(id)
+                << errdesc_info("Cannot open file.");
+        }
+
+        createMeshData(inFile);
+
+        inFile.clear();
+        inFile.seekg(0, std::ios_base::beg);
+
+        loadMeshData(inFile);
+
+        while (inFile.good()) {
+            std::getline(inFile, currLine);
+            boost::trim(currLine);
+
+            if (currLine.length() == 0 || boost::starts_with(currLine, "#"))
+                // ReSharper disable once CppRedundantControlFlowJump
+                continue; // comment or empty line
+        }
     }
 
     /** Default copy constructor. */
@@ -115,41 +140,6 @@ namespace cgu {
 
     /** Destructor. */
     OBJMesh::~OBJMesh() = default;
-
-    void OBJMesh::Load()
-    {
-        std::string currLine;
-        auto filename = FindResourceLocation(GetParameters()[0]);
-        std::ifstream inFile(filename);
-
-        if (!inFile.is_open()) {
-            LOG(ERROR) << "Cannot open file \"" << filename.c_str() << "\".";
-            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(id)
-                << errdesc_info("Cannot open file.");
-        }
-
-        createMeshData(inFile);
-
-        inFile.clear();
-        inFile.seekg(0, std::ios_base::beg);
-
-        loadMeshData(inFile);
-
-        while (inFile.good()) {
-            std::getline(inFile, currLine);
-            boost::trim(currLine);
-
-            if (currLine.length() == 0 || boost::starts_with(currLine, "#"))
-            // ReSharper disable once CppRedundantControlFlowJump
-                continue; // comment or empty line
-        }
-        Resource::Load();
-    }
-
-    void OBJMesh::Unload()
-    {
-        Resource::Unload();
-    }
 
     /**
      * Creates the internal structure of the mesh.
@@ -218,7 +208,7 @@ namespace cgu {
         std::string currLine;
         boost::smatch lineMatch;
         SubMesh* subMesh = this;
-        std::vector<MaterialLibrary*> mtlLibraries;
+        std::vector<std::shared_ptr<MaterialLibrary>> mtlLibraries;
         SubMeshMaterialChunk mtlChunk;
         std::vector<std::unique_ptr<CacheEntry> > vfCache(vertices.capacity());
         std::vector<std::unique_ptr<CacheEntry> > vlCache(vertices.capacity());
@@ -282,7 +272,7 @@ namespace cgu {
             } else if (boost::regex_match(currLine, lineMatch, reg_surf)) {
                 OBJMesh::addSurfToMesh(subMesh, currLine);
             } else if (boost::regex_match(currLine, lineMatch, reg_mtllib)) {
-                mtlLibraries = getMtlLibraries(currLine);
+                mtlLibraries = std::move(getMtlLibraries(currLine));
             } else if (boost::regex_match(currLine, lineMatch, reg_usemtl)) {
                 mtlChunk = addMtlChunkToMesh(subMesh, mtlChunk, mtlLibraries, lineMatch[1].str());
             }
@@ -294,18 +284,18 @@ namespace cgu {
         if (!this->faceHasNormal) CalculateNormals();
     }
 
-    std::vector<MaterialLibrary*> OBJMesh::getMtlLibraries(const std::string& line) const
+    std::vector<std::shared_ptr<MaterialLibrary>> OBJMesh::getMtlLibraries(const std::string& line) const
     {
         boost::regex reg_mtllibname("\\s+(\\w+\\.mtl)");
         boost::sregex_iterator i(line.begin(), line.end(), reg_mtllibname);
         boost::sregex_iterator j;
-        std::vector<MaterialLibrary*> result;
+        std::vector<std::shared_ptr<MaterialLibrary>> result;
         while (i != j) {
             boost::filesystem::path meshFile{ id };
             auto mtllibname = meshFile.parent_path().string() + "/" + (*i++)[1].str();
-            result.push_back(application->GetMaterialLibManager()->GetResource(mtllibname));
+            result.emplace_back(application->GetMaterialLibManager()->GetResource(mtllibname));
         }
-        return result;
+        return std::move(result);
     }
 
     void OBJMesh::loadGroup(SubMesh*)
@@ -313,18 +303,18 @@ namespace cgu {
     }
 
     SubMeshMaterialChunk OBJMesh::addMtlChunkToMesh(SubMesh* mesh, SubMeshMaterialChunk& oldChunk,
-        std::vector<MaterialLibrary*> matLibs, const std::string& newMtl)
+        const std::vector<std::shared_ptr<MaterialLibrary>>& matLibs, const std::string& newMtl)
     {
         mesh->FinishMaterial(oldChunk);
 
         // get new material
-        const Material* newMat = nullptr;
-        for (const auto lib : matLibs) {
+        std::shared_ptr<const Material> newMat;
+        for (const auto& lib : matLibs) {
             if (lib->HasResource(newMtl)) {
                 newMat = lib->GetResource(newMtl);
             }
         }
-        return SubMeshMaterialChunk(oldChunk, newMat);
+        return SubMeshMaterialChunk(oldChunk, std::move(newMat));
     }
 
     void OBJMesh::addPointsToMesh(SubMesh* mesh, const std::string& line) const

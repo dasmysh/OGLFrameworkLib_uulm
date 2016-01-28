@@ -33,27 +33,13 @@ namespace cgu {
         Volume& operator=(Volume&&);
         virtual ~Volume();
 
-        void Load() override;
-        void Unload() override;
-
         std::unique_ptr<GLTexture> Load3DTexture(unsigned int mipLevels) const;
 
         const glm::vec3& GetScaling() const { return cellSize; }
 
-        std::unique_ptr<MinMaxVolume> GetMinMaxTexture() const;
-        Volume* GetSpeedVolume() const;
-        // Volume* GetHalfResTexture(bool denoise) const;
-        // std::unique_ptr<VolumeBrickOctree> GetBrickedVolume(const glm::vec3& scale, int denoiseLevel) const;
+        std::shared_ptr<Volume> GetSpeedVolume() const;
         const TextureDescriptor& GetTextureDescriptor() const { return texDesc; }
         const glm::uvec3& GetSize() const { return volumeSize; }
-
-        // glm::uvec3 GetBrickTextureSize(const glm::uvec3& pos, const glm::uvec3& size) const;
-
-
-        /*void ReadRaw(std::vector<uint8_t>& data, const glm::uvec3& pos, const glm::uvec3& dataSize,
-            const glm::uvec3& texSize) const;
-        static void WriteRaw(std::vector<uint8_t>& data, std::fstream& fileStream, const glm::uvec3& pos,
-            const glm::uvec3& dataSize, const glm::uvec3& volumeSize, unsigned int bytesPV);*/
 
     private:
         /** Holds the textures size. */

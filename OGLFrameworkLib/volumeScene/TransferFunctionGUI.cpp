@@ -24,18 +24,16 @@ namespace cgu {
         quad(nullptr),
         quadTex(nullptr),
         tfTex(nullptr),
+        screenAlignedProg(std::move(app->GetGPUProgramManager()->GetResource("shader/gui/tfRenderGUI.vp|shader/gui/tfRenderGUI.fp"))),
+        screenAlignedTextureUniform(screenAlignedProg->GetUniformLocation("guiTex")),
         selection(-1),
         draggingSelection(false),
         lastButtonAction(0),
-        tfProgram(nullptr),
+        tfProgram(std::move(app->GetGPUProgramManager()->GetResource("shader/gui/tfPicker.vp|shader/gui/tfPicker.fp"))),
         orthoUBO(new GLUniformBuffer("tfOrthoProjection", sizeof(OrthoProjectionBuffer), app->GetUBOBindingPoints())),
         tfVBO(0)
     {
-        screenAlignedProg = app->GetGPUProgramManager()->GetResource("shader/gui/tfRenderGUI.vp|shader/gui/tfRenderGUI.fp");
-        screenAlignedTextureUniform = screenAlignedProg->GetUniformLocation("guiTex");
         screenAlignedProg->BindUniformBlock("tfOrthoProjection", *app->GetUBOBindingPoints());
-
-        tfProgram = app->GetGPUProgramManager()->GetResource("shader/gui/tfPicker.vp|shader/gui/tfPicker.fp");
         tfProgram->BindUniformBlock("tfOrthoProjection", *app->GetUBOBindingPoints());
 
         std::array<glm::vec2, 4> quadVerts;
@@ -243,10 +241,7 @@ namespace cgu {
 
     void TransferFunctionGUI::UpdateTF(bool createVAO)
     {
-        if (createVAO) {
-            if (tfVBO != 0) glDeleteBuffers(1, &tfVBO);
-            OGL_CALL(glGenBuffers, 1, &tfVBO);
-        }
+        if (createVAO) tfVBO = std::move(BufferRAII());
 
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, tfVBO);
         OGL_CALL(glBufferData, GL_ARRAY_BUFFER, (tf_.points().size() + 2) * sizeof(tf::ControlPoint),

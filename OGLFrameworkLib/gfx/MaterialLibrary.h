@@ -20,9 +20,9 @@ namespace cgu {
 
     struct MaterialResourceLoadingPolicy
     {
-        static std::unique_ptr<Material> CreateResource(const std::string&, ApplicationBase*)
+        static std::shared_ptr<Material> CreateResource(const std::string&, ApplicationBase*)
         {
-            return std::move(std::make_unique<Material>());
+            return std::move(std::make_shared<Material>());
         }
 
         static bool IsResourceLoaded(const Material*) { return true; }
@@ -45,12 +45,9 @@ namespace cgu {
         MaterialLibrary& operator=(MaterialLibrary&&);
         virtual ~MaterialLibrary();
 
-        void Load() override;
-        void Unload() override;
-
     private:
         glm::vec3 parseColor(const boost::smatch& matches) const;
-        const GLTexture2D* parseTexture(const std::string& matches, const std::string& params) const;
+        std::shared_ptr<const GLTexture2D> parseTexture(const std::string& matches, const std::string& params) const;
         float parseFloatParameter(const std::string& paramName, const std::string& matches, float defaultValue) const;
         static void notImplemented(const std::string& feature);
     };

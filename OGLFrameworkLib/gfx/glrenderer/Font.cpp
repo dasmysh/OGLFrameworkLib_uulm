@@ -35,60 +35,6 @@ namespace cgu {
     {
         fm.baseLine = 0.0f;
         fm.sizeNormalization = 1.0f;
-    }
-
-    /** Destructor. */
-    Font::~Font()
-    {
-        if (IsLoaded()) UnloadLocal();
-    }
-
-    /** Copy constructor. */
-    Font::Font(const Font& rhs) : Font(rhs.id, rhs.application)
-    {
-        if (rhs.IsLoaded()) Font::Load();
-    }
-
-    /** Copy assignment operator. */
-    Font& Font::operator=(const Font& rhs)
-    {
-        Resource* tRes = this;
-        *tRes = static_cast<const Resource&>(rhs);
-        Font tmp{ rhs };
-        std::swap(fontPages, tmp.fontPages);
-        std::swap(fm, tmp.fm);
-        std::swap(fontMetrics, tmp.fontMetrics);
-        std::swap(fontMetricsBindingPoint, tmp.fontMetricsBindingPoint);
-        return *this;
-    }
-
-    /** Move constructor. */
-    Font::Font(Font&& orig) :
-        Resource(std::move(orig)),
-        fontPages(std::move(orig.fontPages)),
-        fm(std::move(orig.fm)),
-        fontMetrics(std::move(orig.fontMetrics)),
-        fontMetricsBindingPoint(orig.fontMetricsBindingPoint)
-    {
-    }
-
-    /** Move assignment operator. */
-    Font& Font::operator=(Font&& orig)
-    {
-        if (this != &orig) {
-            this->~Font();
-            Resource* tRes = this;
-            *tRes = static_cast<Resource&&> (std::move(orig));
-            fontPages = std::move(orig.fontPages);
-            fm = std::move(orig.fm);
-            fontMetrics = std::move(orig.fontMetrics);
-            fontMetricsBindingPoint = orig.fontMetricsBindingPoint;
-        }
-        return *this;
-    }
-
-    void Font::Load()
-    {
         using boost::property_tree::ptree;
         ptree pt;
 
@@ -117,14 +63,16 @@ namespace cgu {
                 texHeight = v.second.get<unsigned int>("<xmlattr>.scaleH");
                 fTexHeight = static_cast<float> (texHeight);
                 fm.pages.reserve(v.second.get<unsigned int>("<xmlattr>.pages"));
-            } else if (v.first == "pages") {
+            }
+            else if (v.first == "pages") {
                 for (const ptree::value_type& pg : v.second) {
                     font_page page;
                     page.id = pg.second.get<unsigned int>("<xmlattr>.id");
                     page.filename = pg.second.get<std::string>("<xmlattr>.file");
                     fm.pages.push_back(page);
                 }
-            } else if (v.first == "chars") {
+            }
+            else if (v.first == "chars") {
                 auto charCount = v.second.get<unsigned int>("<xmlattr>.count");
                 assert(charCount == 96); // 95 printable + invalid ...
                 fm.chars.reserve(charCount);
@@ -165,8 +113,47 @@ namespace cgu {
             fontMetrics->UploadData(i * sizeof(glyph_metrics),
                 sizeof(glyph_metrics), &fm.chars[i].metrics);
         }
+    }
 
-        Resource::Load();
+    /** Destructor. */
+    Font::~Font() = default;
+
+    /** Copy constructor. */
+    Font::Font(const Font& rhs) : Font(rhs.id, rhs.application)
+    {
+    }
+
+    /** Copy assignment operator. */
+    Font& Font::operator=(const Font& rhs)
+    {
+        Font tmp{ rhs };
+        std::swap(*this, tmp);
+        return *this;
+    }
+
+    /** Move constructor. */
+    Font::Font(Font&& orig) :
+        Resource(std::move(orig)),
+        fontPages(std::move(orig.fontPages)),
+        fm(std::move(orig.fm)),
+        fontMetrics(std::move(orig.fontMetrics)),
+        fontMetricsBindingPoint(orig.fontMetricsBindingPoint)
+    {
+    }
+
+    /** Move assignment operator. */
+    Font& Font::operator=(Font&& orig)
+    {
+        if (this != &orig) {
+            this->~Font();
+            Resource* tRes = this;
+            *tRes = static_cast<Resource&&> (std::move(orig));
+            fontPages = std::move(orig.fontPages);
+            fm = std::move(orig.fm);
+            fontMetrics = std::move(orig.fontMetrics);
+            fontMetricsBindingPoint = orig.fontMetricsBindingPoint;
+        }
+        return *this;
     }
 
     /**
@@ -197,21 +184,5 @@ namespace cgu {
     const font_metrics& Font::GetFontMetrics() const
     {
         return fm;
-    }
-
-    void Font::UnloadLocal()
-    {
-        LOG(INFO) << L"Destructor call of font " << id.c_str();
-        fontPages.reset();
-        fontMetrics.reset();
-        fm.chars.resize(0);
-        fm.pages.resize(0);
-
-    }
-
-    void Font::Unload()
-    {
-        UnloadLocal();
-        Resource::Unload();
     }
 }

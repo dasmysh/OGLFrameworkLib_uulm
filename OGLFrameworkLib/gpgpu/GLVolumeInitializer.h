@@ -23,12 +23,12 @@ namespace cgu {
             GLVolumeInitializer(unsigned int width, unsigned int height, unsigned int depth, const TextureDescriptor& desc);
             virtual ~GLVolumeInitializer();
 
-            Volume* InitChecker(const std::string& filename, const glm::uvec3& checkerSize, ApplicationBase* app) const;
-            Volume* InitStripes(const std::string& filename, unsigned int stripeSize, ApplicationBase* app) const;
-            Volume* InitSpherical(const std::string& filename, const glm::vec3& sphereCenter, const glm::vec3& sphereScale, ApplicationBase* app) const;
+            std::shared_ptr<Volume> InitChecker(const std::string& filename, const glm::uvec3& checkerSize, ApplicationBase* app) const;
+            std::shared_ptr<Volume> InitStripes(const std::string& filename, unsigned int stripeSize, ApplicationBase* app) const;
+            std::shared_ptr<Volume> InitSpherical(const std::string& filename, const glm::vec3& sphereCenter, const glm::vec3& sphereScale, ApplicationBase* app) const;
 
         private:
-            Volume* InitGeneral(const std::string& filename, GPUProgram* initProg,
+            std::shared_ptr<Volume> InitGeneral(const std::string& filename, GPUProgram* initProg,
                 const std::vector<BindingLocation>& uniformNames, ApplicationBase* app,
                 std::function<void(const glm::uvec3&, const glm::uvec3&, const TextureDescriptor&, std::fstream&)> chunkInitialize) const;
             static void ReadRaw(std::vector<uint8_t>& data, std::fstream& fileStream, const glm::uvec3& pos,

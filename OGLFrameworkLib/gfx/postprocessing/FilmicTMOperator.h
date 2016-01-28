@@ -50,7 +50,7 @@ namespace cgu {
 
     private:
         /** Holds the shader used for tone-mapping. */
-        GPUProgram* tmProgram;
+        std::shared_ptr<GPUProgram> tmProgram;
         /** Holds the screen renderable for the tone-mapping. */
         cgu::ScreenQuadRenderable* renderable;
         /** Holds the shader uniform ids. */

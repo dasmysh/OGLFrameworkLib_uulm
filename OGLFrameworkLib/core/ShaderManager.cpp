@@ -37,10 +37,10 @@ namespace cgu {
     /** Default destructor. */
     ShaderManager::~ShaderManager() = default;
 
-    void ShaderManager::LoadResource(const std::string& resId, ResourceType* resourcePtr)
+    void ShaderManager::LoadResource(const std::string& resId, std::shared_ptr<ResourceType>& spResource)
     {
         try {
-            resourcePtr->Load();
+            spResource = std::move(LoadingPolicy::CreateResource(resId, application));
         }
         catch (const shader_compiler_error&) {
             // no compiler error handling, this is done by the program manager

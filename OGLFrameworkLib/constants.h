@@ -27,8 +27,8 @@ static const char* orthoProjectionUBBName = "orthoProjection";
 static const char* perspectiveProjectionUBBName = "perspectiveTransform";
 
 /** Holds the number of buffers used for dynamic buffering. */
-static unsigned int NUM_DYN_BUFFERS = 5;
+static const unsigned int NUM_DYN_BUFFERS = 5;
 /** Holds the timeout to wait for asynchronous buffers. */
-static GLuint64 ASYNC_TIMEOUT = 3000000;
+static const GLuint64 ASYNC_TIMEOUT = 3000000;
 
 #endif /* CONSTANTS_H */

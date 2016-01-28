@@ -31,17 +31,12 @@ namespace cgu {
         GLTexture2D& operator=(GLTexture2D&&);
         virtual ~GLTexture2D();
 
-        void Load() override;
-        void Unload() override;
-
         GLTexture* GetTexture();
         const GLTexture* GetTexture() const;
 
     private:
         /** Holds the texture. */
         std::unique_ptr<GLTexture> texture;
-
-        void UnloadLocal();
     };
 }
 

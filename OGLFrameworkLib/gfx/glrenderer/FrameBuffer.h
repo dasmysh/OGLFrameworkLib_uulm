@@ -57,12 +57,10 @@ namespace cgu {
         unsigned int GetHeight() const { return height; };
 
     private:
-        void Destroy();
-
         static unsigned int findAttachment(GLenum internalFormat, unsigned int& colorAtt, std::vector<GLenum> &drawBuffers);
 
         /** holds the frame buffers OpenGL name. */
-        GLuint fbo;
+        FramebufferRAII fbo;
         /** Holds whether this represents the back buffer or not. */
         bool isBackbuffer;
         /** holds the frame buffer type. */
@@ -72,7 +70,7 @@ namespace cgu {
         /** Holds the a list of color attachments for the textures. */
         std::vector<GLenum> drawBuffers;
         /** holds the frame buffers render buffers to render to. */
-        std::vector<GLuint> renderBuffers;
+        std::vector<RenderbufferRAII> renderBuffers;
         /** holds the frame buffers width. */
         unsigned int width;
         /** holds the frame buffers height. */

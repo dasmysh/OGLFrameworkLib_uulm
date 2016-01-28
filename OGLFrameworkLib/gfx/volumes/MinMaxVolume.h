@@ -40,15 +40,15 @@ namespace cgu {
         /** Holds the texture containing the min/max data. */
         std::unique_ptr<GLTexture> minMaxTexture;
         /** Holds the GPUProgram for generating the lower mip map levels. */
-        GPUProgram* mipLevelsProgram;
+        std::shared_ptr<GPUProgram> mipLevelsProgram;
         /** Holds the binding locations for the program generating the lower mip map levels. */
         std::vector<BindingLocation> mipLevelsUniformNames;
         /** Holds the GPUProgram for generating the top level min max texture. */
-        GPUProgram* minMaxProgram;
+        std::shared_ptr<GPUProgram> minMaxProgram;
         /** Holds the binding locations for the program generating the top level min max texture. */
         std::vector<BindingLocation> minMaxUniformNames;
         /** Holds the GPUProgram for generating the lower min max levels. */
-        GPUProgram* minMaxLevelsProgram;
+        std::shared_ptr<GPUProgram> minMaxLevelsProgram;
         /** Holds the binding locations for the program generating the lower min max levels. */
         std::vector<BindingLocation> minMaxLevelsUniformNames;
 

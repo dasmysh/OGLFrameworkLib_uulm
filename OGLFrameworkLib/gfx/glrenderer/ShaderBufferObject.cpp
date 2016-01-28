@@ -17,13 +17,10 @@ namespace cgu {
     * @param bindings the binding points used to bind the buffer to
     */
     ShaderBufferObject::ShaderBufferObject(const std::string& name, unsigned int size, ShaderBufferBindingPoints& bindings) :
-        ssbo(0),
         bufferSize(size),
         bindingPoints(bindings),
         bindingPoint(bindingPoints.GetBindingPoint(name))
     {
-        OGL_CALL(glGenBuffers, 1, &ssbo);
-
         if (bufferSize > 0) {
             OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, ssbo);
             OGL_CALL(glBufferData, GL_SHADER_STORAGE_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
@@ -42,13 +39,7 @@ namespace cgu {
     {
     }
 
-    ShaderBufferObject::~ShaderBufferObject()
-    {
-        if (ssbo != 0) {
-            OGL_CALL(glDeleteBuffers, 1, &ssbo);
-            ssbo = 0;
-        }
-    }
+    ShaderBufferObject::~ShaderBufferObject() = default;
 
     void ShaderBufferObject::BindBuffer() const
     {
