@@ -10,6 +10,7 @@
 #define RESOURCE_H
 
 #include "main.h"
+#include <boost/lexical_cast.hpp>
 
 namespace cgu {
 
@@ -38,18 +39,37 @@ namespace cgu {
         using SubResourceList = std::vector<std::string>;
         /** A list of parameters. */
         using ParameterList = std::vector<std::string>;
+        /**  A map of flag and value parameters. */
+        using ParameterMap = std::unordered_map<std::string, std::string>;
 
-        static std::string GetNormalizedResourceId(const std::string& resId);
-        SubResourceList GetSubresources() const;
-        ParameterList GetParameters() const;
         std::string FindResourceLocation(const std::string& localFilename) const;
+        const ParameterList& GetParameters() const { return parameters; };
+        const SubResourceList& GetSubresourceIds() const { return subresourceIds; };
+        std::string GetParameter(unsigned int index) const { return parameters[index]; };
+        std::string GetNamedParameterString(const std::string& name) const;
+        template<typename T> T GetNamedParameterValue(const std::string& name, const T& def) const { 
+            auto resultString = GetNamedParameterString(name);
+            T result = def;
+            if (resultString.size() != 0) result = boost::lexical_cast<unsigned int>(resultString);
+            return result;
+        };
+        bool CheckNamedParameterFlag(const std::string& name) const;
+
+
+        /** Holds the application object for dependencies. */
+        ApplicationBase* application;
+
+    private:
+        static std::string GetNormalizedResourceId(const std::string& resId);
 
         /** Holds the resources id. */
         std::string id;
-        /** Holds the application object for dependencies. */
-        ApplicationBase* application;
-        /** Holds if the resource is currently loaded. */
-        bool loaded;
+        /** Holds the sub-resources ids. */
+        SubResourceList subresourceIds;
+        /** Holds the parameters. */
+        ParameterList parameters;
+        /** Holds the named parameters with (optional) values. */
+        ParameterMap namedParameters;
     };
 }
 

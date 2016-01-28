@@ -31,7 +31,7 @@ namespace cgu {
         return static_cast<unsigned int>(fNumLevels);
     }
 
-    MinMaxVolume::MinMaxVolume(const Volume* texData, ApplicationBase* app) :
+    MinMaxVolume::MinMaxVolume(const std::shared_ptr<const Volume>& texData, ApplicationBase* app) :
         volumeData(texData),
         volumeTexture(nullptr),
         minMaxTexture(nullptr),

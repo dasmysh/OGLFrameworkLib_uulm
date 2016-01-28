@@ -23,7 +23,7 @@ namespace cgu {
     class MinMaxVolume
     {
     public:
-        MinMaxVolume(const Volume* texData, ApplicationBase* app);
+        MinMaxVolume(const std::shared_ptr<const Volume>& texData, ApplicationBase* app);
         ~MinMaxVolume();
 
         glm::mat4 GetLocalWorld(const glm::mat4& world) const;
@@ -33,7 +33,7 @@ namespace cgu {
 
     private:
         /** Holds the 3D texture object to load from. */
-        const Volume* volumeData;
+        std::shared_ptr<const Volume> volumeData;
 
         /** Holds the texture containing the original data and MipMaps. */
         std::unique_ptr<GLTexture> volumeTexture;

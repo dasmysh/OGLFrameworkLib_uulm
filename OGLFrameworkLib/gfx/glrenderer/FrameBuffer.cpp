@@ -139,7 +139,7 @@ namespace cgu {
             std::unique_ptr<GLTexture> texture{ new GLTexture{ std::move(tex), GL_TEXTURE_2D, texDesc } };
 
             auto attachment = findAttachment(texDesc.internalFormat, colorAtt, drawBuffers);
-            OGL_CALL(glFramebufferTexture, GL_FRAMEBUFFER, attachment, tex, 0);
+            OGL_CALL(glFramebufferTexture, GL_FRAMEBUFFER, attachment, texture->GetGLIdentifier().textureId, 0);
             textures.emplace_back(std::move(texture));
         }
 

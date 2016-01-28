@@ -81,8 +81,7 @@ namespace cgu {
         std::vector<std::unique_ptr<GLVertexAttributeArray> > vaos;
 
         void LoadInternal(GLuint newProgram);
-        GLuint LinkNewProgram(const std::string& name, const std::vector<ShaderRAII>& shaders) const;
-        // static void ReleaseShaders(const std::vector<GLuint>& shaders);
+        GLuint LinkNewProgram(const std::vector<ShaderRAII>& shaders) const;
     };
 }
 

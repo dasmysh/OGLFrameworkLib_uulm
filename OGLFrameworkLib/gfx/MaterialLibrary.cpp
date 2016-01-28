@@ -33,7 +33,7 @@ namespace cgu {
         std::ifstream inFile(filename);
 
         if (!inFile.is_open()) {
-            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(id) << errdesc_info("Cannot open file.");
+            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(getId()) << errdesc_info("Cannot open file.");
         }
 
         boost::regex reg_newmtl("^newmtl\\s+(\\w+)$");
@@ -148,7 +148,7 @@ namespace cgu {
      */
     std::shared_ptr<const GLTexture2D> MaterialLibrary::parseTexture(const std::string& matches, const std::string& params) const
     {
-        boost::filesystem::path mtlFile{ id };
+        boost::filesystem::path mtlFile{ GetParameters()[0] };
         auto texFilename = mtlFile.parent_path().string() + "/" + matches + (params.size() > 0 ? "," + params : "");
         return std::move(Resource::application->GetTextureManager()->GetResource(texFilename));
     }

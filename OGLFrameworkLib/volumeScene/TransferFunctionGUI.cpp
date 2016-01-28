@@ -63,16 +63,16 @@ namespace cgu {
         quadTex.reset(new GLTexture(TEX_RES, TEX_RES / 2, TextureDescriptor(32, GL_RGBA8, GL_RGBA, GL_FLOAT), texContent.data()));
 
         UpdateTF(true);
-        Resize(static_cast<float>(app->GetWindow()->GetWidth()), static_cast<float>(app->GetWindow()->GetHeight()));
+        Resize(glm::uvec2(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight()));
     }
 
     TransferFunctionGUI::~TransferFunctionGUI() = default;
 
-    void TransferFunctionGUI::Resize(float width, float height)
+    void TransferFunctionGUI::Resize(const glm::uvec2& screenSize)
     {
         auto left = -rectMin.x / (rectMax.x - rectMin.x);
-        auto right = (width - rectMin.x) / (rectMax.x - rectMin.x);
-        auto bottom = (height - rectMin.y) / (rectMax.y - rectMin.y);
+        auto right = (static_cast<float>(screenSize.x) - rectMin.x) / (rectMax.x - rectMin.x);
+        auto bottom = (static_cast<float>(screenSize.y) - rectMin.y) / (rectMax.y - rectMin.y);
         auto top = -rectMin.y / (rectMax.y - rectMin.y);
         orthoBuffer.orthoMatrix = glm::ortho(left, right, bottom, top, 1.0f, -1.0f);
         orthoUBO->UploadData(0, sizeof(OrthoProjectionBuffer), &orthoBuffer);

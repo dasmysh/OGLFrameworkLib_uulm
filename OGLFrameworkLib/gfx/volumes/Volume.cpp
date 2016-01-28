@@ -16,6 +16,7 @@
 #include <boost/filesystem.hpp>
 #include "app/Configuration.h"
 #include <limits>
+#include <boost/lexical_cast.hpp>
 
 /*#undef min
 #undef max*/
@@ -51,7 +52,7 @@ namespace cgu {
     }
 
     /** Copy constructor. */
-    Volume::Volume(const Volume& rhs) : Volume(rhs.id, rhs.application)
+    Volume::Volume(const Volume& rhs) : Volume(rhs.getId(), rhs.application)
     {
     }
 
@@ -98,6 +99,8 @@ namespace cgu {
     void Volume::LoadDatFile()
     {
         auto filename = FindResourceLocation(GetParameters()[0]);
+        auto forceBits = GetNamedParameterValue<unsigned int>("forceBits", 0);
+
         boost::filesystem::path datFile{ filename };
         auto path = datFile.parent_path().string() + "/";
         auto ending = datFile.extension().string();
@@ -105,7 +108,7 @@ namespace cgu {
         if (ending != ".dat" && ending != ".DAT") {
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
             LOG(ERROR) << "Cannot load '" << converter.from_bytes(ending) << "' Only .dat files are supported.";
-            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(id)
+            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(getId())
                 << errdesc_info("Cannot load file, file type not supported.");
         }
 
@@ -113,7 +116,7 @@ namespace cgu {
         if (!ifs.is_open()) {
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
             LOG(ERROR) << "Cannot open file '" << converter.from_bytes(filename) << "'.";
-            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(id)
+            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(getId())
                 << errdesc_info("Cannot open file.");
         }
 
@@ -135,7 +138,7 @@ namespace cgu {
 
         if (raw_file == "" || volumeSize == glm::uvec3(0) || format_str == "") {
             LOG(ERROR) << "Could find all required fields in dat file.";
-            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(id)
+            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(getId())
                 << errdesc_info("Cannot find all required fields in dat file.");
         }
 
@@ -155,7 +158,7 @@ namespace cgu {
         } else {
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
             LOG(ERROR) << "Format '" << converter.from_bytes(format_str) << "' is not supported.";
-            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(id)
+            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(getId())
                 << errdesc_info("Format not supported.");
         }
 
@@ -174,43 +177,63 @@ namespace cgu {
         } else {
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
             LOG(ERROR) << "ObjectModel '" << converter.from_bytes(obj_model) << "' is not supported.";
-            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(id)
+            throw resource_loading_error() << ::boost::errinfo_file_name(datFile.filename().string()) << resid_info(getId())
                 << errdesc_info("ObjectModel not supported.");
         }
 
-        texDesc.bytesPP = dataDim * componentSize;
-        /*if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RED)
+        if (forceBits == 0) {
+            texDesc.bytesPP = dataDim * componentSize;
+            if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RED)
             texDesc.internalFormat = GL_R8;
-        else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RG)
+            else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RG)
             texDesc.internalFormat = GL_RG8;
-        else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RGB)
+            else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RGB)
             texDesc.internalFormat = GL_RGB8;
-        else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RGBA)
+            else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RGBA)
             texDesc.internalFormat = GL_RGBA8;
-        else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RED)
+            else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RED)
             texDesc.internalFormat = GL_R16F;
-        else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RG)
+            else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RG)
             texDesc.internalFormat = GL_RG16F;
-        else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RGB)
+            else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RGB)
             texDesc.internalFormat = GL_RGB16F;
-        else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RGBA)
+            else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RGBA)
             texDesc.internalFormat = GL_RGBA16F;
-        else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RED)
+            else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RED)
             texDesc.internalFormat = GL_R32F;
-        else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RG)
+            else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RG)
             texDesc.internalFormat = GL_RG32F;
-        else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RGB)
+            else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RGB)
             texDesc.internalFormat = GL_RGB32F;
-        else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RGBA)
-            texDesc.internalFormat = GL_RGBA32F;*/
-        if (texDesc.format == GL_RED)
+            else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RGBA)
+            texDesc.internalFormat = GL_RGBA32F;
+        } else {
+            texDesc.bytesPP = dataDim * (forceBits / 8);
+            if (forceBits == 8 && texDesc.format == GL_RED)
             texDesc.internalFormat = GL_R8;
-        else if (texDesc.format == GL_RG)
+            else if (forceBits == 8 && texDesc.format == GL_RG)
             texDesc.internalFormat = GL_RG8;
-        else if (texDesc.format == GL_RGB)
+            else if (forceBits == 8 && texDesc.format == GL_RGB)
             texDesc.internalFormat = GL_RGB8;
-        else if (texDesc.format == GL_RGBA)
+            else if (forceBits == 8 && texDesc.format == GL_RGBA)
             texDesc.internalFormat = GL_RGBA8;
+            else if (forceBits == 16 && texDesc.format == GL_RED)
+            texDesc.internalFormat = GL_R16F;
+            else if (forceBits == 16 && texDesc.format == GL_RG)
+            texDesc.internalFormat = GL_RG16F;
+            else if (forceBits == 16 && texDesc.format == GL_RGB)
+            texDesc.internalFormat = GL_RGB16F;
+            else if (forceBits == 16 && texDesc.format == GL_RGBA)
+            texDesc.internalFormat = GL_RGBA16F;
+            else if (forceBits == 32 && texDesc.format == GL_RED)
+            texDesc.internalFormat = GL_R32F;
+            else if (forceBits == 32 && texDesc.format == GL_RG)
+            texDesc.internalFormat = GL_RG32F;
+            else if (forceBits == 32 && texDesc.format == GL_RGB)
+            texDesc.internalFormat = GL_RGB32F;
+            else if (forceBits == 32 && texDesc.format == GL_RGBA)
+            texDesc.internalFormat = GL_RGBA32F;
+        }
 
         scaleValue = (format_str == "USHORT_12") ? 16 : 1;
         rawFileName = path + "/" + raw_file;
@@ -266,28 +289,28 @@ namespace cgu {
     {
         assert(texDesc.format == GL_RGBA);
 
-        auto baseFileName = id.substr(0, id.find_last_of("."));
-        auto newBaseFileName = baseFileName + "_speed";
-        auto newFilename = application->GetConfig().resourceBase + "/" + newBaseFileName + ".dat";
-        auto path = newFilename.substr(0, newFilename.find_last_of("/\\"));
+        boost::filesystem::path volumeRelativeFilename(GetParameters()[0]);
+        boost::filesystem::path volumeFilename(FindResourceLocation(GetParameters()[0]));
 
-        if (!boost::filesystem::exists(newFilename)) {
-            std::ofstream datOut(newFilename, std::ofstream::out | std::ofstream::trunc);
+        auto newStrippedFilename = volumeFilename.filename().stem().string() + "_speed";
+
+        auto newDatFilename = volumeFilename.parent_path().string() + "/" + newStrippedFilename + ".dat";
+        auto newRelativeDatFilename = volumeRelativeFilename.parent_path().string() + "/" + newStrippedFilename + ".dat";
+        auto newRawFilename = volumeFilename.parent_path().string() + "/" + newStrippedFilename + ".raw";
+
+        if (!boost::filesystem::exists(newDatFilename)) {
+            std::ofstream datOut(newDatFilename, std::ofstream::out | std::ofstream::trunc);
             if (!datOut.is_open()) {
                 std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-                LOG(ERROR) << "Could not open file '" << converter.from_bytes(newFilename) << "'.";
-                throw std::runtime_error("Could not open file '" + newFilename + "'.");
+                LOG(ERROR) << "Could not open file '" << converter.from_bytes(newDatFilename) << "'.";
+                throw std::runtime_error("Could not open file '" + newDatFilename + "'.");
             }
-
-            auto baseRawFileName = rawFileName.substr(path.size() + 1);
-            baseRawFileName = baseRawFileName.substr(0, baseRawFileName.find_last_of("."));
-            auto newRawFileName = baseRawFileName + "_speed.raw";
 
             std::string newFormat = "UCHAR";
             if (texDesc.type == GL_UNSIGNED_SHORT) newFormat = "USHORT";
             else if (texDesc.type == GL_UNSIGNED_INT) newFormat = "UINT";
 
-            datOut << "ObjectFileName:\t" << newRawFileName << std::endl;
+            datOut << "ObjectFileName:\t" << newRawFilename << ".raw" << std::endl;
             datOut << "Resolution:\t" << volumeSize.x << " " << volumeSize.y << " " << volumeSize.z << std::endl;
             datOut << "SliceThickness:\t" << cellSize.x << " " << cellSize.y << " " << cellSize.z << std::endl;
             datOut << "Format:\t" << newFormat << std::endl;
@@ -295,12 +318,12 @@ namespace cgu {
 
             datOut.close();
 
-            std::fstream rawOut(application->GetConfig().resourceBase + "/" + newRawFileName,
-                std::ios_base::in | std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+            std::fstream rawOut(newRawFilename, std::ios_base::in | std::ios_base::out | std::ios_base::binary
+                | std::ios_base::trunc);
             if (!rawOut.is_open()) {
                 std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-                LOG(ERROR) << "Could not open file '" << converter.from_bytes(newRawFileName) << "'.";
-                throw std::runtime_error("Could not open file '" + newRawFileName + "'.");
+                LOG(ERROR) << "Could not open file '" << converter.from_bytes(newRawFilename) << "'.";
+                throw std::runtime_error("Could not open file '" + newRawFilename + "'.");
             }
 
             unsigned data_size;
@@ -338,6 +361,10 @@ namespace cgu {
             rawOut.close();
         }
 
-        return application->GetVolumeManager()->GetResource(newBaseFileName + ".dat");
+        std::string newFileParameters;
+        for (unsigned int i = 1; i < GetParameters().size(); ++i) {
+            newFileParameters += "," + GetParameter(i);
+        }
+        return application->GetVolumeManager()->GetResource(newRelativeDatFilename + newFileParameters);
     }
 }

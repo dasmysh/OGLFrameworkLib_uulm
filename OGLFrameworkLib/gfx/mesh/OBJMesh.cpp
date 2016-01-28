@@ -96,7 +96,7 @@ namespace cgu {
 
         if (!inFile.is_open()) {
             LOG(ERROR) << "Cannot open file \"" << filename.c_str() << "\".";
-            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(id)
+            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(getId())
                 << errdesc_info("Cannot open file.");
         }
 
@@ -291,7 +291,7 @@ namespace cgu {
         boost::sregex_iterator j;
         std::vector<std::shared_ptr<MaterialLibrary>> result;
         while (i != j) {
-            boost::filesystem::path meshFile{ id };
+            boost::filesystem::path meshFile{ GetParameters()[0] };
             auto mtllibname = meshFile.parent_path().string() + "/" + (*i++)[1].str();
             result.emplace_back(application->GetMaterialLibManager()->GetResource(mtllibname));
         }
