@@ -27,10 +27,10 @@ namespace cgu {
     * @param fntWeight the texts font weight
     * @param fntShearing the texts fonts shearing
     */
-    ScreenText::ScreenText(const Font& fnt, GPUProgram* fontProg, const std::string& txt,
+    ScreenText::ScreenText(std::shared_ptr<const Font> fnt, std::shared_ptr<GPUProgram> fontProg, const std::string& txt,
         const glm::vec2& pos, const glm::vec2& dir, const glm::vec2& fntSize, float fntWeight,
         float fntShearing, float depth) :
-        font(&fnt),
+        font(std::move(fnt)),
         fontWeight(fntWeight),
         fontShearing(fntShearing),
         fontSize(fntSize),
@@ -40,7 +40,7 @@ namespace cgu {
         color(1.0f, 1.0f, 1.0f, 1.0f),
         depthLayer(depth),
         currentBuffer(0),
-        fontProgram(fontProg),
+        fontProgram(std::move(fontProg)),
         fontMetricsBindingLocation(nullptr),
         pixelLength(0.0f)
     {
@@ -58,10 +58,10 @@ namespace cgu {
     * @param fntWeight the texts font weight
     * @param fntShearing the texts fonts shearing
     */
-    ScreenText::ScreenText(const Font& fnt, GPUProgram* fontProg, const std::string& txt,
+    ScreenText::ScreenText(std::shared_ptr<const Font> fnt, std::shared_ptr<GPUProgram> fontProg, const std::string& txt,
         const glm::vec2& pos, const glm::vec2& dir, float fntSize, float fntWeight,
         float fntShearing, float depth) :
-        ScreenText(fnt, fontProg, txt, pos, dir, glm::vec2(fntSize, fntSize), fntWeight, fntShearing, depth)
+        ScreenText(std::move(fnt), std::move(fontProg), txt, pos, dir, glm::vec2(fntSize, fntSize), fntWeight, fntShearing, depth)
     {
     }
 
@@ -75,40 +75,25 @@ namespace cgu {
      * @param fntWeight the texts font weight
      * @param fntShearing the texts fonts shearing
      */
-    ScreenText::ScreenText(const Font& fnt, GPUProgram* fontProg, const std::string& txt,
+    ScreenText::ScreenText(std::shared_ptr<const Font> fnt, std::shared_ptr<GPUProgram> fontProg, const std::string& txt,
         const glm::vec2& pos, float fntSize, float fntWeight, float fntShearing, float depth) :
-        ScreenText(fnt, fontProg, txt, pos, glm::vec2(1.0f, 0.0f), glm::vec2(fntSize, fntSize), fntWeight, fntShearing, depth)
+        ScreenText(std::move(fnt), std::move(fontProg), txt, pos, glm::vec2(1.0f, 0.0f), glm::vec2(fntSize, fntSize), fntWeight, fntShearing, depth)
     {
     }
 
     /** Copy constructor. */
-    ScreenText::ScreenText(const ScreenText&) : ScreenText(*font, fontProgram, text, position, direction, fontSize, fontWeight, fontShearing, depthLayer)
+    ScreenText::ScreenText(const ScreenText& rhs) : ScreenText(rhs.font, rhs.fontProgram, rhs.text, rhs.position,
+        rhs.direction, rhs.fontSize, rhs.fontWeight, rhs.fontShearing, rhs.depthLayer)
     {
     }
 
     /** Copy assignment operator. */
     ScreenText& ScreenText::operator=(const ScreenText& rhs)
     {
-        ScreenText tmp{ rhs };
-        std::swap(font, tmp.font);
-        std::swap(fontWeight, tmp.fontWeight);
-        std::swap(fontShearing, tmp.fontShearing);
-        std::swap(fontSize, tmp.fontSize);
-        std::swap(text, tmp.text);
-        std::swap(position, tmp.position);
-        std::swap(direction, tmp.direction);
-        std::swap(color, tmp.color);
-        std::swap(depthLayer, tmp.depthLayer);
-        std::swap(textVBOs, tmp.textVBOs);
-        std::swap(textVBOFences, tmp.textVBOFences);
-        std::swap(textVBOSizes, tmp.textVBOSizes);
-        std::swap(currentBuffer, tmp.currentBuffer);
-        std::swap(fontProgram, tmp.fontProgram);
-        std::swap(vertexAttribPos, tmp.vertexAttribPos);
-        std::swap(attribBind, tmp.attribBind);
-        std::swap(uniformNames, tmp.uniformNames);
-        std::swap(fontMetricsBindingLocation, tmp.fontMetricsBindingLocation);
-        std::swap(pixelLength, tmp.pixelLength);
+        if (this != &rhs) {
+            ScreenText tmp{ rhs };
+            std::swap(*this, tmp);
+        }
         return *this;
     }
 
@@ -170,18 +155,14 @@ namespace cgu {
         for (auto sync : textVBOFences) {
             OGL_CALL(glDeleteSync, sync);
         }
-        OGL_CALL(glDeleteBuffers, static_cast<GLsizei>(textVBOs.size()), textVBOs.data());
     }
 
     /** Initializes the object (workaround for C++98 constructors which can not call other constructors). */
     void ScreenText::Initialize()
     {
-        vertexAttribPos = fontProgram->GetAttributeLocations(
-            boost::assign::list_of<std::string>("position")("index"));
-        textVBOs.resize(NUM_DYN_BUFFERS, 0);
+        vertexAttribPos = fontProgram->GetAttributeLocations({ "position", "index" });
         textVBOFences.resize(NUM_DYN_BUFFERS, nullptr);
         textVBOSizes.resize(NUM_DYN_BUFFERS, 0);
-        OGL_CALL(glGenBuffers, static_cast<GLsizei>(textVBOs.size()), textVBOs.data());
         for (unsigned int i = 0; i < NUM_DYN_BUFFERS; ++i) {
             attribBind.push_back(fontProgram->CreateVertexAttributeArray(textVBOs[i], 0));
         }
@@ -277,7 +258,7 @@ namespace cgu {
      */
     void ScreenText::Draw()
     {
-        font->UseFont(fontProgram, fontMetricsBindingLocation);
+        font->UseFont(fontProgram.get(), fontMetricsBindingLocation);
         DrawMultiple();
     }
 

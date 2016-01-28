@@ -38,7 +38,7 @@ namespace cgu {
 
     private:
         /** holds the uniform buffer object. */
-        GLuint ubo;
+        BufferRAII ubo;
         /** Holds the size of the buffer. */
         unsigned int bufferSize;
         /** holds the uniform buffer binding points. */

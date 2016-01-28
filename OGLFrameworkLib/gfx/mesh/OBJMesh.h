@@ -35,18 +35,15 @@ namespace cgu {
         OBJMesh& operator=(OBJMesh&&);
         virtual ~OBJMesh();
 
-        void Load() override;
-        void Unload() override;
-
     private:
         void createMeshData(std::ifstream& file);
         void loadMeshData(std::ifstream& file);
 
         static void loadGroup(SubMesh* oldMesh);
 
-        std::vector<MaterialLibrary*> getMtlLibraries(const std::string& line) const;
+        std::vector<std::shared_ptr<MaterialLibrary>> getMtlLibraries(const std::string& line) const;
         static SubMeshMaterialChunk addMtlChunkToMesh(SubMesh* mesh, SubMeshMaterialChunk& oldChunk,
-            std::vector<MaterialLibrary*> matLibs, const std::string& newMtl);
+            const std::vector<std::shared_ptr<MaterialLibrary>>& matLibs, const std::string& newMtl);
 
         void addPointsToMesh(SubMesh* mesh, const std::string& line) const;
         void addLineToMesh(SubMesh* mesh, std::vector<std::unique_ptr<CacheEntry> >& cache, const std::string& line);

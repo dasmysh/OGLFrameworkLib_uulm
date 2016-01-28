@@ -33,7 +33,7 @@ namespace cgu {
         void RecompileAll();
 
     private:
-        void LoadResource(const std::string& resId, ResourceType* resourcePtr) override;
+        void LoadResource(const std::string& resId, std::shared_ptr<ResourceType>& spResource) override;
         void HandleShaderCompileException(const shader_compiler_error& except) const;
     };
 }

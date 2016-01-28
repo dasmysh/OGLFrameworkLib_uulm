@@ -30,7 +30,7 @@ namespace cgu {
         virtual ~ShaderManager();
 
     protected:
-        void LoadResource(const std::string& resId, ResourceType* resourcePtr) override;
+        void LoadResource(const std::string& resId, std::shared_ptr<ResourceType>& spResource) override;
     };
 }
 

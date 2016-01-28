@@ -24,12 +24,10 @@ namespace cgu {
      *  @param vertices the vertices to use.
      *  @param prog the program to use (optional).
      */
-    ScreenQuadRenderable::ScreenQuadRenderable(const std::array <glm::vec2, 4>& vertices, GPUProgram* prog) :
+    ScreenQuadRenderable::ScreenQuadRenderable(const std::array <glm::vec2, 4>& vertices, std::shared_ptr<GPUProgram> prog) :
         vertexData(vertices),
-        program(prog),
-        vBuffer(0)
+        program(prog)
     {
-        OGL_CALL(glGenBuffers, 1, &vBuffer);
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
         OGL_CALL(glBufferData, GL_ARRAY_BUFFER, 4 * sizeof(glm::vec2), vertices.data(), GL_STATIC_DRAW);
 
@@ -53,11 +51,10 @@ namespace cgu {
     /** Move constructor. */
     ScreenQuadRenderable::ScreenQuadRenderable(ScreenQuadRenderable&& rhs) :
         vertexData(std::move(rhs.vertexData)),
-        program(rhs.program),
-        vBuffer(rhs.vBuffer),
+        program(std::move(rhs.program)),
+        vBuffer(std::move(rhs.vBuffer)),
         vertexAttribs(std::move(rhs.vertexAttribs))
     {
-        rhs.vBuffer = 0;
     }
 
     /** Move assignment operator. */
@@ -66,20 +63,14 @@ namespace cgu {
         if (this != &rhs) {
             this->~ScreenQuadRenderable();
             vertexData = std::move(rhs.vertexData);
-            program = rhs.program;
-            vBuffer = rhs.vBuffer;
+            program = std::move(rhs.program);
+            vBuffer = std::move(rhs.vBuffer);
             vertexAttribs = std::move(rhs.vertexAttribs);
-            rhs.vBuffer = 0;
         }
         return *this;
     }
 
-    ScreenQuadRenderable::~ScreenQuadRenderable()
-    {
-        if (vBuffer != 0) {
-            OGL_CALL(glDeleteBuffers, 1, &vBuffer);
-        }
-    }
+    ScreenQuadRenderable::~ScreenQuadRenderable() = default;
 
     void ScreenQuadRenderable::FillAttributeBindings()
     {

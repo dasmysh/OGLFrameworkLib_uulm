@@ -25,15 +25,13 @@ namespace cgu {
         }
 
 
-        GLVolumeInitializer::~GLVolumeInitializer()
-        {
-        }
+        GLVolumeInitializer::~GLVolumeInitializer() = default;
 
-        Volume* GLVolumeInitializer::InitChecker(const std::string& filename, const glm::uvec3& checkerSize, ApplicationBase* app) const
+        std::shared_ptr<Volume> GLVolumeInitializer::InitChecker(const std::string& filename, const glm::uvec3& checkerSize, ApplicationBase* app) const
         {
             auto initProg = app->GetGPUProgramManager()->GetResource("synthChecker.cp");
             auto uniformNames = initProg->GetUniformLocations(boost::assign::list_of<std::string>("resultImg")("checkerSize")("offset"));
-            return InitGeneral(filename, initProg, uniformNames, app, [&](const glm::uvec3& chunkPos,
+            return InitGeneral(filename, initProg.get(), uniformNames, app, [&](const glm::uvec3& chunkPos,
                 const glm::uvec3& dataSize, const TextureDescriptor& internalTexDesc, std::fstream& rawOut){
 
                 GLTexture resultTex(dataSize.x, dataSize.y, dataSize.z, 1, internalTexDesc, nullptr);
@@ -127,11 +125,11 @@ namespace cgu {
             return app->GetVolumeManager()->GetResource(baseFileName + ".dat");*/
         }
 
-        Volume* GLVolumeInitializer::InitStripes(const std::string& filename, unsigned int stripeSize, ApplicationBase* app) const
+        std::shared_ptr<Volume> GLVolumeInitializer::InitStripes(const std::string& filename, unsigned int stripeSize, ApplicationBase* app) const
         {
             auto initProg = app->GetGPUProgramManager()->GetResource("synthStripes.cp");
             auto uniformNames = initProg->GetUniformLocations(boost::assign::list_of<std::string>("resultImg")("stripeSize")("offset"));
-            return InitGeneral(filename, initProg, uniformNames, app, [&](const glm::uvec3& chunkPos,
+            return InitGeneral(filename, initProg.get(), uniformNames, app, [&](const glm::uvec3& chunkPos,
                 const glm::uvec3& dataSize, const TextureDescriptor& internalTexDesc, std::fstream& rawOut){
 
                 GLTexture resultTex(dataSize.x, dataSize.y, dataSize.z, 1, internalTexDesc, nullptr);
@@ -152,12 +150,12 @@ namespace cgu {
         }
 
 
-        Volume* GLVolumeInitializer::InitSpherical(const std::string& filename, const glm::vec3& sphereCenter,
+        std::shared_ptr<Volume> GLVolumeInitializer::InitSpherical(const std::string& filename, const glm::vec3& sphereCenter,
             const glm::vec3& sphereScale, ApplicationBase* app) const
         {
             auto initProg = app->GetGPUProgramManager()->GetResource("synthSpherical.cp");
             auto uniformNames = initProg->GetUniformLocations(boost::assign::list_of<std::string>("resultImg")("sphereCenter")("sphereScale")("offset"));
-            return InitGeneral(filename, initProg, uniformNames, app, [&](const glm::uvec3& chunkPos,
+            return InitGeneral(filename, initProg.get(), uniformNames, app, [&](const glm::uvec3& chunkPos,
                 const glm::uvec3& dataSize, const TextureDescriptor& internalTexDesc, std::fstream& rawOut){
 
                 GLTexture resultTex(dataSize.x, dataSize.y, dataSize.z, 1, internalTexDesc, nullptr);
@@ -179,7 +177,7 @@ namespace cgu {
         }
 
 
-        Volume* GLVolumeInitializer::InitGeneral(const std::string& filename, GPUProgram* initProg,
+        std::shared_ptr<Volume> GLVolumeInitializer::InitGeneral(const std::string& filename, GPUProgram* initProg,
             const std::vector<BindingLocation>& uniformNames, ApplicationBase* app,
             std::function<void(const glm::uvec3&, const glm::uvec3&, const TextureDescriptor&, std::fstream&)> chunkInitialize) const
         {
@@ -240,7 +238,7 @@ namespace cgu {
                 rawOut.close();
             }
 
-            return app->GetVolumeManager()->GetResource(baseFileName + ".dat");
+            return std::move(app->GetVolumeManager()->GetResource(baseFileName + ".dat"));
         }
 
         void GLVolumeInitializer::ReadRaw(std::vector<uint8_t>& data, std::fstream& fileStream, const glm::uvec3& pos,

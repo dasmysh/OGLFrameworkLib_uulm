@@ -70,7 +70,7 @@ namespace cgu {
         ShaderBufferBindingPoints* GetSSBOBindingPoints();
         Configuration& GetConfig() const;
         GLWindow* GetWindow() const;
-        GPUProgram* GetFontProgram() const;
+        std::shared_ptr<GPUProgram> GetFontProgram() const;
         ScreenQuadRenderable* GetScreenQuadRenderable() const;
 
     private:
@@ -129,7 +129,7 @@ namespace cgu {
         /** Holds the perspective camera view. */
         std::unique_ptr<CameraView> cameraView;
         /** Holds the GPUProgram for font rendering. */
-        GPUProgram* fontProgram;
+        std::shared_ptr<GPUProgram> fontProgram;
         /** Holds the screen quad renderable. */
         std::unique_ptr<ScreenQuadRenderable> screenQuadRenderable;
     };

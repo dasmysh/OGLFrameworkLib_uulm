@@ -35,9 +35,6 @@ namespace cgu {
         Font& operator=(Font&&);
         virtual ~Font();
 
-        void Load() override;
-        void Unload() override;
-
         void UseFont(GPUProgram* fontProgram, BindingLocation fontMetricsLocation) const;
         const font_metrics& GetFontMetrics() const;
         static unsigned int GetCharacterId(char character);
@@ -51,8 +48,6 @@ namespace cgu {
         std::unique_ptr<GLUniformBuffer> fontMetrics;
         /** Holds the binding point for the font metrics buffer. */
         GLuint fontMetricsBindingPoint;
-
-        void UnloadLocal();
     };
 }
 

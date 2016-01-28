@@ -27,35 +27,7 @@ namespace cgu {
         Resource(mtlFilename, app),
         ResourceManagerBase(app)
     {
-    }
-
-    /** Default copy constructor. */
-    MaterialLibrary::MaterialLibrary(const MaterialLibrary&) = default;
-    /** Default copy assignment operator. */
-    MaterialLibrary& MaterialLibrary::operator=(const MaterialLibrary&) = default;
-
-    /** Default move constructor. */
-    MaterialLibrary::MaterialLibrary(MaterialLibrary&& rhs) : Resource(std::move(rhs)), ResourceManagerBase(std::move(rhs)) {}
-
-    /** Default move assignment operator. */
-    MaterialLibrary& MaterialLibrary::operator=(MaterialLibrary&& rhs)
-    {
-        if (this != &rhs) {
-            this->~MaterialLibrary();
-            Resource* tRes = this;
-            *tRes = static_cast<Resource&&>(std::move(rhs));
-            ResourceManagerBase* tResMan = this;
-            *tResMan = static_cast<ResourceManagerBase&&>(std::move(rhs));
-        }
-        return *this;
-    }
-
-    /** Default destructor. */
-    MaterialLibrary::~MaterialLibrary() = default;
-
-    void MaterialLibrary::Load()
-    {
-        ResourceType* currMat = nullptr;
+        std::shared_ptr<ResourceType> currMat;
         std::string currLine;
         auto filename = FindResourceLocation(GetParameters()[0]);
         std::ifstream inFile(filename);
@@ -85,39 +57,66 @@ namespace cgu {
                 continue; // comment or empty line
             if (boost::regex_match(currLine, lineMatch, reg_newmtl)) {
                 auto mtlName = lineMatch[1].str();
-                currMat = SetResource(mtlName, std::move(std::make_unique<Material>()));
-            } else if (boost::regex_match(currLine, lineMatch, reg_Ka) && currMat) {
+                currMat = SetResource(mtlName, std::move(std::make_shared<Material>()));
+            }
+            else if (boost::regex_match(currLine, lineMatch, reg_Ka) && currMat) {
                 currMat->ambient = parseColor(lineMatch);
-            } else if (boost::regex_match(currLine, lineMatch, reg_Kd) && currMat) {
+            }
+            else if (boost::regex_match(currLine, lineMatch, reg_Kd) && currMat) {
                 currMat->diffuse = parseColor(lineMatch);
-            } else if (boost::regex_match(currLine, lineMatch, reg_Ks) && currMat) {
+            }
+            else if (boost::regex_match(currLine, lineMatch, reg_Ks) && currMat) {
                 currMat->specular = parseColor(lineMatch);
-            } else if (boost::regex_match(currLine, lineMatch, reg_d) && currMat) {
+            }
+            else if (boost::regex_match(currLine, lineMatch, reg_d) && currMat) {
                 currMat->alpha = boost::lexical_cast<float>(lineMatch[1].str());
-            } else if (boost::regex_match(currLine, lineMatch, reg_d_halo) && currMat) {
+            }
+            else if (boost::regex_match(currLine, lineMatch, reg_d_halo) && currMat) {
                 currMat->minOrientedAlpha = boost::lexical_cast<float>(lineMatch[1].str());
-            } else if (boost::regex_match(currLine, lineMatch, reg_Ns) && currMat) {
+            }
+            else if (boost::regex_match(currLine, lineMatch, reg_Ns) && currMat) {
                 currMat->N_s = boost::lexical_cast<float>(lineMatch[1].str());
-            } else if (boost::regex_match(currLine, lineMatch, reg_Ni) && currMat) {
+            }
+            else if (boost::regex_match(currLine, lineMatch, reg_Ni) && currMat) {
                 currMat->N_i = boost::lexical_cast<float>(lineMatch[1].str());
-            } else if (boost::regex_match(currLine, lineMatch, reg_map_Kd) && currMat) {
-                currMat->diffuseTex = parseTexture(lineMatch[2].str(), "sRGB");
-            } else if (boost::regex_match(currLine, lineMatch, reg_map_bump) && currMat) {
-                currMat->bumpTex = parseTexture(lineMatch[3].str(), "");
+            }
+            else if (boost::regex_match(currLine, lineMatch, reg_map_Kd) && currMat) {
+                currMat->diffuseTex = std::move(parseTexture(lineMatch[2].str(), "sRGB"));
+            }
+            else if (boost::regex_match(currLine, lineMatch, reg_map_bump) && currMat) {
+                currMat->bumpTex = std::move(parseTexture(lineMatch[3].str(), ""));
                 currMat->bumpMultiplier = parseFloatParameter("-bm", lineMatch[2].str(), 1.0f);
-            } else {
+            }
+            else {
                 notImplemented(currLine);
             }
         }
         inFile.close();
-
-        Resource::Load();
     }
 
-    void MaterialLibrary::Unload()
+    /** Default copy constructor. */
+    MaterialLibrary::MaterialLibrary(const MaterialLibrary&) = default;
+    /** Default copy assignment operator. */
+    MaterialLibrary& MaterialLibrary::operator=(const MaterialLibrary&) = default;
+
+    /** Default move constructor. */
+    MaterialLibrary::MaterialLibrary(MaterialLibrary&& rhs) : Resource(std::move(rhs)), ResourceManagerBase(std::move(rhs)) {}
+
+    /** Default move assignment operator. */
+    MaterialLibrary& MaterialLibrary::operator=(MaterialLibrary&& rhs)
     {
-        Resource::Unload();
+        if (this != &rhs) {
+            this->~MaterialLibrary();
+            Resource* tRes = this;
+            *tRes = static_cast<Resource&&>(std::move(rhs));
+            ResourceManagerBase* tResMan = this;
+            *tResMan = static_cast<ResourceManagerBase&&>(std::move(rhs));
+        }
+        return *this;
     }
+
+    /** Default destructor. */
+    MaterialLibrary::~MaterialLibrary() = default;
 
     /**
      * Logs a warning this feature is not implemented.
@@ -147,11 +146,11 @@ namespace cgu {
      * @param matches the regex matcher for the texture lines
      * @return the loaded texture
      */
-    const GLTexture2D* MaterialLibrary::parseTexture(const std::string& matches, const std::string& params) const
+    std::shared_ptr<const GLTexture2D> MaterialLibrary::parseTexture(const std::string& matches, const std::string& params) const
     {
         boost::filesystem::path mtlFile{ id };
         auto texFilename = mtlFile.parent_path().string() + "/" + matches + (params.size() > 0 ? "," + params : "");
-        return Resource::application->GetTextureManager()->GetResource(texFilename);
+        return std::move(Resource::application->GetTextureManager()->GetResource(texFilename));
     }
 
     /**

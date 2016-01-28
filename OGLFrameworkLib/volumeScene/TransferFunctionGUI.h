@@ -65,7 +65,7 @@ namespace cgu {
         /** The texture that is the result of the transfer function. */
         std::unique_ptr<GLTexture> tfTex;
         /** holds the GPU program for rendering screen aligned things. */
-        GPUProgram* screenAlignedProg;
+        std::shared_ptr<GPUProgram> screenAlignedProg;
         /** holds the uniform binding point for textures on screen aligned things. */
         BindingLocation screenAlignedTextureUniform;
         /** holds the index of the selected point (-1 for no selection). */
@@ -76,11 +76,11 @@ namespace cgu {
         unsigned int lastButtonAction;
 
         /** Holds the shader for rendering the transfer function. */
-        GPUProgram* tfProgram;
+        std::shared_ptr<GPUProgram> tfProgram;
         /** Holds the orthographic projection uniform buffer. */
         std::unique_ptr<GLUniformBuffer> orthoUBO;
         /** holds the VBO for the transfer function. */
-        GLuint tfVBO;
+        BufferRAII tfVBO;
         /** Holds the vertex attribute bindings for the shader. */
         GLVertexAttributeArray* attribBind;
 
