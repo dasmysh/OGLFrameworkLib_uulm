@@ -58,7 +58,8 @@ namespace cgu {
         virtual bool HandleKeyboardCharacters(unsigned int key, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         virtual bool HandleMouseApp(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender) = 0;
-        virtual void OnResize(unsigned int width, unsigned int height);
+        void OnResize(unsigned int width, unsigned int height);
+        virtual void Resize(const glm::uvec2& screenSize);
 
         TextureManager* GetTextureManager() const;
         VolumeManager* GetVolumeManager() const;

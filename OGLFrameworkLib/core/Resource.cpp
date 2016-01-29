@@ -24,10 +24,26 @@ namespace cgu {
      * @param app the application object for dependencies
      */
     Resource::Resource(const std::string& resourceId, ApplicationBase* app) :
-        id(GetNormalizedResourceId(resourceId)),
         application(app),
-        loaded(false)
+        id(GetNormalizedResourceId(resourceId))
     {
+        boost::split(subresourceIds, id, boost::is_any_of("|"));
+        for (auto& sr : subresourceIds) boost::trim(sr);
+
+        if (subresourceIds.size() == 1) {
+            boost::split(parameters, subresourceIds[0], boost::is_any_of(","));
+            for (auto& param : parameters) {
+                boost::trim(param);
+                const boost::regex nameValueRegex("^-([\\w-]*)=(.*)$");
+                const boost::regex flagRegex("^-([\\w-]*)$");
+                boost::smatch paramMatch;
+                if (boost::regex_match(param, paramMatch, nameValueRegex)) {
+                    namedParameters.insert(std::make_pair(paramMatch[1].str(), paramMatch[2].str()));
+                } else if (boost::regex_match(param, paramMatch, flagRegex)) {
+                    namedParameters.insert(std::make_pair(paramMatch[1].str(), ""));
+                }
+            }
+        }
     };
 
     /** Default copy constructor. */
@@ -38,11 +54,9 @@ namespace cgu {
 
     /** Move constructor. */
     Resource::Resource(Resource&& orig) :
-        id(std::move(orig.id)),
         application(std::move(orig.application)),
-        loaded(std::move(orig.loaded))
+        id(std::move(orig.id))
     {
-        orig.loaded = false;
         orig.application = nullptr;
     };
 
@@ -51,11 +65,8 @@ namespace cgu {
     {
         if (this != &orig) {
             this->~Resource();
-            // if (loaded) Unload();
             id = std::move(orig.id);
             application = orig.application;
-            loaded = orig.loaded;
-            orig.loaded = false;
             orig.application = nullptr;
         }
         return *this;
@@ -72,11 +83,23 @@ namespace cgu {
         return id;
     };
 
+    std::string Resource::GetNamedParameterString(const std::string& name) const
+    {
+        auto it = namedParameters.find(name);
+        if (it != namedParameters.end()) return it->second;
+        return "";
+    }
+
+    bool Resource::CheckNamedParameterFlag(const std::string& name) const
+    {
+        return namedParameters.find(name) != namedParameters.end();
+    }
+
     /**
-     *  Returns the normalized resource id (no global parameters).
-     *  @param the resource id.
-     *  @return the normalized resource id.
-     */
+         *  Returns the normalized resource id (no global parameters).
+         *  @param the resource id.
+         *  @return the normalized resource id.
+         */
     std::string Resource::GetNormalizedResourceId(const std::string& resId)
     {
         std::vector<std::string> subresourcesAndGlobalParams;
@@ -90,31 +113,6 @@ namespace cgu {
             if (subresourcesAndGlobalParams.size() > 1) sr += "," + subresourcesAndGlobalParams[1];
         }
         return boost::join(subresources, "|");
-    }
-
-    /**
-     *  Returns the list of sub-resources.
-     *  @return a list of sub-resource ids.
-     */
-    Resource::SubResourceList Resource::GetSubresources() const
-    {
-        SubResourceList subresources;
-        boost::split(subresources, id, boost::is_any_of("|"));
-        for (auto& sr : subresources) boost::trim(sr);
-        return subresources;
-    }
-
-    /**
-     *  Returns a list of parameters for this resource.
-     *  @return a list of parameter strings.
-     */
-    Resource::ParameterList Resource::GetParameters() const
-    {
-        assert(GetSubresources().size() == 1);
-        ParameterList parameters;
-        boost::split(parameters, id, boost::is_any_of(","));
-        for (auto& param : parameters) boost::trim(param);
-        return parameters;
     }
 
     /**

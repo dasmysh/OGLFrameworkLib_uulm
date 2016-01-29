@@ -256,6 +256,11 @@ namespace cgu {
         if (cameraView) {
             cameraView->Resize(screenSize);
         }
+        Resize(screenSize);
+    }
+
+    void ApplicationBase::Resize(const glm::uvec2&)
+    {
     }
 
     void ApplicationBase::StartRun()

@@ -43,7 +43,7 @@ namespace cgu {
         auto path = datFile.parent_path().string() + "/";
         if (!boost::filesystem::exists(filename)) {
             LOG(ERROR) << L"File \"" << filename.c_str() << L"\" does not exist.";
-            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(id)
+            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(getId())
                 << errdesc_info("Cannot open file.");
         }
 
@@ -119,7 +119,7 @@ namespace cgu {
     Font::~Font() = default;
 
     /** Copy constructor. */
-    Font::Font(const Font& rhs) : Font(rhs.id, rhs.application)
+    Font::Font(const Font& rhs) : Font(rhs.getId(), rhs.application)
     {
     }
 

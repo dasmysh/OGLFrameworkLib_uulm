@@ -10,7 +10,6 @@
 #include "GLTexture.h"
 #include <GL/gl.h>
 #include <FreeImage.h>
-#include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 #include "app/ApplicationBase.h"
 #include "app/Configuration.h"
@@ -25,11 +24,10 @@ namespace cgu {
         Resource{ texFilename, app },
         texture()
     {
-        auto fileOptions = GetParameters();
-        auto filename = FindResourceLocation(fileOptions[0]);
+        auto filename = FindResourceLocation(GetParameters()[0]);
         if (!boost::filesystem::exists(filename)) {
             LOG(ERROR) << "File \"" << filename.c_str() << L"\" cannot be opened.";
-            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(id)
+            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(getId())
                 << errdesc_info("Cannot open include file.");
         }
 
@@ -54,10 +52,7 @@ namespace cgu {
         GLenum fmt = GL_RGBA;
         if (redMask > greenMask && greenMask > blueMask) fmt = GL_BGRA;
         auto internalFmt = GL_RGBA8;
-        for (unsigned int i = 1; i < fileOptions.size(); ++i) {
-            boost::trim(fileOptions[i]);
-            if (fileOptions[i] == "sRGB" && application->GetConfig().useSRGB) internalFmt = GL_SRGB8_ALPHA8;
-        }
+        if (CheckNamedParameterFlag("sRGB") && application->GetConfig().useSRGB) internalFmt = GL_SRGB8_ALPHA8;
         TextureDescriptor texDesc(4, internalFmt, fmt, GL_UNSIGNED_BYTE);
         texture = std::make_unique<GLTexture>(width, height, texDesc, data);
         FreeImage_Unload(bitmap32);
@@ -65,7 +60,7 @@ namespace cgu {
     }
 
     /** Copy constructor. */
-    GLTexture2D::GLTexture2D(const GLTexture2D& rhs) : GLTexture2D(rhs.id, rhs.application)
+    GLTexture2D::GLTexture2D(const GLTexture2D& rhs) : GLTexture2D(rhs.getId(), rhs.application)
     {
     }
 

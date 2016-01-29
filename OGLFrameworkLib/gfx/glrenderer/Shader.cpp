@@ -48,7 +48,7 @@ namespace cgu {
     }
 
     /** Copy constructor. */
-    Shader::Shader(const Shader& rhs) : Shader(rhs.id, rhs.application)
+    Shader::Shader(const Shader& rhs) : Shader(rhs.getId(), rhs.application)
     {
     }
 
@@ -120,7 +120,7 @@ namespace cgu {
     {
         if (recursionDepth > 32) {
             LOG(ERROR) << L"Header inclusion depth limit reached! Cyclic header inclusion?";
-            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << fileid_info(fileId) << resid_info(id)
+            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << fileid_info(fileId) << resid_info(getId())
                 << errdesc_info("Header inclusion depth limit reached! Cyclic header inclusion?");
         }
         boost::filesystem::path sdrFile{ filename };
@@ -213,7 +213,7 @@ namespace cgu {
             delete[] strInfoLog;
             OGL_CALL(glDeleteShader, shader);
             throw shader_compiler_error() << ::boost::errinfo_file_name(filename)
-                << compiler_error_info(infoLog) << resid_info(id)
+                << compiler_error_info(infoLog) << resid_info(getId())
                 << errdesc_info("Shader compilation failed.");
         }
         return std::move(shader);

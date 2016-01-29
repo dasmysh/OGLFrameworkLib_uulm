@@ -27,7 +27,7 @@ namespace cgu {
         boundSSBOs(),
         vaos()
     {
-        auto programNames = GetSubresources();
+        auto programNames = GetSubresourceIds();
         std::vector<ShaderRAII> shaderObjs;
         for (auto& progName : programNames) {
             // ignore exception and reload whole program
@@ -35,7 +35,7 @@ namespace cgu {
             shaderObjs.emplace_back(static_cast<GLuint>(shader->shader));
             shaders.emplace_back(std::move(shader));
         }
-        LoadInternal(LinkNewProgram(id, shaderObjs));
+        LoadInternal(LinkNewProgram(shaderObjs));
         for (auto& shdObj : shaderObjs) shdObj.release();
     }
 
@@ -43,7 +43,7 @@ namespace cgu {
     GPUProgram::~GPUProgram() = default;
 
     /** Copy constructor. */
-    GPUProgram::GPUProgram(const GPUProgram& rhs) : GPUProgram(rhs.id, rhs.application)
+    GPUProgram::GPUProgram(const GPUProgram& rhs) : GPUProgram(rhs.getId(), rhs.application)
     {
     }
 
@@ -136,7 +136,7 @@ namespace cgu {
     /** Recompiles the program. */
     void GPUProgram::RecompileProgram()
     {
-        auto shaderIds = GetSubresources();
+        auto shaderIds = GetSubresourceIds();
         std::vector<ShaderRAII> newOGLShaders;
         for (auto& shaderId : shaderIds) {
             shaders.emplace_back(std::move(application->GetShaderManager()->GetResource(shaderId)));
@@ -155,7 +155,7 @@ namespace cgu {
 
         GLuint tempProgram = 0;
         try {
-            tempProgram = LinkNewProgram(id, newOGLShaders);
+            tempProgram = LinkNewProgram(newOGLShaders);
         }
         catch (shader_compiler_error compilerError) {
             throw;
@@ -457,12 +457,12 @@ namespace cgu {
         OGL_CALL(glUseProgram, program);
     }
 
-    GLuint GPUProgram::LinkNewProgram(const std::string& name, const std::vector<ShaderRAII>& shdrs) const
+    GLuint GPUProgram::LinkNewProgram(const std::vector<ShaderRAII>& shdrs) const
     {
         auto program = OGL_SCALL(glCreateProgram);
         if (program == 0) {
             LOG(ERROR) << L"Could not create GPU program!";
-            throw resource_loading_error() << resid_info(name)
+            throw resource_loading_error() << resid_info(getId())
                 << errdesc_info("Cannot create program.");
         }
         for (const auto& shader : shdrs) {
@@ -487,7 +487,7 @@ namespace cgu {
             }
             OGL_CALL(glDeleteProgram, program);
 
-            throw shader_compiler_error() << resid_info(id)
+            throw shader_compiler_error() << resid_info(getId())
                 << compiler_error_info(infoLog)
                 << errdesc_info("Program linking failed.");
         }
