@@ -268,17 +268,23 @@ namespace cgu {
         std::vector<char> rawData;
         LoadRawDataFromFile(data_size, rawData);
 
-        std::vector<int8_t> data;
+        // std::vector<int8_t> data;
+        std::vector<float> data;
         if (texDesc.type == GL_UNSIGNED_BYTE) {
-            data = readModifyData<int8_t, uint8_t, uint8_t>(rawData, data_size, [](const uint8_t& val){ return val; });
+            // data = readModifyData<int8_t, uint8_t, uint8_t>(rawData, data_size, [](const uint8_t& val){ return val; });
+            data = readModifyData<float, float, uint8_t>(rawData, data_size, [](const uint8_t& val){ return static_cast<float>(val) / static_cast<float>(std::numeric_limits<uint8_t>::max()); });
         } else if (texDesc.type == GL_UNSIGNED_SHORT) {
             auto l_scaleValue = scaleValue;
-            data = readModifyData<int8_t, uint16_t, uint16_t>(rawData, data_size, [l_scaleValue](const uint16_t& val){ return val * l_scaleValue; });
+            // data = readModifyData<int8_t, uint16_t, uint16_t>(rawData, data_size, [l_scaleValue](const uint16_t& val){ return val * l_scaleValue; });
+            data = readModifyData<float, float, uint16_t>(rawData, data_size, [l_scaleValue](const uint16_t& val){ return static_cast<float>(val * l_scaleValue) / static_cast<float>(std::numeric_limits<uint16_t>::max()); });
         } else if (texDesc.type == GL_UNSIGNED_INT) {
-            data = readModifyData<int8_t, uint32_t, uint32_t>(rawData, data_size, [](const uint32_t& val){ return val; });
+            // data = readModifyData<int8_t, uint32_t, uint32_t>(rawData, data_size, [](const uint32_t& val){ return val; });
+            data = readModifyData<float, float, uint32_t>(rawData, data_size, [](const uint32_t& val){ return static_cast<float>(val) / static_cast<float>(std::numeric_limits<uint32_t>::max()); });
         }
 
-        auto volTex = std::make_unique<GLTexture>(volumeSize.x, volumeSize.y, volumeSize.z, mipLevels, texDesc, data.data());
+        auto tempDesc = texDesc;
+        tempDesc.type = GL_FLOAT;
+        auto volTex = std::make_unique<GLTexture>(volumeSize.x, volumeSize.y, volumeSize.z, mipLevels, tempDesc, data.data());
         return std::move(volTex);
     }
 
