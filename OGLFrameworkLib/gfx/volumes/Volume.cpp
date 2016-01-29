@@ -269,16 +269,13 @@ namespace cgu {
         LoadRawDataFromFile(data_size, rawData);
 
         std::vector<int8_t> data;
-        auto volumeNumBytes = volumeSize.x * volumeSize.y * volumeSize.z * texDesc.bytesPP;
-
-        int size = std::min(data_size, volumeNumBytes);
         if (texDesc.type == GL_UNSIGNED_BYTE) {
-            data = readModifyData<int8_t, uint8_t, uint8_t>(rawData, size, [](const uint8_t& val){ return val; });
+            data = readModifyData<int8_t, uint8_t, uint8_t>(rawData, data_size, [](const uint8_t& val){ return val; });
         } else if (texDesc.type == GL_UNSIGNED_SHORT) {
             auto l_scaleValue = scaleValue;
-            data = readModifyData<int8_t, uint16_t, uint16_t>(rawData, size, [l_scaleValue](const uint16_t& val){ return val * l_scaleValue; });
+            data = readModifyData<int8_t, uint16_t, uint16_t>(rawData, data_size, [l_scaleValue](const uint16_t& val){ return val * l_scaleValue; });
         } else if (texDesc.type == GL_UNSIGNED_INT) {
-            data = readModifyData<int8_t, uint32_t, uint32_t>(rawData, size, [](const uint32_t& val){ return val; });
+            data = readModifyData<int8_t, uint32_t, uint32_t>(rawData, data_size, [](const uint32_t& val){ return val; });
         }
 
         auto volTex = std::make_unique<GLTexture>(volumeSize.x, volumeSize.y, volumeSize.z, mipLevels, texDesc, data.data());
