@@ -23,8 +23,8 @@
 
 namespace cgu {
 
-    template<typename OT, typename OET, typename I>
-    static std::vector<OT> readModifyData(const std::vector<char>& rawData, unsigned int size, std::function<OET(const I&)> modify)
+    template<typename OT, typename OET, typename I, typename IT>
+    static std::vector<OT> readModifyData(const std::vector<IT>& rawData, unsigned int size, std::function<OET(const I&)> modify)
     {
         auto elementsToRead = size / static_cast<unsigned int>(sizeof(I));
         auto ptr = reinterpret_cast<const I*>(rawData.data());
@@ -242,7 +242,7 @@ namespace cgu {
         rawFileName = path + "/" + raw_file;
     }
 
-    void Volume::LoadRawDataFromFile(unsigned& data_size, std::vector<char>& rawData) const
+    void Volume::LoadRawDataFromFile(unsigned int& data_size, std::vector<char>& rawData) const
     {
         std::ifstream ifsRaw(rawFileName, std::ios::in | std::ios::binary);
         if (!ifsRaw || !ifsRaw.is_open()) {
@@ -267,26 +267,49 @@ namespace cgu {
          */
     std::unique_ptr<GLTexture> Volume::Load3DTexture(unsigned int mipLevels) const
     {
-        unsigned data_size;
+        unsigned int data_size;
         std::vector<char> rawData;
         LoadRawDataFromFile(data_size, rawData);
 
         // std::vector<int8_t> data;
         std::vector<float> data;
+        auto maxValue = 0.0f;
         if (texDesc.type == GL_UNSIGNED_BYTE) {
             // data = readModifyData<int8_t, uint8_t, uint8_t>(rawData, data_size, [](const uint8_t& val){ return val; });
-            data = readModifyData<float, float, uint8_t>(rawData, data_size, [](const uint8_t& val){ return static_cast<float>(val) / static_cast<float>(std::numeric_limits<uint8_t>::max()); });
+            data = readModifyData<float, float, uint8_t, char>(rawData, data_size, [&maxValue](const uint8_t& val)
+            {
+                auto value = static_cast<float>(val) / static_cast<float>(std::numeric_limits<uint8_t>::max());
+                maxValue = glm::max(maxValue, value);
+                return value;
+            });
         } else if (texDesc.type == GL_UNSIGNED_SHORT) {
             auto l_scaleValue = scaleValue;
             // data = readModifyData<int8_t, uint16_t, uint16_t>(rawData, data_size, [l_scaleValue](const uint16_t& val){ return val * l_scaleValue; });
-            data = readModifyData<float, float, uint16_t>(rawData, data_size, [l_scaleValue](const uint16_t& val){ return static_cast<float>(val * l_scaleValue) / static_cast<float>(std::numeric_limits<uint16_t>::max()); });
+            data = readModifyData<float, float, uint16_t, char>(rawData, data_size, [l_scaleValue, &maxValue](const uint16_t& val)
+            {
+                auto value = static_cast<float>(val * l_scaleValue) / static_cast<float>(std::numeric_limits<uint16_t>::max());
+                maxValue = glm::max(maxValue, value);
+                return value;
+            });
         } else if (texDesc.type == GL_UNSIGNED_INT) {
             // data = readModifyData<int8_t, uint32_t, uint32_t>(rawData, data_size, [](const uint32_t& val){ return val; });
-            data = readModifyData<float, float, uint32_t>(rawData, data_size, [](const uint32_t& val){ return static_cast<float>(val) / static_cast<float>(std::numeric_limits<uint32_t>::max()); });
+            data = readModifyData<float, float, uint32_t, char>(rawData, data_size, [&maxValue](const uint32_t& val)
+            {
+                auto value = static_cast<float>(val) / static_cast<float>(std::numeric_limits<uint32_t>::max());
+                maxValue = glm::max(maxValue, value);
+                return value;
+            });
         } else if (texDesc.type == GL_FLOAT) {
             // data = readModifyData<int8_t, float, float>(rawData, data_size, [](const float& val){ return val; });
-            data = readModifyData<float, float, float>(rawData, data_size, [](const float& val){ return val; });
+            data = readModifyData<float, float, float, char>(rawData, data_size, [&maxValue](const float& val)
+            {
+                auto value = val;
+                maxValue = glm::max(maxValue, value);
+                return value;
+            });
         }
+
+        data = readModifyData<float, float, float, float>(data, static_cast<unsigned int>(data.size() * sizeof(float)), [maxValue](const float& val) { return val / maxValue; });
 
         auto tempDesc = texDesc;
         tempDesc.type = GL_FLOAT;
@@ -344,23 +367,28 @@ namespace cgu {
 
             int size = std::min(data_size, volumeNumBytes);
             if (texDesc.type == GL_UNSIGNED_BYTE) {
-                data = readModifyData<int8_t, uint8_t, glm::u8vec4>(rawData, size, [](const glm::u8vec4& val)
+                data = readModifyData<int8_t, uint8_t, glm::u8vec4, char>(rawData, size, [](const glm::u8vec4& val)
                 {
                     auto sval = glm::vec3(val.xyz()) / glm::vec3(std::numeric_limits<uint8_t>::max());
                     return static_cast<uint8_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint8_t>::max()));
                 });
             } else if (texDesc.type == GL_UNSIGNED_SHORT) {
                 auto l_scaleValue = scaleValue;
-                data = readModifyData<int8_t, uint16_t, glm::u16vec4>(rawData, size, [l_scaleValue](const glm::u16vec4& val)
+                data = readModifyData<int8_t, uint16_t, glm::u16vec4, char>(rawData, size, [l_scaleValue](const glm::u16vec4& val)
                 {
                     auto sval = glm::vec3(val.xyz() * glm::u16vec3(l_scaleValue)) / glm::vec3(std::numeric_limits<uint16_t>::max());
                     return static_cast<uint16_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint16_t>::max()));
                 });
             } else if (texDesc.type == GL_UNSIGNED_INT) {
-                data = readModifyData<int8_t, uint32_t, glm::u32vec4>(rawData, size, [](const glm::u32vec4& val)
+                data = readModifyData<int8_t, uint32_t, glm::u32vec4, char>(rawData, size, [](const glm::u32vec4& val)
                 {
                     auto sval = glm::vec3(val.xyz()) / glm::vec3(static_cast<float>(std::numeric_limits<uint32_t>::max()));
-                    return static_cast<uint8_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint32_t>::max()));
+                    return static_cast<uint32_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint32_t>::max()));
+                });
+            } else if (texDesc.type == GL_FLOAT) {
+                data = readModifyData<int8_t, float, glm::vec4, char>(rawData, size, [](const glm::vec4& val)
+                {
+                    return glm::length((val.xyz() - glm::vec3(0.5f)) * 2.0f);
                 });
             }
 

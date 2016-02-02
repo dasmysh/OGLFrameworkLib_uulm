@@ -56,7 +56,7 @@ namespace cgu {
         TextureDescriptor texDesc;
 
         void LoadDatFile();
-        void LoadRawDataFromFile(unsigned& data_size, std::vector<char>& rawData) const;
+        void LoadRawDataFromFile(unsigned int& data_size, std::vector<char>& rawData) const;
     };
 }
 

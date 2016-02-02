@@ -152,6 +152,8 @@ namespace cgu {
         // calculate relative points
         auto relCoords = (mouseCoords - rectMin) / (rectMax - rectMin);
         relCoords.y = 1.0f - relCoords.y;
+        // relCoords.y = glm::log((relCoords.y * (scaleBase - 1.0f)) + 1.0f) / glm::log(scaleBase);
+        relCoords.y = (glm::pow(scaleBase, relCoords.y) - 1.0f) / (scaleBase - 1.0f);
 
         if (draggingSelection) {
             relCoords = glm::clamp(relCoords, glm::vec2(0.0f), glm::vec2(1.0f));
@@ -253,8 +255,14 @@ namespace cgu {
         last = tf_.points().back();
         last.SetValue(1.0f);
 
+        auto tmpPoints = tf_.points();
+        for (auto& pt : tmpPoints) {
+            auto pos = pt.GetPos();
+            pos.y = glm::log((pos.y * (scaleBase - 1.0f)) + 1.0f) / glm::log(scaleBase);
+            pt.SetPos(pos);
+        }
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(tf::ControlPoint), &first);
-        glBufferSubData(GL_ARRAY_BUFFER, sizeof(tf::ControlPoint), tf_.points().size() * sizeof(tf::ControlPoint), tf_.points().data());
+        glBufferSubData(GL_ARRAY_BUFFER, sizeof(tf::ControlPoint), tf_.points().size() * sizeof(tf::ControlPoint), tmpPoints.data());
         glBufferSubData(GL_ARRAY_BUFFER, (tf_.points().size() + 1) * sizeof(tf::ControlPoint), sizeof(tf::ControlPoint), &last);
 
         if (createVAO) {
