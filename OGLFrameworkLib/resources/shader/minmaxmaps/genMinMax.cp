@@ -10,7 +10,7 @@ void main() {
     if (storePos.x >= minMaxSize.x || storePos.y >= minMaxSize.y || storePos.z >= minMaxSize.z) return;
     
     ivec3 origSize = imageSize(origTex);
-    ivec3 baseReadSize = ivec3(ceil(vec3(origSize) / vec3(minMaxSize)));
+    ivec3 baseReadSize = ivec3(floor(vec3(origSize) / vec3(minMaxSize)));
     ivec3 baseReadPos = storePos * baseReadSize;
 
     float minValue = 1.0f;

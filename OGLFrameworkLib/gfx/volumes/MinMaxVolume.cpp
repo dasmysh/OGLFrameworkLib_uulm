@@ -39,7 +39,7 @@ namespace cgu {
         minMaxLevelsProgram(nullptr),
         volumeSize(volumeData->GetSize()),
         texMax(static_cast<float>(calcTextureMaxSize(volumeSize))),
-        voxelScale(volumeData->GetScaling())
+        voxelScale(volumeData->GetScaling() * glm::vec3(volumeSize) / static_cast<float>(calcTextureMaxSize(volumeSize)))
     {
         auto numLevels = calcMipLevels(static_cast<unsigned int>(texMax));
 
@@ -96,7 +96,7 @@ namespace cgu {
         minMaxProgram->SetUniform(minMaxUniformNames[0], 0);
         minMaxProgram->SetUniform(minMaxUniformNames[1], 1);
 
-        numGroups = glm::ivec3(glm::ceil(glm::vec3(volumeSize) / 8.0f));
+        numGroups = glm::ivec3(glm::ceil(glm::vec3(minMaxSize) / 8.0f));
         volumeTexture->ActivateImage(0, 0, GL_READ_ONLY);
         minMaxTexture->ActivateImage(1, 0, GL_WRITE_ONLY);
         OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);

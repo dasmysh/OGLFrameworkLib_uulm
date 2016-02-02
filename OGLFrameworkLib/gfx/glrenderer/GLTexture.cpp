@@ -94,7 +94,14 @@ namespace cgu {
         depth(d),
         mipMapLevels(numMipLevels)
     {
-        mipMapLevels = glm::min(mipMapLevels, glm::max(1U, static_cast<unsigned int>(glm::log2(static_cast<float>(glm::max(glm::max(width, height), depth)))) + 1));
+        GLint maxSizeSystem;
+        OGL_CALL(glGetIntegerv, GL_MAX_3D_TEXTURE_SIZE, &maxSizeSystem);
+        auto maxSize = glm::max(glm::max(width, height), depth);
+
+        if (maxSize > static_cast<unsigned int>(maxSizeSystem))
+            throw std::runtime_error("Texture size is too big.");
+
+        mipMapLevels = glm::min(mipMapLevels, glm::max(1U, static_cast<unsigned int>(glm::log2(static_cast<float>(maxSize))) + 1));
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glTexStorage3D, id.textureType, mipMapLevels, descriptor.internalFormat, width, height, depth);
         if (data) {

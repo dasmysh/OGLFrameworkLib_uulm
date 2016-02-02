@@ -155,6 +155,9 @@ namespace cgu {
         } else if (format_str == "UINT") {
             texDesc.type = GL_UNSIGNED_INT;
             componentSize = 4;
+        } else if (format_str == "FLOAT") {
+            texDesc.type = GL_FLOAT;
+            componentSize = 4;
         } else {
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
             LOG(ERROR) << "Format '" << converter.from_bytes(format_str) << "' is not supported.";
@@ -199,13 +202,13 @@ namespace cgu {
             texDesc.internalFormat = GL_RGB16F;
             else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RGBA)
             texDesc.internalFormat = GL_RGBA16F;
-            else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RED)
+            else if (componentSize == 4 && texDesc.format == GL_RED)
             texDesc.internalFormat = GL_R32F;
-            else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RG)
+            else if (componentSize == 4 && texDesc.format == GL_RG)
             texDesc.internalFormat = GL_RG32F;
-            else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RGB)
+            else if (componentSize == 4 && texDesc.format == GL_RGB)
             texDesc.internalFormat = GL_RGB32F;
-            else if (texDesc.type == GL_UNSIGNED_INT && texDesc.format == GL_RGBA)
+            else if (componentSize == 4 && texDesc.format == GL_RGBA)
             texDesc.internalFormat = GL_RGBA32F;
         } else {
             texDesc.bytesPP = dataDim * (forceBits / 8);
@@ -280,6 +283,9 @@ namespace cgu {
         } else if (texDesc.type == GL_UNSIGNED_INT) {
             // data = readModifyData<int8_t, uint32_t, uint32_t>(rawData, data_size, [](const uint32_t& val){ return val; });
             data = readModifyData<float, float, uint32_t>(rawData, data_size, [](const uint32_t& val){ return static_cast<float>(val) / static_cast<float>(std::numeric_limits<uint32_t>::max()); });
+        } else if (texDesc.type == GL_FLOAT) {
+            // data = readModifyData<int8_t, float, float>(rawData, data_size, [](const float& val){ return val; });
+            data = readModifyData<float, float, float>(rawData, data_size, [](const float& val){ return val; });
         }
 
         auto tempDesc = texDesc;
