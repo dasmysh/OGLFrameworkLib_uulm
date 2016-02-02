@@ -24,12 +24,12 @@
 namespace cgu {
 
     template<typename OT, typename OET, typename I, typename IT>
-    static std::vector<OT> readModifyData(const std::vector<IT>& rawData, unsigned int size, std::function<OET(const I&)> modify)
+    static std::vector<OT> readModifyData(const std::vector<IT>& rawData, size_t size, std::function<OET(const I&)> modify)
     {
-        auto elementsToRead = size / static_cast<unsigned int>(sizeof(I));
+        auto elementsToRead = size / sizeof(I);
         auto ptr = reinterpret_cast<const I*>(rawData.data());
         std::vector<OT> data(elementsToRead * sizeof(OET) / sizeof(OT));
-        for (unsigned int i = 0; i < elementsToRead; ++i) {
+        for (size_t i = 0; i < elementsToRead; ++i) {
             reinterpret_cast<OET*>(data.data())[i] = modify(ptr[i]);
         }
         return std::move(data);
@@ -309,7 +309,7 @@ namespace cgu {
             });
         }
 
-        data = readModifyData<float, float, float, float>(data, static_cast<unsigned int>(data.size() * sizeof(float)), [maxValue](const float& val) { return val / maxValue; });
+        data = readModifyData<float, float, float, float>(data, data.size() * sizeof(float), [maxValue](const float& val) { return val / maxValue; });
 
         auto tempDesc = texDesc;
         tempDesc.type = GL_FLOAT;

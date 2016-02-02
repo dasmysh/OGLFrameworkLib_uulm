@@ -249,21 +249,22 @@ namespace cgu {
         OGL_CALL(glBufferData, GL_ARRAY_BUFFER, (tf_.points().size() + 2) * sizeof(tf::ControlPoint),
             nullptr, GL_DYNAMIC_DRAW);
 
-        tf::ControlPoint first, last;
-        first = tf_.points()[0];
-        first.SetValue(0.0f);
-        last = tf_.points().back();
-        last.SetValue(1.0f);
-
         auto tmpPoints = tf_.points();
         for (auto& pt : tmpPoints) {
             auto pos = pt.GetPos();
             pos.y = glm::log((pos.y * (scaleBase - 1.0f)) + 1.0f) / glm::log(scaleBase);
             pt.SetPos(pos);
         }
+
+        tf::ControlPoint first, last;
+        first = tmpPoints[0];
+        first.SetValue(0.0f);
+        last = tmpPoints.back();
+        last.SetValue(1.0f);
+
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(tf::ControlPoint), &first);
-        glBufferSubData(GL_ARRAY_BUFFER, sizeof(tf::ControlPoint), tf_.points().size() * sizeof(tf::ControlPoint), tmpPoints.data());
-        glBufferSubData(GL_ARRAY_BUFFER, (tf_.points().size() + 1) * sizeof(tf::ControlPoint), sizeof(tf::ControlPoint), &last);
+        glBufferSubData(GL_ARRAY_BUFFER, sizeof(tf::ControlPoint), tmpPoints.size() * sizeof(tf::ControlPoint), tmpPoints.data());
+        glBufferSubData(GL_ARRAY_BUFFER, (tmpPoints.size() + 1) * sizeof(tf::ControlPoint), sizeof(tf::ControlPoint), &last);
 
         if (createVAO) {
             auto loc = tfProgram->GetAttributeLocations({ "value", "color" });

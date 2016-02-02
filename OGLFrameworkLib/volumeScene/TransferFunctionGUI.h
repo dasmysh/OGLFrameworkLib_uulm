@@ -40,7 +40,7 @@ namespace cgu {
         static const int CP_GUI_HEIGHT = 128;
         static const int TEX_RES = 512;
         const float pickRadius = 10.0f;
-        const float scaleBase = 15.0f;
+        const float scaleBase = 20.0f;
 
         bool SelectPoint(const glm::vec2& position, const glm::vec2& pickSize);
         bool AddPoint(const glm::vec2& position, const glm::vec2& pickSize);
