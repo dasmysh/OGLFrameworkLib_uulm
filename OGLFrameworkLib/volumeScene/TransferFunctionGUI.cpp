@@ -169,9 +169,10 @@ namespace cgu {
         const auto SEL_RAD2 = (pickRadius / (rectMax.x - rectMin.x)) * (pickRadius / (rectMax.y - rectMin.y));
         if (relCoords.x >= -SEL_RAD2 && relCoords.y >= -SEL_RAD2 && relCoords.x <= 1.0f + SEL_RAD2 && relCoords.y <= 1.0f + SEL_RAD2)
         {
-            // left click: select point
-            if (buttonAction & RI_MOUSE_LEFT_BUTTON_DOWN && SelectPoint(relCoords, pickSize)) {
-                draggingSelection = true;
+            // left click: select point or start dragging
+            if (buttonAction & RI_MOUSE_LEFT_BUTTON_DOWN) {
+                auto oldSelection = selection;
+                if (SelectPoint(relCoords, pickSize) && selection != -1 && selection == oldSelection) draggingSelection = true;
             }
 
             // right click: delete old point
@@ -228,7 +229,7 @@ namespace cgu {
 
     void TransferFunctionGUI::InitTF(float freq)
     {
-        tf_.InitWithFreqRGBA(freq / 2.0f, 1.0f - freq / 2.0f, 1.0f / ((1.0f / freq) + 1.0f));
+        tf_.InitWithFreqRGBA(freq / 2.0f, 1.0f - freq / 2.0f, 1.0f / ((1.0f / freq) + 1.0f), 0.1f);
         UpdateTF();
     }
 
@@ -291,15 +292,19 @@ namespace cgu {
     {
         const auto SEL_RAD2 = (pickRadius / (rectMax.x - rectMin.x)) * (pickRadius / (rectMax.y - rectMin.y));
 
+        auto curSelectDist2 = SEL_RAD2 * 2.0f;
+        auto curSel = -1;
         for (auto i = 0; i < static_cast<int>(tf_.points().size()); ++i) {
             auto p = tf_.points()[i].GetPos();
             // p.y = 1.f - p.y;
             // glm::vec2 pos = p * (rectMax - rectMin) + rectMin;
             auto d = mouse_pos - p;
             auto dist2 = d.x * d.x + d.y * d.y;
-            if (dist2 < SEL_RAD2)
-                return i;
+            if (dist2 < SEL_RAD2 && dist2 < curSelectDist2) {
+                curSelectDist2 = dist2;
+                curSel = i;
+            }
         }
-        return -1;
+        return curSel;
     }
 }

@@ -59,7 +59,7 @@ namespace cgu {
             void CreateTextureData(glm::vec4* data, int resolution) const;
             void SaveToFile(const std::string& filename) const;
             void LoadFromFile(const std::string& filename);
-            void InitWithFreqRGBA(float start, float end, float freq);
+            void InitWithFreqRGBA(float start, float end, float freq, float alpha = 0.3f);
 
             std::vector<ControlPoint>& points() { return points_; }
             const std::vector<ControlPoint>& points() const { return points_; }

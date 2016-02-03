@@ -11,7 +11,6 @@
 
 #include "main.h"
 #include "gfx/glrenderer/GLTexture.h"
-#include <boost/filesystem.hpp>
 
 namespace cgu {
 
@@ -30,6 +29,7 @@ namespace cgu {
         const GLTexture* GetVolumeTexture() const { return volumeTexture.get(); }
         const GLTexture* GetMinMaxTexture() const { return minMaxTexture.get(); }
         float GetTexMax() const { return texMax; }
+        float GetStepSize(unsigned int mipLevel) const { return stepSizes[mipLevel]; };
 
     private:
         /** Holds the 3D texture object to load from. */
@@ -56,6 +56,8 @@ namespace cgu {
         glm::uvec3 volumeSize;
         /** Holds the maximum texture dimension. */
         float texMax;
+        /** Holds the step sizes for the mip levels. */
+        std::vector<float> stepSizes;
 
         /** Holds the scaling of a voxel. */
         const glm::vec3 voxelScale;

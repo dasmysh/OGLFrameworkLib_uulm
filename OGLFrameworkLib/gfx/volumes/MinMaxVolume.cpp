@@ -42,6 +42,7 @@ namespace cgu {
         voxelScale(volumeData->GetScaling() * glm::vec3(volumeSize) / static_cast<float>(calcTextureMaxSize(volumeSize)))
     {
         auto numLevels = calcMipLevels(static_cast<unsigned int>(texMax));
+        stepSizes.resize(numLevels, 1.0f / (2.0f * texMax));
 
         volumeTexture = volumeData->Load3DTexture(numLevels);
 
@@ -73,8 +74,11 @@ namespace cgu {
         mipLevelsProgram->SetUniform(mipLevelsUniformNames[1], 1);
 
         auto numGroups = glm::ivec3(glm::ceil(glm::vec3(volumeSize) / 8.0f));
+        auto stepSizeFactor = 1.0f;
         for (unsigned int lvl = 1; lvl < numLevels; ++lvl) {
             numGroups = glm::ivec3(glm::ceil(glm::vec3(numGroups) * 0.5f));
+            stepSizeFactor *= 2.0f;
+            stepSizes[lvl] *= stepSizeFactor;
 
             OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
             OGL_SCALL(glFinish);

@@ -102,16 +102,16 @@ namespace cgu {
             }
         }
 
-        void TransferFunction::InitWithFreqRGBA(float start, float end, float freq)
+        void TransferFunction::InitWithFreqRGBA(float start, float end, float freq, float alpha /*= 0.3f*/)
         {
             points_.clear();
             auto freqAcc = start;
             points_.push_back(ControlPoint{ start, glm::vec4(0.0f) });
             while (freqAcc < end) {
                 points_.push_back(ControlPoint{ freqAcc, glm::vec4(0.0f) });
-                points_.push_back(ControlPoint{ freqAcc + (freq * 0.25f), glm::vec4(1.0f, 0.0f, 0.0f, 0.3f) });
+                points_.push_back(ControlPoint{ freqAcc + (freq * 0.25f), glm::vec4(1.0f, 0.0f, 0.0f, alpha) });
                 points_.push_back(ControlPoint{ freqAcc + (freq * 0.50f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) });
-                points_.push_back(ControlPoint{ freqAcc + (freq * 0.75f), glm::vec4(0.0f, 0.0f, 1.0f, 0.3f) });
+                points_.push_back(ControlPoint{ freqAcc + (freq * 0.75f), glm::vec4(0.0f, 0.0f, 1.0f, alpha) });
                 freqAcc += freq;
             }
 
