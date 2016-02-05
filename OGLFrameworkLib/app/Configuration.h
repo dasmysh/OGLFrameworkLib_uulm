@@ -51,6 +51,8 @@ namespace cgu {
         std::string resourceBase;
         /** Holds the resource base directory. */
         std::vector<std::string> resourceDirs;
+        /** Holds the directory for evaluation results. */
+        std::string evalDirectory;
         /** Holds whether to use CUDA in the application or not. */
         bool useCUDA;
         /** Holds the used CUDA device if CUDA is used. */
@@ -90,6 +92,9 @@ namespace cgu {
             if (version >= 5) {
                 ar & BOOST_SERIALIZATION_NVP(resourceDirs);
             }
+            if (version >= 7) {
+                ar & BOOST_SERIALIZATION_NVP(evalDirectory);
+            }
             if (version >= 2) {
                 ar & BOOST_SERIALIZATION_NVP(useCUDA);
                 ar & BOOST_SERIALIZATION_NVP(cudaDevice);
@@ -126,6 +131,9 @@ namespace cgu {
             if (version >= 5) {
                 ar & BOOST_SERIALIZATION_NVP(resourceDirs);
             }
+            if (version >= 7) {
+                ar & BOOST_SERIALIZATION_NVP(evalDirectory);
+            }
             if (version >= 2) {
                 ar & BOOST_SERIALIZATION_NVP(useCUDA);
                 ar & BOOST_SERIALIZATION_NVP(cudaDevice);
@@ -140,6 +148,6 @@ namespace cgu {
     };
 }
 
-BOOST_CLASS_VERSION(cgu::Configuration, 6)
+BOOST_CLASS_VERSION(cgu::Configuration, 7)
 
 #endif /* CONFIGURATION_H */

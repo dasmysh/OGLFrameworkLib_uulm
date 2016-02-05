@@ -16,6 +16,11 @@ namespace cgu {
         str << v.x << "(" << v.y << ")";
         return str;
     }
+
+    inline std::ostream& operator<<(std::ostream& str, const glm::vec3& v) {
+        str << v.x << "(" << v.y << ", max: " << v.z << ")";
+        return str;
+    }
 }
 
 #endif // GLM_HELPER_H

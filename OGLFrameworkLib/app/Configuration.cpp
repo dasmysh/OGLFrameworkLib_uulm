@@ -20,6 +20,7 @@ namespace cgu {
         useSRGB(false),
         pauseOnKillFocus(false),
         resourceBase("resources"),
+        evalDirectory("evaluation"),
         useCUDA(true),
         cudaDevice(-1),
         sceneFile(""),
