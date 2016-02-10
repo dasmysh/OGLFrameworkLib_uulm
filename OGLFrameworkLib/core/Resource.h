@@ -33,6 +33,7 @@ namespace cgu {
         virtual ~Resource();
 
         const std::string& getId() const;
+        const std::string& GetFilename() const { return parameters[0]; }
 
     protected:
         /** A list of sub-resources. */

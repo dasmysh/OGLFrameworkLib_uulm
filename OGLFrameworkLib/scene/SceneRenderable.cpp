@@ -31,6 +31,13 @@ namespace cgu {
         UpdatePositionOrientation(position, orientation);
     }
 
+    void SceneRenderable::ResetScene(const glm::mat4& world)
+    {
+        worldMatrix = world;
+        position = glm::vec3(world[3]);
+        orientation = glm::quat_cast(world);
+    }
+
     void SceneRenderable::UpdatePositionOrientation(const glm::vec3& pos, const glm::quat& orient)
     {
         position = pos;

@@ -134,6 +134,25 @@ namespace cgu {
     /** Default destructor. */
     CameraView::~CameraView() = default;
 
+    void CameraView::ResetCamera(const glm::mat4& proj, const glm::mat4& vw)
+    {
+        perspective = proj;
+        nearZ = proj[3][2] / (proj[2][2] - 1);
+        farZ = proj[3][2] / (proj[2][2] + 1);
+        auto t = proj[3][2] / ((proj[2][2] - 1) * proj[1][1]);
+        auto r = proj[3][2] / ((proj[2][2] - 1) * proj[0][0]);
+
+        fovY = 2.f * glm::atan(t / nearZ);
+        aspectRatio = r / t;
+
+        view = vw;
+
+        auto viewInv = glm::inverse(view);
+        camOrient = glm::quat_cast(viewInv);
+        camPos = glm::vec3(viewInv[3]);
+        camUp = glm::vec3(viewInv[1]);
+    }
+
     void CameraView::Resize(const glm::uvec2& theScreenSize)
     {
         screenSize = theScreenSize;

@@ -45,6 +45,7 @@ namespace cgu {
         CameraView& operator=(CameraView&&);
         virtual ~CameraView();
 
+        void ResetCamera(const glm::mat4& proj, const glm::mat4& view);
         void Resize(const glm::uvec2& screenSize);
         bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);

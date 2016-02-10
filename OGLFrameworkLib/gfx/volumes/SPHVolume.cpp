@@ -1,12 +1,12 @@
 /**
- * @file   MinMaxVolume.cpp
+ * @file   SPHVolume.cpp
  * @author Sebastian Maisch <sebastian.maisch@uni-ulm.de>
- * @date   2016.01.15
+ * @date   2016.02.09
  *
- * @brief  Implementation of a volume with average, minimum and maximum values.
+ * @brief  Implementation of a volume with spherical harmonics downsampling.
  */
 
-#include "MinMaxVolume.h"
+#include "SPHVolume.h"
 #include "gfx/volumes/Volume.h"
 #include "gfx/glrenderer/GLTexture.h"
 #include "app/ApplicationBase.h"
@@ -31,12 +31,11 @@ namespace cgu {
         return static_cast<unsigned int>(fNumLevels);
     }
 
-    MinMaxVolume::MinMaxVolume(const std::shared_ptr<const Volume>& texData, ApplicationBase* app) :
+    SPHVolume::SPHVolume(const std::shared_ptr<const Volume>& texData, ApplicationBase* app) :
         volumeData(texData),
         volumeTexture(nullptr),
-        minMaxTexture(nullptr),
-        minMaxProgram(nullptr),
-        minMaxLevelsProgram(nullptr),
+        sphProgram(nullptr),
+        sphLevelsProgram(nullptr),
         volumeSize(volumeData->GetSize()),
         texMax(static_cast<float>(calcTextureMaxSize(volumeSize))),
         voxelScale(volumeData->GetScaling() * glm::vec3(volumeSize) / static_cast<float>(calcTextureMaxSize(volumeSize)))
@@ -44,30 +43,30 @@ namespace cgu {
         auto numLevels = calcMipLevels(static_cast<unsigned int>(texMax));
         stepSizes.resize(numLevels, 1.0f / (2.0f * texMax));
 
-        volumeTexture = volumeData->Load3DTexture(numLevels);
+        volumeTexture = volumeData->Load3DTexture(3);
 
         std::string shaderDefines;
-        auto minMaxDesc = volumeTexture->GetDescriptor();
-        minMaxDesc.bytesPP *= 4;
-        minMaxDesc.format = GL_RG;
-        switch (minMaxDesc.internalFormat) {
+        auto sphDesc = volumeTexture->GetDescriptor();
+        sphDesc.bytesPP *= 4;
+        sphDesc.format = GL_RGBA;
+        switch (sphDesc.internalFormat) {
         case GL_R8:
-            minMaxDesc.internalFormat = GL_RG8;
-            shaderDefines = "AVGTEX r8,MMTEX rg8";
+            sphDesc.internalFormat = GL_RGBA8;
+            shaderDefines = "TEX r8,SPHTEX rgba8";
             break;
         case GL_R16F:
-            minMaxDesc.internalFormat = GL_RG16F;
-            shaderDefines = "AVGTEX r16f,MMTEX rg16f";
+            sphDesc.internalFormat = GL_RGBA16F;
+            shaderDefines = "TEX r16f,SPHTEX rgba16f";
             break;
         case GL_R32F:
-            minMaxDesc.internalFormat = GL_RG32F;
-            shaderDefines = "AVGTEX r32f,MMTEX rg32f";
+            sphDesc.internalFormat = GL_RGBA32F;
+            shaderDefines = "TEX r32f,SPHTEX rgba32f";
             break;
         default:
             throw std::runtime_error("Texture format not allowed.");
         }
 
-        mipLevelsProgram = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMipLevels.cp," + shaderDefines);
+        /*mipLevelsProgram = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMipLevels.cp," + shaderDefines);
         mipLevelsUniformNames = mipLevelsProgram->GetUniformLocations({ "origLevelTex", "nextLevelTex" });
         mipLevelsProgram->UseProgram();
         mipLevelsProgram->SetUniform(mipLevelsUniformNames[0], 0);
@@ -88,21 +87,41 @@ namespace cgu {
             OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
         }
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
+        OGL_SCALL(glFinish);*/
+
+        auto sphSize = volumeTexture->GetLevelDimensions(2);
+        auto sphLevels = calcMipLevels(calcTextureMaxSize(sphSize)) - 4;
+        auto twoRootPi = 2.0f * glm::root_pi<float>();
+        sphCoeffs = glm::vec2(1.0f / twoRootPi, glm::root_three<float>() / twoRootPi);
+
+        sphTextures[0] = std::make_unique<GLTexture>(sphSize.x, sphSize.y, sphSize.z, sphLevels, sphDesc, nullptr);
+        sphTextures[1] = std::make_unique<GLTexture>(sphSize.x, sphSize.y, sphSize.z, sphLevels, sphDesc, nullptr);
+        sphProgram = app->GetGPUProgramManager()->GetResource("shader/sphvolumes/genSPHMap.cp," + shaderDefines);
+        sphUniformNames = sphProgram->GetUniformLocations({ "origTex", "sphTex0", "sphTex1", "sphCoeffs" });
+        sphProgram->UseProgram();
+        sphProgram->SetUniform(sphUniformNames[0], 0);
+        sphProgram->SetUniform(sphUniformNames[1], 1);
+        sphProgram->SetUniform(sphUniformNames[2], 2);
+        sphProgram->SetUniform(sphUniformNames[3], sphCoeffs);
+
+        auto numGroups = glm::ivec3(glm::ceil(glm::vec3(sphSize) / 8.0f));
+        volumeTexture->ActivateImage(0, 0, GL_READ_ONLY);
+        for (unsigned int lvl = 0; lvl < sphLevels; ++lvl) {
+            OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
+            OGL_SCALL(glFinish);
+
+            sphTextures[0]->ActivateImage(1, lvl, GL_WRITE_ONLY);
+            sphTextures[1]->ActivateImage(2, lvl, GL_WRITE_ONLY);
+            OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
+            numGroups = glm::ivec3(glm::ceil(glm::vec3(numGroups) * 0.5f));
+        }
+        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_SCALL(glFinish);
 
-        auto minMaxSize = volumeTexture->GetLevelDimensions(2);
-        auto minMaxLevels = calcMipLevels(calcTextureMaxSize(minMaxSize));
 
-        minMaxTexture = std::make_unique<GLTexture>(minMaxSize.x, minMaxSize.y, minMaxSize.z, minMaxLevels, minMaxDesc, nullptr);
-        minMaxProgram = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMax.cp," + shaderDefines);
-        minMaxUniformNames = minMaxProgram->GetUniformLocations({ "origTex", "minMaxTex" });
-        minMaxProgram->UseProgram();
-        minMaxProgram->SetUniform(minMaxUniformNames[0], 0);
-        minMaxProgram->SetUniform(minMaxUniformNames[1], 1);
-
-        numGroups = glm::ivec3(glm::ceil(glm::vec3(minMaxSize) / 8.0f));
-        volumeTexture->ActivateImage(0, 0, GL_READ_ONLY);
-        minMaxTexture->ActivateImage(1, 0, GL_WRITE_ONLY);
+        /*volumeTexture->ActivateImage(0, 0, GL_READ_ONLY);
+        sphTextures[0]->ActivateImage(1, 0, GL_WRITE_ONLY);
+        sphTextures[1]->ActivateImage(2, 0, GL_WRITE_ONLY);
         OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
 
         minMaxLevelsProgram = app->GetGPUProgramManager()->GetResource("shader/minmaxmaps/genMinMaxLevels.cp," + shaderDefines);
@@ -123,23 +142,18 @@ namespace cgu {
             OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
         }
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        OGL_SCALL(glFinish);*/
     }
 
     /**
      *  Destructor.
      */
-    MinMaxVolume::~MinMaxVolume()
+    SPHVolume::~SPHVolume()
     {
     }
 
-    glm::mat4 MinMaxVolume::GetLocalWorld(const glm::mat4& world) const
+    glm::mat4 SPHVolume::GetLocalWorld(const glm::mat4& world) const
     {
         return glm::scale(glm::translate(world, -0.5f * voxelScale), voxelScale);
-    }
-
-    glm::mat4 MinMaxVolume::ReverseLocalWorld(const glm::mat4& world) const
-    {
-        return glm::translate(glm::scale(world, 1.0f / voxelScale), 0.5f * voxelScale);
     }
 }

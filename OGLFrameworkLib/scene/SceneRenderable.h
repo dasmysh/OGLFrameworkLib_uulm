@@ -29,6 +29,8 @@ namespace cgu {
     protected:
         /** Constructor used for derivations that create their own renderables. */
         SceneRenderable(const glm::vec3& pos, const glm::quat& orient);
+        /** Reset the scene orientation and position. */
+        void ResetScene(const glm::mat4& world);
 
         /** Holds the renderable used for display. */
         MeshRenderable* renderable;

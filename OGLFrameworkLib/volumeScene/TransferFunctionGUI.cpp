@@ -123,11 +123,12 @@ namespace cgu {
             saveTFFilename = tmpFilename.data();
         }
         if (ImGui::Button("Save TF")) {
-            tf_.SaveToFile(saveTFFilename + ".tf");
+            SaveTransferFunction();
+
         }
         if (ImGui::Button("Load TF")) {
-            tf_.LoadFromFile(saveTFFilename + ".tf");
-            UpdateTF();
+            LoadTransferFunction(saveTFFilename);
+
         }
         if (ImGui::Button("Init TF High Freq")) {
             InitTF(1.0f / 16.0f);
@@ -136,6 +137,19 @@ namespace cgu {
             InitTF(1.0f / 4.0f);
         }
         ImGui::End();
+    }
+
+    void TransferFunctionGUI::LoadTransferFunction(const std::string& filename)
+    {
+        saveTFFilename = filename;
+        tf_.LoadFromFile(saveTFFilename + ".tf");
+        UpdateTF();
+    }
+
+    const std::string& TransferFunctionGUI::SaveTransferFunction() const
+    {
+        tf_.SaveToFile(saveTFFilename + ".tf");
+        return saveTFFilename;
     }
 
     bool TransferFunctionGUI::HandleMouse(unsigned int buttonAction, float, BaseGLWindow* sender)

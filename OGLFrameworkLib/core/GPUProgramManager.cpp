@@ -102,7 +102,7 @@ namespace cgu {
         auto errDesc = boost::get_error_info<errdesc_info>(except);
         auto errorString = boost::get_error_info<compiler_error_info>(except);
         auto message = "ResourceID: " + (*resid) + "\n";
-        message += "Filename: " + (*filename) + "\n";
+        if (filename) message += "Filename: " + (*filename) + "\n";
         message += "Description: " + (*errDesc) + "\n";
         message += "Compiler Message:\n" + (*errorString) + "\n";
         message += "\nRecompile (y) or Quit (n)?";

@@ -28,6 +28,10 @@ namespace cgu {
         ~TransferFunctionGUI();
 
         void Draw();
+
+        void LoadTransferFunction(const std::string& filename);
+        const std::string& SaveTransferFunction() const;
+
         void Resize(const glm::uvec2& screenSize);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
         void LoadTransferFunctionFromFile(const std::string& filename);
