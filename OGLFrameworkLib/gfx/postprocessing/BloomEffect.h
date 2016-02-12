@@ -13,8 +13,6 @@
 
 namespace cgu {
 
-    class GLRenderTarget;
-    class ScreenQuadRenderable;
     class GPUProgram;
     class GLTexture;
 
@@ -30,11 +28,11 @@ namespace cgu {
     class BloomEffect
     {
     public:
-        explicit BloomEffect(ApplicationBase* app);
+        explicit BloomEffect(const glm::ivec2 sourceSize, ApplicationBase* app);
         ~BloomEffect();
 
         void RenderParameterSliders();
-        void ApplyEffect(GLRenderTarget* sourceRT, GLRenderTarget* targetRT);
+        void ApplyEffect(GLTexture* sourceRT, GLTexture* targetRT);
         void Resize(const glm::uvec2& screenSize);
 
         void SetExposure(float exposure) { params.exposure = exposure; }
@@ -51,8 +49,6 @@ namespace cgu {
         /** Holds the bloom parameters. */
         BloomParams params;
 
-        /** Holds the screen quad renderable. */
-        cgu::ScreenQuadRenderable* renderable;
         /** Holds the GPU program used for glare detection. */
         std::shared_ptr<GPUProgram> glareDetectProgram;
         /** Holds the glare program uniform ids. */

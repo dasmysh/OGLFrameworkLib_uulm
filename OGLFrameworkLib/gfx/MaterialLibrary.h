@@ -20,13 +20,11 @@ namespace cgu {
 
     struct MaterialResourceLoadingPolicy
     {
-        static std::shared_ptr<Material> CreateResource(const std::string&, ApplicationBase*)
-        {
-            return std::move(std::make_shared<Material>());
-        }
-
-        static bool IsResourceLoaded(const Material*) { return true; }
-        static void LoadResource(Material*) {}
+        static std::shared_ptr<Material> CreateResource(const std::string& resDesc, ApplicationBase* app);
+        static void notImplemented(const std::string& feature);
+        static glm::vec3 parseColor(const boost::smatch & matches);
+        static std::shared_ptr<const GLTexture2D> parseTexture(const std::string& matches, const std::string& params, const std::string& libfile, ApplicationBase* app);
+        static float parseFloatParameter(const std::string& paramName, const std::string& matches, float defaultValue);
     };
 
     /**
@@ -45,11 +43,16 @@ namespace cgu {
         MaterialLibrary& operator=(MaterialLibrary&&);
         virtual ~MaterialLibrary();
 
+    protected:
+        std::string TranslateCreationParameters(const std::string& id) override;
     private:
-        glm::vec3 parseColor(const boost::smatch& matches) const;
-        std::shared_ptr<const GLTexture2D> parseTexture(const std::string& matches, const std::string& params) const;
-        float parseFloatParameter(const std::string& paramName, const std::string& matches, float defaultValue) const;
-        static void notImplemented(const std::string& feature);
+        //glm::vec3 parseColor(const boost::smatch& matches) const;
+        //std::shared_ptr<const GLTexture2D> parseTexture(const std::string& matches, const std::string& params) const;
+        //float parseFloatParameter(const std::string& paramName, const std::string& matches, float defaultValue) const;
+        //static void notImplemented(const std::string& feature);
+
+        /** Holds a map of material ids and strings that can create them. */
+        std::unordered_map<std::string, std::string> materialParams;
     };
 }
 

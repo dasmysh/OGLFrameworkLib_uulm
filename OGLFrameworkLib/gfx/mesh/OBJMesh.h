@@ -53,6 +53,9 @@ namespace cgu {
         static void addSurfToMesh(SubMesh* mesh, const std::string& line);
 
         static void notImplemented(const std::string & feature);
+
+        /** Holds all material libraries the mesh uses. */
+        std::vector<std::shared_ptr<MaterialLibrary>> mtlLibraries;
     };
 }
 

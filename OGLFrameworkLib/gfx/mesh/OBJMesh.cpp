@@ -208,7 +208,6 @@ namespace cgu {
         std::string currLine;
         boost::smatch lineMatch;
         SubMesh* subMesh = this;
-        std::vector<std::shared_ptr<MaterialLibrary>> mtlLibraries;
         SubMeshMaterialChunk mtlChunk;
         std::vector<std::unique_ptr<CacheEntry> > vfCache(vertices.capacity());
         std::vector<std::unique_ptr<CacheEntry> > vlCache(vertices.capacity());

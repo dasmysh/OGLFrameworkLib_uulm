@@ -132,9 +132,9 @@ namespace cgu {
     {
         program->UseProgram();
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        DrawSubMesh<true>(program, attribBinds, attribBinds.GetVertexAttributes()[0], mesh);
+        DrawSubMesh<useMaterials>(program, attribBinds, attribBinds.GetVertexAttributes()[0], mesh);
         for (unsigned int idx = 0; idx < iBuffers.size(); ++idx) {
-            DrawSubMesh<true>(program, attribBinds, attribBinds.GetVertexAttributes()[idx + 1], mesh->subMeshes[idx]);
+            DrawSubMesh<useMaterials>(program, attribBinds, attribBinds.GetVertexAttributes()[idx + 1], mesh->subMeshes[idx]);
         }
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
     }

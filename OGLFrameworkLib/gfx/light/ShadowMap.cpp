@@ -28,7 +28,7 @@ namespace cgu {
         smProgram->BindUniformBlock(perspectiveProjectionUBBName, *app->GetUBOBindingPoints());
 
         FrameBufferDescriptor fbd;
-        fbd.texDesc.emplace_back(32, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT);
+        fbd.texDesc.emplace_back(4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT);
         shadowMapRT.reset(new GLRenderTarget(size.x, size.y, fbd));
         shadowMapRT->GetTextures()[0]->ActivateShadowMapComparison();
     }
@@ -37,6 +37,7 @@ namespace cgu {
 
     void ShadowMap::RenderShadowGeometry(std::function<void(const CameraView&, GLBatchRenderTarget&) > batch)
     {
+        LOG(WARNING) << "SMRT: " << shadowMapRT->GetTextures()[0]->GetGLIdentifier().textureId;
         shadowMapRT->BatchDraw([&](cgu::GLBatchRenderTarget & brt) {
             brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), nullptr, 1.0, 0);
 

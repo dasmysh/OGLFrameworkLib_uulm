@@ -48,13 +48,17 @@ namespace cgu {
 
     void FilmicTMOperator::RenderParameterSliders()
     {
-        ImGui::InputFloat("Shoulder Strength", &params.sStrength, 0.01f);
-        ImGui::InputFloat("Linear Strength", &params.linStrength, 0.1f);
-        ImGui::InputFloat("Linear Angle", &params.linAngle, 0.01f);
-        ImGui::InputFloat("Toe Strength", &params.toeStrength, 0.1f);
-        ImGui::InputFloat("Toe Numerator", &params.toeNumerator, 0.01f);
-        ImGui::InputFloat("Toe Denominator", &params.toeDenominator, 0.1f);
-        ImGui::InputFloat("White", &params.white, 0.1f);
+        if (ImGui::TreeNode("Filmic TM Parameters"))
+        {
+            ImGui::InputFloat("Shoulder Strength", &params.sStrength, 0.01f);
+            ImGui::InputFloat("Linear Strength", &params.linStrength, 0.1f);
+            ImGui::InputFloat("Linear Angle", &params.linAngle, 0.01f);
+            ImGui::InputFloat("Toe Strength", &params.toeStrength, 0.1f);
+            ImGui::InputFloat("Toe Numerator", &params.toeNumerator, 0.01f);
+            ImGui::InputFloat("Toe Denominator", &params.toeDenominator, 0.1f);
+            ImGui::InputFloat("White", &params.white, 0.1f);
+            ImGui::TreePop();
+        }
         // no gamma on sRGB targets
         // TwAddVarRW(bar, "Gamma", TW_TYPE_FLOAT, &params.gamma, " label='Gamma' min=1.0 max=3.0 step=0.1");
     }
@@ -65,14 +69,14 @@ namespace cgu {
     {
     }
 
-    void FilmicTMOperator::ApplyTonemapping(GLRenderTarget* sourceRT, GLRenderTarget* targetRT)
+    void FilmicTMOperator::ApplyTonemapping(GLTexture* sourceRT, GLRenderTarget* targetRT)
     {
         filmicUBO->UploadData(0, sizeof(FilmicTMParameters), &params);
         filmicUBO->BindBuffer();
 
         targetRT->BatchDraw([this, sourceRT](cgu::GLBatchRenderTarget & brt) {
             tmProgram->UseProgram();
-            sourceRT->GetTextures()[0]->ActivateTexture(GL_TEXTURE0);
+            sourceRT->ActivateTexture(GL_TEXTURE0);
             tmProgram->SetUniform(uniformIds[0], 0);
             renderable->Draw();
         });

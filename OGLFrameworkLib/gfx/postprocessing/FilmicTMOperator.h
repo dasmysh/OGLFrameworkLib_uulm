@@ -17,6 +17,7 @@ namespace cgu {
     class GPUProgram;
     class GLUniformBuffer;
     class ScreenQuadRenderable;
+    class GLTexture;
 
 
     struct FilmicTMParameters
@@ -42,7 +43,7 @@ namespace cgu {
         ~FilmicTMOperator();
 
         void RenderParameterSliders();
-        void ApplyTonemapping(GLRenderTarget* sourceRT, GLRenderTarget* targetRT);
+        void ApplyTonemapping(GLTexture* sourceRT, GLRenderTarget* targetRT);
         void Resize(const glm::uvec2& screenSize);
 
         void SetExposure(float exposure) { params.exposure = exposure; }
