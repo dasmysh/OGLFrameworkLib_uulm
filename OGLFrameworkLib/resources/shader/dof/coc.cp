@@ -9,7 +9,8 @@ uniform float scale;
 uniform vec3 clipInfo;
 
 float reconstructLinearZ(float d) {
-   return clipInfo[0] / (clipInfo[1] * d + clipInfo[2]);
+    float dN = (2.0f * d) - 1.0f;
+    return clipInfo[0] / (clipInfo[1] - (d * clipInfo[2]));
 }
 
 layout(local_size_x = 32, local_size_y = 16, local_size_z = 1) in;
@@ -21,9 +22,9 @@ void main() {
     vec4 result;
     result.rgb = texelFetch(colorTex, pos, 0).rgb;
     float z = reconstructLinearZ(texelFetch(depthTex, pos, 0).r);
-    result.a = (z - focusZ) * scale;
+    result.a = (z - focusZ) * scale / z;
     result.a = (result.a * 0.5f) + 0.5f;
 
-    // imageStore(targetTex, pos, result);
-    imageStore(targetTex, pos, vec4(1));
+    imageStore(targetTex, pos, result);
+    // imageStore(targetTex, pos, vec4(result.rgb, 1));
 }

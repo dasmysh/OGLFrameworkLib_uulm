@@ -8,6 +8,7 @@ layout(rgba32f) uniform image2D targetTex;
 uniform float defocus;
 uniform float bloomIntensity;
 
+const float coverageBoost = 0.7f;
 
 layout(local_size_x = 32, local_size_y = 16, local_size_z = 1) in;
 void main() {
@@ -24,9 +25,11 @@ void main() {
 
     float normRadius = (colorCoC.a * 2.0f) - 1.0f;
 
-    float a = clamp(1.5f * front.a, 0.0f, 1.0f);
-    front.rgb = front.rgb * (a / max(front.a, 0.001f));
-    front.a = a;
+    if (coverageBoost != 1.0f) {
+        float a = clamp(1.5f * front.a, 0.0f, 1.0f);
+        front.rgb = front.rgb * (a / max(front.a, 0.001f));
+        front.a = a;
+    }
 
     if (normRadius > 0.1f) {
         normRadius = min(normRadius * 1.5f, 1.0f);

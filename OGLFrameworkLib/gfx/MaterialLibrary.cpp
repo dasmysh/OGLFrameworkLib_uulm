@@ -31,8 +31,8 @@ namespace cgu {
         boost::regex reg_d_halo("^d\\s+-halo\\s+" + regex_help::flt + "$");
         boost::regex reg_Ns("^Ns\\s+" + regex_help::flt + "$");
         boost::regex reg_Ni("^Ni\\s+" + regex_help::flt + "$");
-        boost::regex reg_map_Kd("^map_Kd\\s+(.*\\s+)?([\\w-]+\\.\\w+)$");
-        boost::regex reg_map_bump("^(map_bump|bump)\\s+(.*\\s+)?([\\w-]+\\.\\w+)$");
+        boost::regex reg_map_Kd("^map_Kd\\s+(.*\\s+)?(.*)$");
+        boost::regex reg_map_bump("^(map_bump|bump)\\s+(.*\\s+)?(.*)$");
 
         auto currMat = std::make_shared<Material>();
         std::string libfile;
@@ -58,7 +58,7 @@ namespace cgu {
             } else if (boost::regex_match(currLine, lineMatch, reg_Ni)) {
                 currMat->N_i = boost::lexical_cast<float>(lineMatch[1].str());
             } else if (boost::regex_match(currLine, lineMatch, reg_map_Kd)) {
-                currMat->diffuseTex = std::move(parseTexture(lineMatch[2].str(), "sRGB", libfile, app));
+                currMat->diffuseTex = std::move(parseTexture(lineMatch[2].str(), "-sRGB", libfile, app));
             } else if (boost::regex_match(currLine, lineMatch, reg_map_bump)) {
                 currMat->bumpTex = std::move(parseTexture(lineMatch[3].str(), "", libfile, app));
                 currMat->bumpMultiplier = parseFloatParameter("-bm", lineMatch[2].str(), 1.0f);

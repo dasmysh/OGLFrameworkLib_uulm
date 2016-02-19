@@ -256,6 +256,12 @@ namespace cgu {
         return glm::dot(clampedCamPos - camPos, clampedCamPos - camPos);
     }
 
+    void CameraView::SetFOV(float fov)
+    {
+        fovY = fov;
+        perspective = glm::perspective(glm::radians(fovY), aspectRatio, nearZ, farZ);
+    }
+
     /**
      *  Handles keyboard input for camera positioning.
      *  @param vkCode the virtual key code of the key event.
@@ -282,7 +288,7 @@ namespace cgu {
             camPos += glm::vec3(0.5f, 0.0f, 0.0f);
             handled = true;
             break;
-        case VK_SPACE:
+        /*case VK_SPACE:
             camPos += glm::vec3(0.0f, 0.5f, 0.0f);
             handled = true;
             break;
@@ -290,7 +296,7 @@ namespace cgu {
         case VK_LCONTROL:
             camPos -= glm::vec3(0.0f, 0.5f, 0.0f);
             handled = true;
-            break;
+            break;*/
         }
 
         view = glm::lookAt(camPos, glm::vec3(0.0f), camUp);

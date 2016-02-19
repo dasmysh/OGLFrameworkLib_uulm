@@ -30,10 +30,10 @@ void main() {
     vec4 frontResult = vec4(0.0f);
     float frontWeightSum = 0.0f;
 
-    ivec2 sourcePos = ivec2(pos * (direction * 3 + ivec2(1)));
+    ivec2 sourcePos = ivec2(pos * (direction * (SIZE_FACTOR - 1) + ivec2(1)));
     float packedCoC = texelFetch(sourceTex, sourcePos, 0).a;
     float coc = ((packedCoC * 2.0f) - 1.0f) * float(maxCoCRadius);
-    float frontCoC = clamp(coc * 4.0f, 0.0f, 1.0f);
+    float frontCoC = clamp(coc * float(SIZE_FACTOR), 0.0f, 1.0f);
 
     for (int delta = -maxCoCRadius; delta <= maxCoCRadius; ++delta) {
         ivec2 samplePos = sourcePos + (direction * delta);
@@ -41,14 +41,14 @@ void main() {
         float sampleCoC = ((backInput.a * 2.0f) - 1.0f) * float(maxCoCRadius);
 
         int filterPos = int(float(abs(delta) * (KERNEL_SIZE - 1)) / (0.001f + abs(sampleCoC * 0.8f)));
-        float wNorm = (sampleCoC > 0.25) ? kernel[clamp(filterPos, 0, KERNEL_SIZE)] : 0.0f;
+        float wNorm = (sampleCoC < 0.25) ? kernel[clamp(filterPos, 0, KERNEL_SIZE)] : 0.0f;
         float weight = mix(wNorm, 1.0, frontCoC);
         backWeightSum  += weight;
         backResult.rgb += backInput.rgb * weight;
 
         vec4 frontInput;
 #ifdef HORIZONTAL
-        frontInput.a = float(abs(delta) <= sampleCoC) * clamp(sampleCoC * invFrontBlurRadius * 4.0f, 0.0f, 1.0f);
+        frontInput.a = float(abs(delta) <= sampleCoC) * clamp(sampleCoC * invFrontBlurRadius * float(SIZE_FACTOR), 0.0f, 1.0f);
         frontInput.a *= frontInput.a; frontInput.a *= frontInput.a;
         frontInput.rgb = backInput.rgb * frontInput.a;
 #else

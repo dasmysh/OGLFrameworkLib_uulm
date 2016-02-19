@@ -16,11 +16,13 @@ namespace cgu {
     class GPUProgram;
     class GLTexture;
     class CameraView;
+    class GLRenderTarget;
+    class ScreenQuadRenderable;
 
     struct DOFParams
     {
         float focusZ;
-        float lensRadius;
+        float apertureRadius;
     };
 
     class DepthOfField
@@ -34,9 +36,10 @@ namespace cgu {
         void Resize(const glm::uvec2& screenSize);
 
     private:
+        static const unsigned int RT_SIZE_FACTOR = 1;
         using FrontBackTargets = std::array<std::unique_ptr<GLTexture>, 2>;
 
-        float CalculateImagePlanePixelsPerMeter(const CameraView& cam) const;
+        float CalculateFocalLength(const CameraView& cam) const;
         float CalculateCoCRadius(const CameraView& cam, float z) const;
         int CalculateMaxCoCRadius(const CameraView& cam) const;
 
@@ -63,6 +66,11 @@ namespace cgu {
         std::shared_ptr<GPUProgram> combineProgram;
         /** Holds the combine program uniform ids. */
         std::vector<BindingLocation> combineUniformIds;
+
+        std::shared_ptr<GPUProgram> debugProgram;
+        std::vector<BindingLocation> debugUniformIds;
+        cgu::ScreenQuadRenderable* debugRenderable;
+        std::unique_ptr<GLRenderTarget> debugRT;
 
         /** Holds the size of the source textures. */
         glm::ivec2 sourceRTSize;

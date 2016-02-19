@@ -184,9 +184,9 @@ namespace cgu {
         std::vector<FontVertex> textVertices(text.size());
         pixelLength = 0.0f;
         for (unsigned int i = 0; i < text.size(); ++i) {
-            textVertices[i].idx = font->GetCharacterId(text[i]);
+            textVertices[i].idx[0] = font->GetCharacterId(text[i]);
             textVertices[i].pos = glm::vec3(pixelLength * direction, depthLayer);
-            pixelLength += font->GetFontMetrics().chars[textVertices[i].idx].xadv * fontSize.x;
+            pixelLength += font->GetFontMetrics().chars[textVertices[i].idx[0]].xadv * fontSize.x;
         }
 
         if (textVBOFences[currentBuffer] != nullptr) {

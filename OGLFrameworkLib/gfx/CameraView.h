@@ -59,6 +59,7 @@ namespace cgu {
         glm::vec2 CalculatePixelFootprintToUnitAABB(const glm::mat4& world) const;
         float GetSignedDistanceToUnitAABB2(const glm::mat4& world) const;
         float GetFOV() const { return fovY; }
+        void SetFOV(float fov);
         float GetNearZ() const { return nearZ; }
         float GetFarZ() const { return farZ; }
         const glm::uvec2& GetScreenSize() const { return screenSize; }

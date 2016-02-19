@@ -17,16 +17,27 @@ namespace cgu {
     DepthOfField::DepthOfField(const glm::ivec2 sourceSize, ApplicationBase* app) :
         cocProgram(app->GetGPUProgramManager()->GetResource("shader/dof/coc.cp")),
         cocUniformIds(cocProgram->GetUniformLocations({ "colorTex", "depthTex", "targetTex", "focusZ", "scale", "clipInfo" })),
-        hBlurProgram(app->GetGPUProgramManager()->GetResource("shader/dof/blurDoF.cp,HORIZONTAL")),
-        hBlurUniformIds(hBlurProgram->GetUniformLocations({ "sourceTex", "targetFrontTex", "targetBackTex", "maxCoCRadius", "frontBlurRadius", "invFrontBlurRadius" })),
-        vBlurProgram(app->GetGPUProgramManager()->GetResource("shader/dof/blurDoF.cp")),
-        vBlurUniformIds(vBlurProgram->GetUniformLocations({ "sourceFrontTex", "sourceTex", "targetFrontTex", "targetBackTex", "maxCoCRadius", "frontBlurRadius", "invFrontBlurRadius" })),
         combineProgram(app->GetGPUProgramManager()->GetResource("shader/dof/combineDoF.cp")),
         combineUniformIds(combineProgram->GetUniformLocations({ "cocTex", "sourceFrontTex", "sourceBackTex", "targetTex" })),
+        debugProgram(app->GetGPUProgramManager()->GetResource("shader/screenQuad.vp|shader/debugTexOut.fp")),
+        debugUniformIds(debugProgram->GetUniformLocations({ "sourceTex" })),
         sourceRTSize(sourceSize)
     {
-        params.focusZ = 0.5f;
-        params.lensRadius = 0.01f;
+        params.focusZ = 50.0f;
+        params.apertureRadius = 0.02f;
+
+        std::stringstream shaderDefines;
+        shaderDefines << "SIZE_FACTOR " << RT_SIZE_FACTOR;
+        hBlurProgram = app->GetGPUProgramManager()->GetResource("shader/dof/blurDoF.cp,HORIZONTAL," + shaderDefines.str());
+        hBlurUniformIds = hBlurProgram->GetUniformLocations({ "sourceTex", "targetFrontTex", "targetBackTex", "maxCoCRadius", "frontBlurRadius", "invFrontBlurRadius" });
+        vBlurProgram = app->GetGPUProgramManager()->GetResource("shader/dof/blurDoF.cp," + shaderDefines.str());
+        vBlurUniformIds = vBlurProgram->GetUniformLocations({ "sourceFrontTex", "sourceTex", "targetFrontTex", "targetBackTex", "maxCoCRadius", "frontBlurRadius", "invFrontBlurRadius" });
+
+        FrameBufferDescriptor hdrFBODesc;
+        hdrFBODesc.texDesc.emplace_back(16, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+        hdrFBODesc.texDesc.emplace_back(4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT);
+        debugRT.reset(new GLRenderTarget(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), hdrFBODesc));
+        debugRenderable = app->GetScreenQuadRenderable();
 
         Resize(sourceSize);
     }
@@ -37,8 +48,8 @@ namespace cgu {
     {
         if (ImGui::TreeNode("DepthOfField Parameters"))
         {
-            ImGui::InputFloat("DoF Focus", &params.focusZ, 0.001f);
-            ImGui::InputFloat("Lens Radius", &params.lensRadius, 0.01f);
+            ImGui::InputFloat("DoF Focus", &params.focusZ, 0.1f);
+            ImGui::InputFloat("Aperture Radius", &params.apertureRadius, 0.01f);
             ImGui::TreePop();
         }
     }
@@ -50,12 +61,13 @@ namespace cgu {
         auto targetSize = glm::vec2(sourceRTSize);
         auto numGroups = glm::ivec2(glm::ceil(targetSize / groupSize));
 
-
+        auto focalLength = CalculateFocalLength(cam);
         auto maxCoCRadius = CalculateMaxCoCRadius(cam);
         auto nearBlurRadius = static_cast<int>(glm::ceil(glm::max(static_cast<float>(sourceRTSize.y) / 100.0f, 12.0f)));
         auto invNearBlurRadius = 1.0f / glm::max(static_cast<float>(nearBlurRadius), 0.0001f);
-        const auto scale = CalculateImagePlanePixelsPerMeter(cam) * params.lensRadius / (params.focusZ * maxCoCRadius);
-        glm::vec3 clipInfo(cam.GetNearZ() * cam.GetFarZ(), cam.GetNearZ() - cam.GetFarZ(), cam.GetFarZ());
+        const auto scale = (params.apertureRadius * focalLength) / (params.focusZ - focalLength);
+        // * CalculateImagePlanePixelsPerMeter(cam)
+        glm::vec3 clipInfo(2.0f * cam.GetNearZ() * cam.GetFarZ(), cam.GetFarZ() - cam.GetNearZ(), cam.GetFarZ() + cam.GetNearZ());
 
         cocProgram->UseProgram();
         cocProgram->SetUniform(cocUniformIds[0], 0);
@@ -71,6 +83,15 @@ namespace cgu {
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_SCALL(glFinish);
 
+        float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        debugRT->BatchDraw([this,&clearColor](GLBatchRenderTarget& brt)
+        {
+            brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_RenderTarget) | static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), clearColor, 1.0, 0);
+            debugProgram->UseProgram();
+            cocRT->ActivateTexture(GL_TEXTURE0);
+            debugProgram->SetUniform(debugUniformIds[0], 0);
+            debugRenderable->Draw();
+        });
 
         hBlurProgram->UseProgram();
         hBlurProgram->SetUniform(hBlurUniformIds[0], 0);
@@ -81,10 +102,19 @@ namespace cgu {
         hBlurProgram->SetUniform(hBlurUniformIds[5], invNearBlurRadius);
         cocRT->ActivateTexture(GL_TEXTURE0);
         blurRTs[0][0]->ActivateImage(0, 0, GL_WRITE_ONLY);;
-        blurRTs[0][1]->ActivateImage(0, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x / 4, numGroups.y, 1);
+        blurRTs[0][1]->ActivateImage(1, 0, GL_WRITE_ONLY);
+        OGL_CALL(glDispatchCompute, numGroups.x / RT_SIZE_FACTOR, numGroups.y, 1);
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_SCALL(glFinish);
+
+        debugRT->BatchDraw([this, &clearColor](GLBatchRenderTarget& brt)
+        {
+            brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_RenderTarget) | static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), clearColor, 1.0, 0);
+            debugProgram->UseProgram();
+            blurRTs[0][0]->ActivateTexture(GL_TEXTURE0);
+            debugProgram->SetUniform(debugUniformIds[0], 0);
+            debugRenderable->Draw();
+        });
 
         vBlurProgram->UseProgram();
         vBlurProgram->SetUniform(vBlurUniformIds[0], 0);
@@ -98,7 +128,7 @@ namespace cgu {
         blurRTs[0][1]->ActivateTexture(GL_TEXTURE1);
         blurRTs[1][0]->ActivateImage(0, 0, GL_WRITE_ONLY);
         blurRTs[1][1]->ActivateImage(1, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x / 4, numGroups.y / 4, 1);
+        OGL_CALL(glDispatchCompute, numGroups.x / RT_SIZE_FACTOR, numGroups.y / RT_SIZE_FACTOR, 1);
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_SCALL(glFinish);
 
@@ -130,22 +160,25 @@ namespace cgu {
         glm::uvec2 size(screenSize.x, screenSize.y);
         cocRT.reset(new GLTexture(size.x, size.y, texDesc, nullptr));
 
-        blurRTs[0][0].reset(new GLTexture(size.x / 4, size.y, texDesc, nullptr));
-        blurRTs[0][1].reset(new GLTexture(size.x / 4, size.y, texDesc, nullptr));
-        blurRTs[1][0].reset(new GLTexture(size.x / 4, size.y / 4, texDesc, nullptr));
-        blurRTs[1][1].reset(new GLTexture(size.x / 4, size.y / 4, texDesc, nullptr));
+        blurRTs[0][0].reset(new GLTexture(size.x / RT_SIZE_FACTOR, size.y, texDesc, nullptr));
+        blurRTs[0][1].reset(new GLTexture(size.x / RT_SIZE_FACTOR, size.y, texDesc, nullptr));
+        blurRTs[1][0].reset(new GLTexture(size.x / RT_SIZE_FACTOR, size.y / RT_SIZE_FACTOR, texDesc, nullptr));
+        blurRTs[1][1].reset(new GLTexture(size.x / RT_SIZE_FACTOR, size.y / RT_SIZE_FACTOR, texDesc, nullptr));
+
+        debugRT->Resize(screenSize.x, screenSize.y);
     }
 
-    float DepthOfField::CalculateImagePlanePixelsPerMeter(const CameraView& cam) const
+    float DepthOfField::CalculateFocalLength(const CameraView& cam) const
     {
-        const auto scale = -2.0f * glm::tan(cam.GetFOV() * 0.5f);
+        const auto scale = 2.0f * glm::tan(cam.GetFOV() * 0.5f);
         return static_cast<float>(sourceRTSize.y) / scale;
     }
 
     float DepthOfField::CalculateCoCRadius(const CameraView& cam, float z) const
     {
         // TODO: this returns negative values. [2/12/2016 Sebastian Maisch]
-        return CalculateImagePlanePixelsPerMeter(cam) * ((z - params.focusZ) * params.lensRadius / params.focusZ) / -z;
+        auto focalLength = CalculateFocalLength(cam);
+        return ((z - params.focusZ) * params.apertureRadius * focalLength) / (z * (params.focusZ - focalLength));
     }
 
     int DepthOfField::CalculateMaxCoCRadius(const CameraView& cam) const
