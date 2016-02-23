@@ -8,6 +8,9 @@
 
 #include "MeshRenderable.h"
 #include "GPUProgram.h"
+#include "gfx/mesh/SceneMeshNode.h"
+#include "gfx/mesh/SubMesh.h"
+#include "gfx/Material.h"
 #include "GLTexture2D.h"
 #include "GLTexture.h"
 
@@ -18,41 +21,44 @@ namespace cgu {
      * @param renderMesh the Mesh to use for rendering.
      * @param prog the program used for rendering.
      */
-    MeshRenderable::MeshRenderable(const Mesh* renderMesh, GPUProgram* prog) :
-        mesh(renderMesh),
-        drawProgram(prog)
+    MeshRenderable::MeshRenderable(const Mesh* renderMesh, GPUProgram* program) : mesh_(renderMesh), drawProgram_(program)
     {
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        OGL_CALL(glBufferData, GL_ARRAY_BUFFER, mesh->faceVertices.size() * sizeof(FaceVertex),
-            mesh->faceVertices.data(), GL_STATIC_DRAW);
-
-        FillIndexBuffer(iBuffer, mesh);
-
-        for (unsigned int idx = 0; idx < mesh->subMeshes.size(); ++idx) {
-            iBuffers.emplace_back(std::move(BufferRAII()));
-            FillIndexBuffer(iBuffers[idx], mesh->subMeshes[idx]);
-        }
-
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
-
-        FillMeshAttributeBindings(drawProgram, drawAttribBinds);
+        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer_);
+        OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, mesh_->GetIndices().size() * sizeof(unsigned int),
+            mesh_->GetIndices().data(), GL_STATIC_DRAW);
+        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     /**
      * Destructor.
      */
-    MeshRenderable::~MeshRenderable()
-    {
-        iBuffers.clear();
-    }
+    MeshRenderable::~MeshRenderable() = default;
 
     /**
      * Copy constructor.
      * @param orig the original object
      */
     MeshRenderable::MeshRenderable(const MeshRenderable& orig) :
-        MeshRenderable(orig.mesh, orig.drawProgram)
+        mesh_(orig.mesh_),
+        drawProgram_(orig.drawProgram_),
+        drawAttribBinds_(orig.drawAttribBinds_)
     {
+        auto bufferSize = 0;
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, orig.vBuffer_);
+        OGL_CALL(glGetBufferParameteriv, GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bufferSize);
+
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
+        OGL_CALL(glBufferData, GL_ARRAY_BUFFER, bufferSize, 0, GL_STATIC_COPY);
+
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, orig.vBuffer_);
+        OGL_CALL(glBindBuffer, GL_COPY_WRITE_BUFFER, vBuffer_);
+        OGL_CALL(glCopyBufferSubData, GL_ARRAY_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, bufferSize);
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
+        OGL_CALL(glBindBuffer, GL_COPY_WRITE_BUFFER, 0);
+
+        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer_);
+        OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, mesh_->GetIndices().size() * sizeof(unsigned int),
+            mesh_->GetIndices().data(), GL_STATIC_DRAW);
     }
 
     /**
@@ -60,15 +66,14 @@ namespace cgu {
      * @param orig the original object
      */
     MeshRenderable::MeshRenderable(MeshRenderable&& orig) :
-        mesh(orig.mesh),
-        vBuffer(std::move(orig.vBuffer)),
-        iBuffer(std::move(orig.iBuffer)),
-        iBuffers(std::move(orig.iBuffers)),
-        drawProgram(orig.drawProgram),
-        drawAttribBinds(std::move(orig.drawAttribBinds))
+        mesh_(orig.mesh_),
+        vBuffer_(std::move(orig.vBuffer_)),
+        iBuffer_(std::move(orig.iBuffer_)),
+        drawProgram_(orig.drawProgram_),
+        drawAttribBinds_(std::move(orig.drawAttribBinds_))
     {
-        orig.mesh = nullptr;
-        orig.drawProgram = nullptr;
+        orig.mesh_ = nullptr;
+        orig.drawProgram_ = nullptr;
     }
 
     /**
@@ -92,128 +97,64 @@ namespace cgu {
     {
         if (this != &orig) {
             this->~MeshRenderable();
-            mesh = orig.mesh;
-            vBuffer = std::move(orig.vBuffer);
-            iBuffer = std::move(orig.iBuffer);
-            iBuffers = std::move(orig.iBuffers);
-            drawProgram = orig.drawProgram;
-            drawAttribBinds = std::move(orig.drawAttribBinds);
-            orig.mesh = nullptr;
-            orig.drawProgram = nullptr;
+            mesh_ = orig.mesh_;
+            vBuffer_ = std::move(orig.vBuffer_);
+            iBuffer_ = std::move(orig.iBuffer_);
+            drawProgram_ = orig.drawProgram_;
+            drawAttribBinds_ = std::move(orig.drawAttribBinds_);
+            orig.mesh_ = nullptr;
+            orig.drawProgram_ = nullptr;
         }
         return *this;
     }
 
-    void MeshRenderable::FillMeshAttributeBindings(GPUProgram* program, ShaderMeshAttributes& attribBinds) const
+    void MeshRenderable::Draw(const glm::mat4& modelMatrix) const
     {
-        assert(attribBinds.GetUniformIds().size() == 0);
-        assert(attribBinds.GetVertexAttributes().size() == 0);
-        auto shaderPositions = program->GetAttributeLocations({ "pos", "tex", "normal" });
-
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer, iBuffer));
-        GenerateVertexAttribute(attribBinds.GetVertexAttributes().back(), mesh, shaderPositions);
-        for (unsigned int idx = 0; idx < mesh->subMeshes.size(); ++idx) {
-            attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer, iBuffers[idx]));
-            GenerateVertexAttribute(attribBinds.GetVertexAttributes().back(), mesh->subMeshes[idx], shaderPositions);
-        }
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
-
-        attribBinds.GetUniformIds() = program->GetUniformLocations({ "diffuseTex", "bumpTex", "bumpMultiplier" });
-    }
-
-    void MeshRenderable::Draw() const
-    {
-        Draw<true>(drawProgram, drawAttribBinds);
+        Draw<true>(modelMatrix, drawProgram_, drawAttribBinds_);
     }
 
     template <bool useMaterials>
-    void MeshRenderable::Draw(GPUProgram* program, const ShaderMeshAttributes& attribBinds) const
+    void MeshRenderable::Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds) const
     {
         program->UseProgram();
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        DrawSubMesh<useMaterials>(program, attribBinds, attribBinds.GetVertexAttributes()[0], mesh);
-        for (unsigned int idx = 0; idx < iBuffers.size(); ++idx) {
-            DrawSubMesh<useMaterials>(program, attribBinds, attribBinds.GetVertexAttributes()[idx + 1], mesh->subMeshes[idx]);
-        }
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
+        attribBinds.GetVertexAttributes()[0]->EnableVertexAttributeArray();
+        DrawNode<useMaterials>(mesh_->GetRootTransform() * modelMatrix, mesh_->GetRootNode(), program, attribBinds);
+        attribBinds.GetVertexAttributes()[0]->DisableVertexAttributeArray();
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
     }
 
-    void MeshRenderable::FillIndexBuffer(GLuint iBuffer, const SubMesh* subMesh)
+    template <bool useMaterials>
+    void MeshRenderable::DrawNode(const glm::mat4& modelMatrix, const SceneMeshNode* node, GPUProgram* program, const ShaderMeshAttributes& attribBinds) const
     {
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer);
-        OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, subMesh->faceIndices.size() * sizeof(unsigned int),
-            subMesh->faceIndices.data(), GL_STATIC_DRAW);
+        auto localMatrix = node->GetLocalTransform() * modelMatrix;
+        for (unsigned int i = 0; i < node->GetNumMeshes(); ++i) DrawSubMesh<useMaterials>(localMatrix, program, attribBinds, node->GetMesh(i));
+        for (unsigned int i = 0; i < node->GetNumNodes(); ++i) DrawNode<useMaterials>(localMatrix, node->GetChild(i), program, attribBinds);
     }
 
-    void MeshRenderable::GenerateVertexAttribute(GLVertexAttributeArray* vao, const SubMesh* subMesh,
-        const std::vector<BindingLocation>& shaderPositions)
+    template<bool useMaterials> void MeshRenderable::DrawSubMesh(const glm::mat4& modelMatrix, GPUProgram* program,
+        const ShaderMeshAttributes& attribBinds, const SubMesh* subMesh) const
     {
-        vao->StartAttributeSetup();
-        // pos
-        if (shaderPositions[0]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[0], 3, GL_FLOAT, GL_FALSE, sizeof(FaceVertex), offsetof(FaceVertex, pos));
-        }
-
-        if (subMesh->faceHasTexture && shaderPositions[1]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[1], 2, GL_FLOAT, GL_FALSE, sizeof(FaceVertex), offsetof(FaceVertex, tex));
-        }
-        if (subMesh->faceHasNormal && shaderPositions[2]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[2], 3, GL_FLOAT, GL_FALSE, sizeof(FaceVertex), offsetof(FaceVertex, normal));
-        }
-        vao->EndAttributeSetup();
+        program->SetUniform(attribBinds.GetUniformIds()[0], modelMatrix);
+        UseMaterials<useMaterials>(program, attribBinds, subMesh);
+        OGL_CALL(glDrawElements, GL_TRIANGLES, subMesh->GetNumberOfTriangles(), GL_UNSIGNED_INT,
+            (static_cast<char*> (nullptr)) + (subMesh->GetIndexOffset() * sizeof(unsigned int)));
     }
 
-    template<bool useMaterials> void MeshRenderable::DrawSubMesh(GPUProgram* program, const ShaderMeshAttributes& attribBinds,
-        const GLVertexAttributeArray* vao, const SubMesh* subMesh) const
-    {
-        vao->EnableVertexAttributeArray();
-        for (const auto& mtlChunk : subMesh->mtlChunks) {
-            UseMaterials<useMaterials>(program, attribBinds, mtlChunk);
-
-            GLsizei count = mtlChunk.face_seq_num;
-            OGL_CALL(glDrawElements, GL_TRIANGLES, count, GL_UNSIGNED_INT,
-                (static_cast<char*> (nullptr)) + (mtlChunk.face_seq_begin * sizeof(unsigned int)));
-        }
-        vao->DisableVertexAttributeArray();
-    }
-
-    template<bool useMaterials> void MeshRenderable::UseMaterials(GPUProgram*, const ShaderMeshAttributes&, const SubMeshMaterialChunk&) const {}
+    template<bool useMaterials> void MeshRenderable::UseMaterials(GPUProgram*, const ShaderMeshAttributes&, const SubMesh*) const {}
 
     template<> void MeshRenderable::UseMaterials<true>(GPUProgram* program, const ShaderMeshAttributes& attribBinds,
-        const SubMeshMaterialChunk& mtlChunk) const
+        const SubMesh* subMesh) const
     {
-        if (mtlChunk.material->diffuseTex && attribBinds.GetUniformIds().size() != 0) {
-            mtlChunk.material->diffuseTex->GetTexture()->ActivateTexture(GL_TEXTURE0);
-            program->SetUniform(attribBinds.GetUniformIds()[0], 0);
+        if (subMesh->GetMaterial()->diffuseTex && attribBinds.GetUniformIds().size() != 0) {
+            subMesh->GetMaterial()->diffuseTex->GetTexture()->ActivateTexture(GL_TEXTURE0);
+            program->SetUniform(attribBinds.GetUniformIds()[1], 0);
         }
-        if (mtlChunk.material->bumpTex && attribBinds.GetUniformIds().size() >= 2) {
-            mtlChunk.material->bumpTex->GetTexture()->ActivateTexture(GL_TEXTURE1);
-            program->SetUniform(attribBinds.GetUniformIds()[1], 1);
-            program->SetUniform(attribBinds.GetUniformIds()[2], mtlChunk.material->bumpMultiplier);
+        if (subMesh->GetMaterial()->bumpTex && attribBinds.GetUniformIds().size() >= 2) {
+            subMesh->GetMaterial()->bumpTex->GetTexture()->ActivateTexture(GL_TEXTURE1);
+            program->SetUniform(attribBinds.GetUniformIds()[2], 1);
+            program->SetUniform(attribBinds.GetUniformIds()[3], subMesh->GetMaterial()->bumpMultiplier);
         }
-    }
-
-    /**
-     *  Constructor.
-     *  @param renderMesh the mesh to render.
-     *  @param prog the GPU program for rendering.
-     *  @param shadowProg the GPU program for shadow map rendering.
-     */
-    MeshRenderableShadowing::MeshRenderableShadowing(const Mesh* renderMesh, GPUProgram* prog, GPUProgram* shadowProg) :
-        MeshRenderable(renderMesh, prog),
-        shadowProgram(shadowProg)
-
-    {
-        FillMeshAttributeBindings(shadowProgram, shadowAttribBinds);
-    }
-
-    /** Helper constructor for implementing the copy constructor. */
-    MeshRenderableShadowing::MeshRenderableShadowing(const MeshRenderable& rhs, GPUProgram* shadowProg) :
-        MeshRenderable(rhs),
-        shadowProgram(shadowProg)
-    {
-        FillMeshAttributeBindings(shadowProgram, shadowAttribBinds);
     }
 
     /** Copy constructor. */
@@ -224,10 +165,10 @@ namespace cgu {
     /** Move constructor. */
     MeshRenderableShadowing::MeshRenderableShadowing(MeshRenderableShadowing&& rhs) :
         MeshRenderable(std::move(rhs)),
-        shadowProgram(rhs.shadowProgram),
-        shadowAttribBinds(std::move(rhs.shadowAttribBinds))
+        shadowProgram_(rhs.shadowProgram_),
+        shadowAttribBinds_(std::move(rhs.shadowAttribBinds_))
     {
-        rhs.shadowProgram = nullptr;
+        rhs.shadowProgram_ = nullptr;
     }
 
     /** Move assignment operator. */
@@ -236,16 +177,35 @@ namespace cgu {
         if (this != &rhs) {
             this->~MeshRenderableShadowing();
             MeshRenderable::operator =(std::move(rhs));
-            shadowProgram = std::move(rhs.shadowProgram);
-            shadowAttribBinds = std::move(rhs.shadowAttribBinds);
+            shadowProgram_ = std::move(rhs.shadowProgram_);
+            shadowAttribBinds_ = std::move(rhs.shadowAttribBinds_);
         }
         return *this;
     }
 
     MeshRenderableShadowing::~MeshRenderableShadowing() = default;
 
-    void MeshRenderableShadowing::DrawShadow() const
+    void MeshRenderableShadowing::DrawShadow(const glm::mat4& modelMatrix) const
     {
-        Draw<false>(shadowProgram, shadowAttribBinds);
+        Draw<false>(modelMatrix, shadowProgram_, shadowAttribBinds_);
+    }
+
+    /**
+     *  Constructor.
+     *  @param renderMesh the mesh to render.
+     *  @param program the GPU program for rendering.
+     *  @param shadowProgram the GPU program for shadow map rendering.
+     */
+    MeshRenderableShadowing::MeshRenderableShadowing(const Mesh* renderMesh, GPUProgram* program, GPUProgram* shadowProgram) :
+        MeshRenderable(renderMesh, program),
+        shadowProgram_(shadowProgram)
+    {
+    }
+
+    /** Helper constructor for implementing the copy constructor. */
+    MeshRenderableShadowing::MeshRenderableShadowing(const MeshRenderable& rhs, GPUProgram* shadowProgram) :
+        MeshRenderable(rhs),
+        shadowProgram_(shadowProgram)
+    {
     }
 }

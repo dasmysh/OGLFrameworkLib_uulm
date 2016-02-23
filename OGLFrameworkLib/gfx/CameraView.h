@@ -19,12 +19,6 @@ namespace cgu {
     class ShaderBufferBindingPoints;
     class GLUniformBuffer;
 
-    struct PerspectiveTransformBuffer {
-        glm::mat4 mat_m;
-        glm::mat4 mat_mvp;
-        glm::mat4 mat_normal;
-    };
-
     /**
     * @brief  Represents a free fly camera responding to input and to be used for rendering.
     *
@@ -48,8 +42,8 @@ namespace cgu {
         void Resize(const glm::uvec2& screenSize);
         bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
         bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
-        cguMath::Frustum<float> SetView(const glm::mat4& modelM) const;
-        void SetViewShadowMap(const glm::mat4& modelM) const;
+        void SetView() const;
+        void SetViewShadowMap() const;
         void UpdateCamera();
         const glm::mat4& GetViewMatrix() const { return view; }
         glm::mat4 GetProjMatrix() const { return perspective; }

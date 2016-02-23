@@ -78,11 +78,11 @@ namespace cgu {
         void StartAttributeSetup() const;
         void EndAttributeSetup() const;
         void AddVertexAttribute(BindingLocation location, int size, GLenum type, GLboolean normalized,
-            GLsizei stride, unsigned int offset);
+            GLsizei stride, size_t offset);
         void AddVertexAttributeI(BindingLocation location, int size, GLenum type, GLsizei stride,
-            unsigned int offset);
+            size_t offset);
         void AddVertexAttributeL(BindingLocation location, int size, GLenum type, GLsizei stride,
-            unsigned int offset);
+            size_t offset);
         void UpdateVertexAttributes();
         void DisableAttributes();
         void EnableVertexAttributeArray() const;

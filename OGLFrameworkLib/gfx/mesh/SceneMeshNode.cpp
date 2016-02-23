@@ -112,7 +112,6 @@ namespace cgu {
         serializeHelper::write(ofs, localTransform_);
         serializeHelper::write(ofs, aabb_.minmax[0]);
         serializeHelper::write(ofs, aabb_.minmax[1]);
-        serializeHelper::write(ofs, localTransform_);
         serializeHelper::write(ofs, reinterpret_cast<uint64_t>(parent_));
         serializeHelper::writeV(ofs, meshWriteIds);
         serializeHelper::writeV(ofs, nodeWriteIds);

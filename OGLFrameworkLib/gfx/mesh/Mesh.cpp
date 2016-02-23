@@ -136,7 +136,7 @@ namespace cgu {
         serializeHelper::writeVV(ofs, colors_);
         serializeHelper::writeV(ofs, indices_);
 
-        serializeHelper::write(ofs, static_cast<unsigned int>(materials_.size()));
+        serializeHelper::write(ofs, static_cast<uint64_t>(materials_.size()));
         for (const auto& mat : materials_) {
             serializeHelper::write(ofs, reinterpret_cast<uint64_t>(mat.get()));
             serializeHelper::write(ofs, mat->ambient);
@@ -154,6 +154,7 @@ namespace cgu {
             else serializeHelper::write(ofs, std::string());
         }
 
+        serializeHelper::write(ofs, static_cast<uint64_t>(subMeshes_.size()));
         for (const auto& mesh : subMeshes_) mesh->write(ofs);
 
         serializeHelper::write(ofs, rootTransform_);
@@ -170,13 +171,14 @@ namespace cgu {
         serializeHelper::readVV(ifs, colors_);
         serializeHelper::readV(ifs, indices_);
 
-        unsigned int numMaterials;
+        uint64_t numMaterials;
         std::unordered_map<uint64_t, Material*> materialMap;
         std::unordered_map<uint64_t, SubMesh*> meshMap;
         std::unordered_map<uint64_t, SceneMeshNode*> nodeMap;
         serializeHelper::read(ifs, numMaterials);
         materials_.resize(numMaterials);
         for (auto& mat : materials_) {
+            mat.reset(new Material());
             uint64_t materialID;
             serializeHelper::read(ifs, materialID);
             serializeHelper::read(ifs, mat->ambient);
@@ -195,14 +197,18 @@ namespace cgu {
             materialMap[materialID] = mat.get();
         }
 
-        unsigned int numMeshes;
+        uint64_t numMeshes;
 
         serializeHelper::read(ifs, numMeshes);
         subMeshes_.resize(numMeshes);
-        for (auto& mesh : subMeshes_) mesh->read(ifs, meshMap, materialMap);
+        for (auto& mesh : subMeshes_) {
+            mesh.reset(new SubMesh());
+            mesh->read(ifs, meshMap, materialMap);
+        }
 
         serializeHelper::read(ifs, rootTransform_);
         rootNode_ = std::make_unique<SceneMeshNode>();
+        nodeMap[0] = nullptr;
         rootNode_->read(ifs, meshMap, nodeMap);
     }
 }

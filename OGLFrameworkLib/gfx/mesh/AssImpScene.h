@@ -35,7 +35,7 @@ namespace cgu {
         virtual ~AssimpScene();
 
     private:
-        static std::shared_ptr<const GLTexture2D> loadTexture(const std::string& relFilename, const std::string& params, const std::string& sceneFile, ApplicationBase* app);
+        std::shared_ptr<const GLTexture2D> loadTexture(const std::string& relFilename, const std::string& params, ApplicationBase* app) const;
         void save(const std::string& filename) const;
         void load(const std::string& filename, ApplicationBase* app);
     };

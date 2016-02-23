@@ -1,7 +1,7 @@
 
 layout(std140) uniform perspectiveTransform
 {
-    mat4 mat_m;
-    mat4 mat_mvp;
-    mat4 mat_normal;
+    mat4 mat_vp;
 };
+
+mat4 modelMatrix;

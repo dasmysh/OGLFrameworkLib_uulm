@@ -42,7 +42,27 @@ namespace cgu {
         const glm::mat4& GetRootTransform() const { return rootTransform_; }
         const SceneMeshNode* GetRootNode() const { return rootNode_.get(); }
 
+        template<class VTX> void GetVertices(std::vector<VTX>& vertices) const
+        {
+            assert(!VTX::HAS_NORMAL || normals_.size() == vertices_.size());
+            assert(!VTX::HAS_TANGENTSPACE || (tangents_.size() == vertices_.size() && binormals_.size() == vertices_.size()));
+            assert(VTX::NUM_TEXTURECOORDS <= texCoords_.size());
+            assert(VTX::NUM_COLORS <= colors_.size());
+            vertices.resize(vertices_.size());
+            for (size_t i = 0; i < vertices_.size(); ++i) {
+                for (auto pd = 0; pd < VTX::POSITION_DIMENSION; ++pd) vertices[i].SetPosition(vertices_[i][pd], pd);
+                vertices[i].SetNormal(normals_[i]);
+                for (auto ti = 0; ti < VTX::NUM_TEXTURECOORDS; ++ti) {
+                    for (auto td = 0; td < VTX::NUM_TEXTURECOORDS; ++td) vertices[i].SetTexCoord(texCoords_[ti][i][td], ti, td);
+                }
+                vertices[i].SetTangent(tangents_[i]);
+                vertices[i].SetBinormal(binormals_[i]);
+                for (auto ci = 0; ci < VTX::NUM_COLORS; ++ci) vertices[i].SetColor(colors_[ci][i], ci);
+            }
+        }
+
     protected:
+        void SetRootTransform(const glm::mat4& rootTransform) { rootTransform_ = rootTransform; }
         std::vector<glm::vec3>& GetVertices() { return vertices_; }
         std::vector<glm::vec3>& GetNormals() { return normals_; }
         const std::vector<glm::vec3>& GetNormals() const { return normals_; }

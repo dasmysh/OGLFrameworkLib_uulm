@@ -22,9 +22,9 @@ namespace cgu {
         objectName_(objectName),
         indexOffset_(indexOffset),
         numIndices_(numIndices),
-        aabb_{ { { glm::vec3(std::numeric_limits<float>::infinity()), glm::vec3(-std::numeric_limits<float>::infinity()) } } },
         material_(material)
     {
+        aabb_.minmax[0] = glm::vec3(std::numeric_limits<float>::infinity()); aabb_.minmax[1] = glm::vec3(-std::numeric_limits<float>::infinity());
         if (numIndices_ == 0) return;
         auto& vertices = mesh->GetVertices();
         auto& indices = mesh->GetIndices();

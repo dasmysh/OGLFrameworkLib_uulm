@@ -10,7 +10,7 @@ out vec3 vVolPosition;
 
 void main()
 {
-    vec4 posOut = vec4(mat_mvp * position);
+    vec4 posOut = vec4(mat_vp * modelMatrix * position);
     vVolPosition = texPosition;
     vTexPosition = 0.5f * ((vec2(posOut) / posOut.w) + vec2(1.0f));
     gl_Position = posOut;

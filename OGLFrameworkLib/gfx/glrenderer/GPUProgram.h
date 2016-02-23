@@ -44,6 +44,7 @@ namespace cgu {
         void SetUniform(BindingLocation name, const glm::vec2& data) const;
         void SetUniform(BindingLocation name, const glm::vec3& data) const;
         void SetUniform(BindingLocation name, const glm::vec4& data) const;
+        void SetUniform(BindingLocation name, const glm::mat4& data) const;
         void SetUniform(BindingLocation name, const std::vector<float>& data) const;
         void SetUniform(BindingLocation name, int data) const;
         void SetUniform(BindingLocation name, const std::vector<int>& data) const;
@@ -81,7 +82,7 @@ namespace cgu {
         std::vector<std::unique_ptr<GLVertexAttributeArray> > vaos;
 
         void LoadInternal(GLuint newProgram);
-        GLuint LinkNewProgram(const std::vector<ShaderRAII>& shaders) const;
+        GLuint LinkNewProgram(const std::vector<GLuint>& shaders) const;
     };
 }
 

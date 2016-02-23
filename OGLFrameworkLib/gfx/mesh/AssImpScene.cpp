@@ -15,6 +15,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <unordered_map>
+#include <glm/gtx/transform.hpp>
 
 namespace cgu {
 
@@ -37,95 +38,99 @@ namespace cgu {
             }
             catch (model_binload_exception) {
             }
-        }
+        } else {
 
+            unsigned int assimpFlags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_LimitBoneWeights
+                | aiProcess_ImproveCacheLocality | aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes
+                | aiProcess_OptimizeGraph;
+            if (CheckNamedParameterFlag("createTangents")) assimpFlags |= aiProcess_CalcTangentSpace;
+            if (CheckNamedParameterFlag("noSmoothNormals")) assimpFlags |= aiProcess_GenNormals;
+            else assimpFlags |= aiProcess_GenSmoothNormals;
 
-        unsigned int assimpFlags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_LimitBoneWeights
-            | aiProcess_ImproveCacheLocality | aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes
-            | aiProcess_OptimizeGraph;
-        if (CheckNamedParameterFlag("createTangents")) assimpFlags |= aiProcess_CalcTangentSpace;
-        if (CheckNamedParameterFlag("noSmoothNormals")) assimpFlags |= aiProcess_GenNormals;
-        else assimpFlags |= aiProcess_GenSmoothNormals;
+            Assimp::Importer importer;
+            auto scene = importer.ReadFile(filename, assimpFlags);
 
-        Assimp::Importer importer;
-        auto scene = importer.ReadFile(filename, assimpFlags);
-
-        unsigned int maxUVChannels = 0, maxColorChannels = 0, numVertices = 0, numIndices = 0;
-        std::vector<std::vector<unsigned int>> indices;
-        indices.resize(scene->mNumMeshes);
-        for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
-            maxUVChannels = glm::max(maxUVChannels, scene->mMeshes[i]->GetNumUVChannels());
-            maxColorChannels = glm::max(maxColorChannels, scene->mMeshes[i]->GetNumUVChannels());
-            numVertices += scene->mMeshes[i]->mNumVertices;
-            for (unsigned int fi = 0; fi < scene->mMeshes[i]->mNumFaces; ++fi) {
-                auto faceIndices = scene->mMeshes[i]->mFaces[fi].mNumIndices;
-                if (faceIndices == 3) {
-                    indices[i].push_back(scene->mMeshes[i]->mFaces[fi].mIndices[0]);
-                    indices[i].push_back(scene->mMeshes[i]->mFaces[fi].mIndices[1]);
-                    indices[i].push_back(scene->mMeshes[i]->mFaces[fi].mIndices[2]);
-                    numIndices += faceIndices;
-                } else {
-                    // TODO: handle points and lines. [2/17/2016 Sebastian Maisch]
+            unsigned int maxUVChannels = 0, maxColorChannels = 0, numVertices = 0, numIndices = 0;
+            std::vector<std::vector<unsigned int>> indices;
+            indices.resize(scene->mNumMeshes);
+            for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
+                maxUVChannels = glm::max(maxUVChannels, scene->mMeshes[i]->GetNumUVChannels());
+                maxColorChannels = glm::max(maxColorChannels, scene->mMeshes[i]->GetNumUVChannels());
+                numVertices += scene->mMeshes[i]->mNumVertices;
+                for (unsigned int fi = 0; fi < scene->mMeshes[i]->mNumFaces; ++fi) {
+                    auto faceIndices = scene->mMeshes[i]->mFaces[fi].mNumIndices;
+                    if (faceIndices == 3) {
+                        indices[i].push_back(scene->mMeshes[i]->mFaces[fi].mIndices[0]);
+                        indices[i].push_back(scene->mMeshes[i]->mFaces[fi].mIndices[1]);
+                        indices[i].push_back(scene->mMeshes[i]->mFaces[fi].mIndices[2]);
+                        numIndices += faceIndices;
+                    } else {
+                        // TODO: handle points and lines. [2/17/2016 Sebastian Maisch]
+                    }
                 }
             }
+
+            ReserveMesh(maxUVChannels, maxColorChannels, numVertices, numIndices, scene->mNumMaterials);
+            for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
+                auto material = scene->mMaterials[i];
+                auto mat = GetMaterial(i);
+                material->Get(AI_MATKEY_COLOR_AMBIENT, mat->ambient);
+                material->Get(AI_MATKEY_COLOR_DIFFUSE, mat->diffuse);
+                material->Get(AI_MATKEY_COLOR_SPECULAR, mat->specular);
+                material->Get(AI_MATKEY_OPACITY, mat->alpha);
+                material->Get(AI_MATKEY_SHININESS, mat->N_s);
+                material->Get(AI_MATKEY_REFRACTI, mat->N_i);
+                aiString diffuseTexPath, bumpTexPath;
+                if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), diffuseTexPath)) {
+                    mat->diffuseTex = loadTexture(diffuseTexPath.C_Str(), "-sRGB", app);
+                }
+
+                if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_HEIGHT, 0), bumpTexPath)) {
+                    mat->bumpTex = loadTexture(bumpTexPath.C_Str(), "", app);
+                    material->Get(AI_MATKEY_TEXBLEND(aiTextureType_HEIGHT, 0), mat->bumpMultiplier);
+                } else if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), bumpTexPath)) {
+                    mat->bumpTex = loadTexture(diffuseTexPath.C_Str(), "", app);
+                    material->Get(AI_MATKEY_TEXBLEND(aiTextureType_NORMALS, 0), mat->bumpMultiplier);
+                }
+            }
+
+            unsigned int currentMeshIndexOffset = 0;
+            unsigned int currentMeshVertexOffset = 0;
+            for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
+                auto mesh = scene->mMeshes[i];
+
+                if (mesh->HasPositions()) {
+                    std::copy(mesh->mVertices, &mesh->mVertices[mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetVertices()[currentMeshVertexOffset]));
+                }
+                if (mesh->HasNormals()) {
+                    std::copy(mesh->mNormals, &mesh->mNormals[mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetNormals()[currentMeshVertexOffset]));
+                }
+                for (unsigned int ti = 0; ti < mesh->GetNumUVChannels(); ++ti) {
+                    std::copy(mesh->mTextureCoords[ti], &mesh->mTextureCoords[ti][mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetTexCoords()[ti][currentMeshVertexOffset]));
+                }
+                if (mesh->HasTangentsAndBitangents()) {
+                    std::copy(mesh->mTangents, &mesh->mTangents[mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetTangents()[currentMeshVertexOffset]));
+                    std::copy(mesh->mBitangents, &mesh->mBitangents[mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetBinormals()[currentMeshVertexOffset]));
+                }
+                for (unsigned int ci = 0; ci < mesh->GetNumColorChannels(); ++ci) {
+                    std::copy(mesh->mColors[ci], &mesh->mColors[ci][mesh->mNumVertices], reinterpret_cast<aiColor4D*>(&GetColors()[ci][currentMeshVertexOffset]));
+                }
+
+                std::transform(indices[i].begin(), indices[i].end(), &GetIndices()[currentMeshIndexOffset], [currentMeshVertexOffset](unsigned int idx){ return idx + currentMeshVertexOffset; });
+
+                auto material = GetMaterial(mesh->mMaterialIndex);
+
+                AddSubMesh(mesh->mName.C_Str(), currentMeshIndexOffset, static_cast<unsigned int>(indices[i].size()), material);
+                currentMeshVertexOffset += mesh->mNumVertices;
+                currentMeshIndexOffset += static_cast<unsigned int>(indices[i].size());
+            }
+
+            CreateSceneNodes(scene->mRootNode);
+            save(binFilename);
         }
 
-        ReserveMesh(maxUVChannels, maxColorChannels, numVertices, numIndices, scene->mNumMaterials);
-        for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
-            auto material = scene->mMaterials[i];
-            auto mat = GetMaterial(i);
-            material->Get(AI_MATKEY_COLOR_AMBIENT, mat->ambient);
-            material->Get(AI_MATKEY_COLOR_DIFFUSE, mat->diffuse);
-            material->Get(AI_MATKEY_COLOR_SPECULAR, mat->specular);
-            material->Get(AI_MATKEY_OPACITY, mat->alpha);
-            material->Get(AI_MATKEY_SHININESS, mat->N_s);
-            material->Get(AI_MATKEY_REFRACTI, mat->N_i);
-            aiString diffuseTexPath, bumpTexPath;
-            if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), diffuseTexPath)) {
-                mat->diffuseTex = loadTexture(diffuseTexPath.C_Str(), "-sRGB", filename, app);
-            }
-
-            if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_HEIGHT, 0), bumpTexPath)) {
-                mat->bumpTex = loadTexture(bumpTexPath.C_Str(), "", filename, app);
-                material->Get(AI_MATKEY_TEXBLEND(aiTextureType_HEIGHT, 0), mat->bumpMultiplier);
-            } else if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), bumpTexPath)) {
-                mat->bumpTex = loadTexture(diffuseTexPath.C_Str(), "", filename, app);
-                material->Get(AI_MATKEY_TEXBLEND(aiTextureType_NORMALS, 0), mat->bumpMultiplier);
-            }
-        }
-
-        unsigned int currentMeshIndexOffset = 0;
-        unsigned int currentMeshVertexOffset = 0;
-        for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
-            auto mesh = scene->mMeshes[i];
-
-            if (mesh->HasPositions()) {
-                std::copy(mesh->mVertices, &mesh->mVertices[mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetVertices()[currentMeshVertexOffset]));
-            }
-            if (mesh->HasNormals()) {
-                std::copy(mesh->mNormals, &mesh->mNormals[mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetNormals()[currentMeshVertexOffset]));
-            }
-            for (unsigned int ti = 0; ti < mesh->GetNumUVChannels(); ++ti) {
-                std::copy(mesh->mTextureCoords[ti], &mesh->mTextureCoords[ti][mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetTexCoords()[ti][currentMeshVertexOffset]));
-            }
-            if (mesh->HasTangentsAndBitangents()) {
-                std::copy(mesh->mTangents, &mesh->mTangents[mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetTangents()[currentMeshVertexOffset]));
-                std::copy(mesh->mBitangents, &mesh->mBitangents[mesh->mNumVertices], reinterpret_cast<aiVector3D*>(&GetBinormals()[currentMeshVertexOffset]));
-            }
-            for (unsigned int ci = 0; ci < mesh->GetNumColorChannels(); ++ci) {
-                std::copy(mesh->mColors[ci], &mesh->mColors[ci][mesh->mNumVertices], reinterpret_cast<aiColor4D*>(&GetColors()[ci][currentMeshVertexOffset]));
-            }
-
-            std::transform(indices[i].begin(), indices[i].end(), &GetIndices()[currentMeshIndexOffset], [currentMeshVertexOffset](unsigned int idx){ return idx + currentMeshVertexOffset; });
-
-            auto material = GetMaterial(mesh->mMaterialIndex);
-
-            AddSubMesh(mesh->mName.C_Str(), currentMeshIndexOffset, static_cast<unsigned int>(indices[i].size()), material);
-            currentMeshVertexOffset += mesh->mNumVertices;
-            currentMeshIndexOffset += static_cast<unsigned int>(indices[i].size());
-        }
-
-        CreateSceneNodes(scene->mRootNode);
+        auto rootScale = GetNamedParameterValue("scale", 0.0f);
+        SetRootTransform(glm::scale(glm::mat4(), glm::vec3(rootScale, rootScale, rootScale)));
     }
 
     /** Default copy constructor. */
@@ -160,16 +165,16 @@ namespace cgu {
     /** Destructor. */
     AssimpScene::~AssimpScene() = default;
 
-    std::shared_ptr<const GLTexture2D> AssimpScene::loadTexture(const std::string& relFilename, const std::string& params, const std::string& sceneFile, ApplicationBase* app)
+    std::shared_ptr<const GLTexture2D> AssimpScene::loadTexture(const std::string& relFilename, const std::string& params, ApplicationBase* app) const
     {
-        boost::filesystem::path sceneFilePath{ sceneFile };
+        boost::filesystem::path sceneFilePath{ GetParameters()[0] };
         auto texFilename = sceneFilePath.parent_path().string() + "/" + relFilename + (params.size() > 0 ? "," + params : "");
         return std::move(app->GetTextureManager()->GetResource(texFilename));
     }
 
     void AssimpScene::save(const std::string& filename) const
     {
-        std::ofstream ofs(filename, std::ios::out);
+        std::ofstream ofs(filename, std::ios::out | std::ios::binary);
         Mesh::write(ofs);
     }
 
@@ -177,7 +182,7 @@ namespace cgu {
     {
         std::vector<std::string> params;
 
-        std::ifstream inBinFile(filename);
+        std::ifstream inBinFile(filename, std::ios::binary);
         if (inBinFile.is_open()) {
             Mesh::read(inBinFile, *app->GetTextureManager());
         }
