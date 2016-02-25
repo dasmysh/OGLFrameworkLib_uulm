@@ -10,12 +10,23 @@ struct Light
     float angFalloffWidth;
     float distAttenuation;
     float farZ;
+    mat4 viewProjection;
 };
+
+uniform sampler2DShadow shadowTextures[NUM_LIGHTS];
+// uniform sampler2D shadowTextures[NUM_LIGHTS];
 
 layout(std140) uniform lightsBuffer
 {
     Light lights[NUM_LIGHTS];
 };
+
+float shadow(vec3 worldPos, int i) {
+    vec4 shadowPos = lights[i].viewProjection * vec4(worldPos, 1.0f);
+    shadowPos.z = shadowPos.z - 0.0001f;
+    shadowPos.xyz /= shadowPos.w;
+    return texture(shadowTextures[i], shadowPos.xyz);
+}
 
 vec3 lightIntensity(vec3 position, vec3 normal) {
     vec3 intensity = vec3(0.0f);
@@ -27,7 +38,7 @@ vec3 lightIntensity(vec3 position, vec3 normal) {
         float cosTerm = clamp(dot(light, normal), 0.0f, 1.0f);
 
         vec3 lambert = (cosTerm * vec3(lights[i].intensity)) / M_PI;
-        intensity += lambert;
+        intensity += shadow(position, i) * lambert;
     }
     return intensity;
 }

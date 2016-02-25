@@ -8,6 +8,7 @@
 
 #include "GLTexture.h"
 #include <FreeImage.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #undef min
 #undef max
@@ -351,15 +352,7 @@ namespace cgu {
      */
     void GLTexture::SampleWrapMirror() const
     {
-        OGL_CALL(glBindTexture, id.textureType, id.textureId);
-        OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-        if (id.textureType == GL_TEXTURE_2D || id.textureType == GL_TEXTURE_3D) {
-            OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-        }
-        if (id.textureType == GL_TEXTURE_3D) {
-            OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT);
-        }
-        OGL_CALL(glBindTexture, id.textureType, 0);
+        SetSampleWrap(GL_MIRRORED_REPEAT);
     }
 
     /**
@@ -367,13 +360,40 @@ namespace cgu {
      */
     void GLTexture::SampleWrapClamp() const
     {
+        SetSampleWrap(GL_CLAMP_TO_EDGE);
+    }
+
+    void GLTexture::SampleWrapRepeat() const
+    {
+        SetSampleWrap(GL_REPEAT);
+    }
+
+    void GLTexture::SampleWrapMirrorClamp() const
+    {
+        SetSampleWrap(GL_MIRROR_CLAMP_TO_EDGE);
+    }
+
+    void GLTexture::SampleWrapBorderColor(const glm::vec4& color) const
+    {
+        SetSampleWrap(GL_CLAMP_TO_BORDER);
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
-        OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        OGL_CALL(glTexParameterfv, id.textureType, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(color));
+        OGL_CALL(glBindTexture, id.textureType, 0);
+    }
+
+    /**
+     *  Sets the sampler parameters for texture wrapping mode.
+     *  @param param the wrapping parameter
+     */
+    void GLTexture::SetSampleWrap(GLint param) const
+    {
+        OGL_CALL(glBindTexture, id.textureType, id.textureId);
+        OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_S, param);
         if (id.textureType == GL_TEXTURE_2D || id.textureType == GL_TEXTURE_3D) {
-            OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_T, param);
         }
         if (id.textureType == GL_TEXTURE_3D) {
-            OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+            OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_R, param);
         }
         OGL_CALL(glBindTexture, id.textureType, 0);
     }

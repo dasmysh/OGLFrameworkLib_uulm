@@ -31,9 +31,6 @@ namespace cgu {
         {
             return std::move(std::make_shared<rType>(resId, app));
         }
-
-        // static bool IsResourceLoaded(const rType* res) { return res->IsLoaded(); }
-        // static void LoadResource(rType* res) { return res->Load(); }
     };
 
     /**
@@ -139,7 +136,7 @@ namespace cgu {
         virtual void LoadResource(const std::string& resId, std::shared_ptr<ResourceType>& spResource)
         {
             try {
-                spResource = std::move(LoadingPolicy::CreateResource(resId, application));
+                spResource = std::move(LoadingPolicy::CreateResource(TranslateCreationParameters(resId), application));
             }
             catch (const resource_loading_error& loadingError) {
                 auto resid = boost::get_error_info<resid_info>(loadingError);
@@ -152,6 +149,11 @@ namespace cgu {
                     << "Description: " << (errDesc == nullptr ? "-" : errDesc->c_str());
                 if (!reloadLoop) throw;
             }
+        }
+
+        virtual std::string TranslateCreationParameters(const std::string& id)
+        {
+            return id;
         }
 
         /**

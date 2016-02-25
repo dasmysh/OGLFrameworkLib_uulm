@@ -34,13 +34,11 @@ namespace cgu {
             boost::split(parameters, subresourceIds[0], boost::is_any_of(","));
             for (auto& param : parameters) {
                 boost::trim(param);
-                const boost::regex nameValueRegex("^-([\\w-]*)=(.*)$");
-                const boost::regex flagRegex("^-([\\w-]*)$");
-                boost::smatch paramMatch;
-                if (boost::regex_match(param, paramMatch, nameValueRegex)) {
-                    namedParameters.insert(std::make_pair(paramMatch[1].str(), paramMatch[2].str()));
-                } else if (boost::regex_match(param, paramMatch, flagRegex)) {
-                    namedParameters.insert(std::make_pair(paramMatch[1].str(), ""));
+                std::string name, value;
+                if (parseNamedValue(param, name, value)) {
+                    namedParameters.insert(std::make_pair(name, value));
+                } else if (parseNamedFlag(param, name)) {
+                    namedParameters.insert(std::make_pair(name, ""));
                 }
             }
         }
@@ -93,6 +91,29 @@ namespace cgu {
     bool Resource::CheckNamedParameterFlag(const std::string& name) const
     {
         return namedParameters.find(name) != namedParameters.end();
+    }
+
+    bool Resource::parseNamedValue(const std::string& str, std::string& name, std::string& value)
+    {
+        const boost::regex nameValueRegex("^-([\\w-]*)=(.*)$");
+        boost::smatch paramMatch;
+        if (boost::regex_match(str, paramMatch, nameValueRegex)) {
+            name = paramMatch[1].str();
+            value = paramMatch[2].str();
+            return true;
+        }
+        return false;
+    }
+
+    bool Resource::parseNamedFlag(const std::string& str, std::string& name)
+    {
+        const boost::regex flagRegex("^-([\\w-]*)$");
+        boost::smatch paramMatch;
+        if (boost::regex_match(str, paramMatch, flagRegex)) {
+            name = paramMatch[1].str();
+            return true;
+        }
+        return false;
     }
 
     /**

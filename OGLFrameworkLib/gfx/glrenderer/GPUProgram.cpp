@@ -9,6 +9,7 @@
 #include "GPUProgram.h"
 #include "ShaderBufferBindingPoints.h"
 #include "app/ApplicationBase.h"
+#include <glm/gtc/type_ptr.hpp>
 
 namespace cgu {
 
@@ -28,7 +29,7 @@ namespace cgu {
         vaos()
     {
         auto programNames = GetSubresourceIds();
-        std::vector<ShaderRAII> shaderObjs;
+        std::vector<GLuint> shaderObjs;
         for (auto& progName : programNames) {
             // ignore exception and reload whole program
             auto shader = std::move(application->GetShaderManager()->GetResource(progName));
@@ -36,7 +37,6 @@ namespace cgu {
             shaders.emplace_back(std::move(shader));
         }
         LoadInternal(LinkNewProgram(shaderObjs));
-        for (auto& shdObj : shaderObjs) shdObj.release();
     }
 
     /** Destructor. */
@@ -137,7 +137,7 @@ namespace cgu {
     void GPUProgram::RecompileProgram()
     {
         auto shaderIds = GetSubresourceIds();
-        std::vector<ShaderRAII> newOGLShaders;
+        std::vector<GLuint> newOGLShaders;
         for (auto& shaderId : shaderIds) {
             shaders.emplace_back(std::move(application->GetShaderManager()->GetResource(shaderId)));
         }
@@ -163,7 +163,7 @@ namespace cgu {
 
         program.reset();
         for (unsigned int i = 0; i < shaders.size(); ++i) {
-            shaders[i]->ResetShader(std::move(newOGLShaders[i]));
+            shaders[i]->ResetShader(std::move(ShaderRAII(newOGLShaders[i])));
         }
         LoadInternal(tempProgram);
     }
@@ -287,6 +287,19 @@ namespace cgu {
     }
 
     /**
+     * Sets a uniform with given OpenGL name/location (mat4 version)
+     * @param name the location of the uniform
+     * @param data the mat4 to set the uniform to
+     */
+    void GPUProgram::SetUniform(BindingLocation name, const glm::mat3& data) const
+    {
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
+        assert(program == cProg);
+        OGL_CALL(glUniformMatrix3fv, name->iBinding, 1, GL_FALSE, glm::value_ptr(data));
+    }
+
+    /**
      * Sets a uniform with given OpenGL name/location (vec4 version)
      * @param name the location of the uniform
      * @param data the vec4 to set the uniform to
@@ -297,6 +310,19 @@ namespace cgu {
         OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform4fv, name->iBinding, 1, reinterpret_cast<const GLfloat*> (&data));
+    }
+
+    /**
+     * Sets a uniform with given OpenGL name/location (mat4 version)
+     * @param name the location of the uniform
+     * @param data the mat4 to set the uniform to
+     */
+    void GPUProgram::SetUniform(BindingLocation name, const glm::mat4& data) const
+    {
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
+        assert(program == cProg);
+        OGL_CALL(glUniformMatrix4fv, name->iBinding, 1, GL_FALSE, glm::value_ptr(data));
     }
 
     /**
@@ -457,7 +483,7 @@ namespace cgu {
         OGL_CALL(glUseProgram, program);
     }
 
-    GLuint GPUProgram::LinkNewProgram(const std::vector<ShaderRAII>& shdrs) const
+    GLuint GPUProgram::LinkNewProgram(const std::vector<GLuint>& shdrs) const
     {
         auto program = OGL_SCALL(glCreateProgram);
         if (program == 0) {

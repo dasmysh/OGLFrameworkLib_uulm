@@ -9,12 +9,11 @@
 #define GLM_SWIZZLE
 
 #include "Mesh.h"
-#include "core/math/math.h"
-
-#include <boost/geometry/geometries/point.hpp>
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/index/rtree.hpp>
+#include "SubMesh.h"
+#include "gfx/Material.h"
+#include "core/serializationHelper.h"
+#include "core/TextureManager.h"
+#include "SceneMeshNode.h"
 
 #undef min
 #undef max
@@ -23,59 +22,52 @@
 namespace cgu {
 
     /** Default constructor. */
-    Mesh::Mesh() : SubMesh() {}
+    Mesh::Mesh() {}
 
     /** Copy constructor. */
     Mesh::Mesh(const Mesh& rhs) :
-        SubMesh(rhs),
-        vertices(rhs.vertices),
-        texCoords(rhs.texCoords),
-        normals(rhs.normals),
-        paramVertices(rhs.paramVertices),
-        lineVertices(rhs.lineVertices),
-        faceVertices(rhs.faceVertices),
-        triangleConnect(rhs.triangleConnect),
-        verticesConnect(rhs.verticesConnect)
+        vertices_(rhs.vertices_),
+        normals_(rhs.normals_),
+        texCoords_(rhs.texCoords_),
+        tangents_(rhs.tangents_),
+        binormals_(rhs.binormals_),
+        colors_(rhs.colors_),
+        indices_(rhs.indices_),
+        rootTransform_(rhs.rootTransform_),
+        rootNode_(std::make_unique<SceneMeshNode>(*rhs.rootNode_))
     {
-        for (const auto& submesh : rhs.subMeshes) {
-            auto subMeshPtr = std::make_unique<SubMesh>(*submesh);
-            subMeshes.push_back(subMeshPtr.get());
-            subMeshMap.insert(std::move(std::make_pair(submesh->objectName, std::move(subMeshPtr))));
+        for (const auto& material : rhs.materials_) {
+            materials_.push_back(std::make_unique<Material>(*material));
+        }
+
+        for (const auto& submesh : rhs.subMeshes_) {
+            subMeshes_.push_back(std::make_unique<SubMesh>(*submesh));
         }
     }
 
     /** Copy assignment operator. */
     Mesh& Mesh::operator=(const Mesh& rhs)
     {
-        Mesh tmp{ rhs };
-        SubMesh* tMesh = this;
-        *tMesh = static_cast<const SubMesh&>(rhs);
-        std::swap(vertices, tmp.vertices);
-        std::swap(texCoords, tmp.texCoords);
-        std::swap(normals, tmp.normals);
-        std::swap(paramVertices, tmp.paramVertices);
-        std::swap(lineVertices, tmp.lineVertices);
-        std::swap(faceVertices, tmp.faceVertices);
-        std::swap(subMeshMap, tmp.subMeshMap);
-        std::swap(subMeshes, tmp.subMeshes);
-        std::swap(triangleConnect, tmp.triangleConnect);
-        std::swap(verticesConnect, tmp.verticesConnect);
+        if (this != &rhs) {
+            Mesh tmp{ rhs };
+            std::swap(*this, tmp);
+        }
         return *this;
     }
 
     /** Default move constructor. */
     Mesh::Mesh(Mesh&& rhs) :
-        //SubMesh(std::move(rhs)),
-        vertices(std::move(rhs.vertices)),
-        texCoords(std::move(rhs.texCoords)),
-        normals(std::move(rhs.normals)),
-        paramVertices(std::move(rhs.paramVertices)),
-        lineVertices(std::move(rhs.lineVertices)),
-        faceVertices(std::move(rhs.faceVertices)),
-        subMeshMap(std::move(rhs.subMeshMap)),
-        subMeshes(std::move(rhs.subMeshes)),
-        triangleConnect(std::move(rhs.triangleConnect)),
-        verticesConnect(std::move(rhs.verticesConnect))
+        vertices_(std::move(rhs.vertices_)),
+        normals_(std::move(rhs.normals_)),
+        texCoords_(std::move(rhs.texCoords_)),
+        tangents_(std::move(rhs.tangents_)),
+        binormals_(std::move(rhs.binormals_)),
+        colors_(std::move(rhs.colors_)),
+        indices_(std::move(rhs.indices_)),
+        rootTransform_(std::move(rhs.rootTransform_)),
+        rootNode_(std::move(rhs.rootNode_)),
+        materials_(std::move(rhs.materials_)),
+        subMeshes_(std::move(rhs.subMeshes_))
     {
     }
 
@@ -84,18 +76,17 @@ namespace cgu {
     {
         if (this != &rhs) {
             this->~Mesh();
-            SubMesh* tMesh = this;
-            *tMesh = static_cast<SubMesh&&>(std::move(rhs));
-            vertices = std::move(rhs.vertices);
-            texCoords = std::move(rhs.texCoords);
-            normals = std::move(rhs.normals);
-            paramVertices = std::move(rhs.paramVertices);
-            lineVertices = std::move(rhs.lineVertices);
-            faceVertices = std::move(rhs.faceVertices);
-            subMeshMap = std::move(rhs.subMeshMap);
-            subMeshes = std::move(rhs.subMeshes);
-            triangleConnect = std::move(rhs.triangleConnect);
-            verticesConnect = std::move(rhs.verticesConnect);
+            vertices_ = std::move(rhs.vertices_);
+            normals_ = std::move(rhs.normals_);
+            texCoords_ = std::move(rhs.texCoords_);
+            tangents_ = std::move(rhs.tangents_);
+            binormals_ = std::move(rhs.binormals_);
+            colors_ = std::move(rhs.colors_);
+            indices_ = std::move(rhs.indices_);
+            rootTransform_ = std::move(rhs.rootTransform_);
+            rootNode_ = std::move(rhs.rootNode_);
+            materials_ = std::move(rhs.materials_);
+            subMeshes_ = std::move(rhs.subMeshes_);
         }
         return *this;
     }
@@ -104,212 +95,120 @@ namespace cgu {
     Mesh::~Mesh() = default;
 
     /**
-     * Creates a new SubMesh in the mesh.
-     * @param subMeshName the name of the sub-mesh (may be empty, then the data is saved in the mesh itself)
-     * @param countState the counts of the single objects to store
+     *  Reserves memory to create the mesh.
+     *  @param maxUVChannels the maximum number of texture coordinates in a single sub-mesh vertex.
+     *  @param maxColorChannels the maximum number of colors in a single sub-mesh vertex.
+     *  @param numVertices the number of vertices in the mesh.
+     *  @param numIndices the number of indices in the mesh.
      */
-    void Mesh::createSubMesh(const std::string& subMeshName, ObjCountState& countState)
+    void Mesh::ReserveMesh(unsigned maxUVChannels, unsigned maxColorChannels, unsigned numVertices, unsigned numIndices, unsigned int numMaterials)
     {
-        SubMesh* subMesh;
-        if (subMeshName.length() == 0) {
-            subMesh = this;
-        } else {
-            subMesh = new SubMesh(subMeshName);
-            subMeshMap[subMeshName] = std::unique_ptr<SubMesh>(subMesh);
-        }
-
-        subMesh->ReserveSubMesh(countState);
+        vertices_.resize(numVertices);
+        normals_.resize(numVertices);
+        texCoords_.resize(maxUVChannels);
+        for (auto& texCoords : texCoords_) texCoords.resize(numVertices);
+        tangents_.resize(numVertices);
+        binormals_.resize(numVertices);
+        colors_.resize(maxColorChannels);
+        for (auto& colors : colors_) colors.resize(numVertices);
+        indices_.resize(numIndices);
+        materials_.resize(numMaterials);
+        for (auto& mat : materials_) mat = std::make_unique<Material>();
     }
 
-    /**
-     * Reserves memory for the meshes data.
-     * @param countState the counts of the single objects to store
-     */
-    void Mesh::ReserveMesh(ObjCountState& countState)
+    void Mesh::AddSubMesh(const std::string& name, unsigned idxOffset, unsigned numIndices, Material* material)
     {
-        vertices.reserve(countState.numVerts);
-        texCoords.reserve(countState.numTexCoords);
-        normals.reserve(countState.numNormals);
-        paramVertices.reserve(countState.numParameterVerts);
-        lineVertices.reserve(countState.numVerts);
-        faceVertices.reserve(countState.numVerts);
-
-        subMeshes.reserve(subMeshMap.size());
-        for (const auto& submesh : subMeshMap) {
-            subMeshes.push_back(submesh.second.get());
-        }
+        subMeshes_.push_back(std::make_unique<SubMesh>(this, name, idxOffset, numIndices, material));
     }
 
-    /**
-     *  Find index of triangle that contains the given point.
-     *  @param point the point to find the triangle for.
-     */
-    unsigned int Mesh::FindContainingTriangle(const glm::vec3 point)
+    void Mesh::CreateSceneNodes(aiNode* rootNode)
     {
-        auto result = FindContainingTriangleSub(this, point);
-        if (result != -1) return result;
-
-        for (auto submesh : subMeshes) {
-            result = FindContainingTriangleSub(submesh, point);
-            if (result != -1) return result;
-        }
-        throw std::out_of_range("Containing triangle not found!");
+        rootNode_ = std::make_unique<SceneMeshNode>(rootNode, nullptr, subMeshes_);
     }
 
-    /**
-     *  Get the number of triangles in this mesh.
-     *  @return the number of triangles.
-     */
-    unsigned int Mesh::GetNumberOfTriangles() const
+    void Mesh::write(std::ofstream& ofs) const
     {
-        auto result = numTriangles;
-        for (const auto submesh : subMeshes) {
-            result += submesh->numTriangles;
+        serializeHelper::writeV(ofs, vertices_);
+        serializeHelper::writeV(ofs, normals_);
+        serializeHelper::writeVV(ofs, texCoords_);
+        serializeHelper::writeV(ofs, tangents_);
+        serializeHelper::writeV(ofs, binormals_);
+        serializeHelper::writeVV(ofs, colors_);
+        serializeHelper::writeV(ofs, indices_);
+
+        serializeHelper::write(ofs, static_cast<uint64_t>(materials_.size()));
+        for (const auto& mat : materials_) {
+            serializeHelper::write(ofs, reinterpret_cast<uint64_t>(mat.get()));
+            serializeHelper::write(ofs, mat->ambient);
+            serializeHelper::write(ofs, mat->diffuse);
+            serializeHelper::write(ofs, mat->specular);
+            serializeHelper::write(ofs, mat->alpha);
+            serializeHelper::write(ofs, mat->minOrientedAlpha);
+            serializeHelper::write(ofs, mat->N_s);
+            serializeHelper::write(ofs, mat->N_i);
+            serializeHelper::write(ofs, mat->bumpMultiplier);
+            if (mat->diffuseTex) serializeHelper::write(ofs, mat->diffuseTex->getId());
+            else serializeHelper::write(ofs, std::string());
+
+            if (mat->bumpTex) serializeHelper::write(ofs, mat->bumpTex->getId());
+            else serializeHelper::write(ofs, std::string());
         }
-        return result;
+
+        serializeHelper::write(ofs, static_cast<uint64_t>(subMeshes_.size()));
+        for (const auto& mesh : subMeshes_) mesh->write(ofs);
+
+        serializeHelper::write(ofs, rootTransform_);
+        rootNode_->write(ofs);
     }
 
-    /**
-     *  Creates the meshes geometry information and acceleration structures.
-     */
-    void Mesh::CreateGeomertyInfo()
+    void Mesh::read(std::ifstream& ifs, TextureManager& texMan)
     {
-        verticesConnect.resize(vertices.size());
-        unsigned int cid = 0;
-        for (auto& vc : verticesConnect) {
-            vc.idx = cid++;
+        serializeHelper::readV(ifs, vertices_);
+        serializeHelper::readV(ifs, normals_);
+        serializeHelper::readVV(ifs, texCoords_);
+        serializeHelper::readV(ifs, tangents_);
+        serializeHelper::readV(ifs, binormals_);
+        serializeHelper::readVV(ifs, colors_);
+        serializeHelper::readV(ifs, indices_);
+
+        uint64_t numMaterials;
+        std::unordered_map<uint64_t, Material*> materialMap;
+        std::unordered_map<uint64_t, SubMesh*> meshMap;
+        std::unordered_map<uint64_t, SceneMeshNode*> nodeMap;
+        serializeHelper::read(ifs, numMaterials);
+        materials_.resize(numMaterials);
+        for (auto& mat : materials_) {
+            mat.reset(new Material());
+            uint64_t materialID;
+            serializeHelper::read(ifs, materialID);
+            serializeHelper::read(ifs, mat->ambient);
+            serializeHelper::read(ifs, mat->diffuse);
+            serializeHelper::read(ifs, mat->specular);
+            serializeHelper::read(ifs, mat->alpha);
+            serializeHelper::read(ifs, mat->minOrientedAlpha);
+            serializeHelper::read(ifs, mat->N_s);
+            serializeHelper::read(ifs, mat->N_i);
+            serializeHelper::read(ifs, mat->bumpMultiplier);
+            std::string diffuseTexId, bumpTexId;
+            serializeHelper::read(ifs, diffuseTexId);
+            serializeHelper::read(ifs, bumpTexId);
+            if (diffuseTexId.size() > 0) mat->diffuseTex = texMan.GetResource(diffuseTexId);
+            if (bumpTexId.size() > 0) mat->bumpTex = texMan.GetResource(bumpTexId);
+            materialMap[materialID] = mat.get();
         }
 
-        CreateGeomertyInfoSub(this);
+        uint64_t numMeshes;
 
-        for (auto submesh : subMeshes) {
-            CreateGeomertyInfoSub(submesh);
-        }
-    }
-
-    /**
-     *  Find index of triangle that contains the given point.
-     *  @param submesh the sub mesh to find the triangle in.
-     *  @param point the point to find the triangle for.
-     */
-    int Mesh::FindContainingTriangleSub(const SubMesh* submesh, const glm::vec3 pt)
-    {
-        if (!cguMath::pointInAABB3Test(submesh->aabb, pt)) return -1;
-
-        std::vector<polyIdxBox> hits;
-        namespace bg = boost::geometry;
-        submesh->fastFindTree.query(bg::index::contains(point(pt.x, pt.y, pt.z)), std::back_inserter(hits));
-        for (const auto& polyBox : hits) {
-            auto triId = polyBox.second;
-            cguMath::Tri3<float> tri{ { vertices[triangleConnect[triId].vertex[0]].xyz(),
-                vertices[triangleConnect[triId].vertex[1]].xyz(), vertices[triangleConnect[triId].vertex[2]].xyz() } };
-            if (cguMath::pointInTriangleTest<float>(tri, pt, nullptr)) return triId;
-        }
-        return -1;
-    }
-
-    /**
-     *  Creates the meshes geometry information and acceleration structures.
-     *  @param submesh the sub mesh to create geometry information for.
-     */
-    void Mesh::CreateGeomertyInfoSub(SubMesh* submesh)
-    {
-        CreateAABB(submesh);
-        CreateConnectivity(submesh);
-        CreateRTree(submesh);
-    }
-
-    /**
-     *  Creates the sub meshes connectivity.
-     *  @param submesh the sub mesh to create the connectivity for.
-     */
-    void Mesh::CreateConnectivity(SubMesh* submesh)
-    {
-        submesh->firstTriIndex = static_cast<unsigned int>(triangleConnect.size());
-        submesh->numTriangles = static_cast<unsigned int>(submesh->trianglePtsIndices.size());
-        triangleConnect.insert(triangleConnect.end(), submesh->trianglePtsIndices.begin(), submesh->trianglePtsIndices.end());
-
-        // set vertex connectivity
-        for (auto i = submesh->firstTriIndex; i < submesh->firstTriIndex + submesh->numTriangles; ++i) {
-            auto& tri = triangleConnect[i];
-            verticesConnect[tri.vertex[0]].triangles.push_back(i);
-            verticesConnect[tri.vertex[1]].triangles.push_back(i);
-            verticesConnect[tri.vertex[2]].triangles.push_back(i);
+        serializeHelper::read(ifs, numMeshes);
+        subMeshes_.resize(numMeshes);
+        for (auto& mesh : subMeshes_) {
+            mesh.reset(new SubMesh());
+            mesh->read(ifs, meshMap, materialMap);
         }
 
-        // set triangle neighbors
-        for (auto i = submesh->firstTriIndex; i < submesh->firstTriIndex + submesh->numTriangles; ++i) {
-            auto& tri = triangleConnect[i];
-            for (unsigned int ni = 0; ni < 3; ++ni) {
-                auto vi0 = tri.vertex[(ni + 1) % 3];
-                auto vi1 = tri.vertex[(ni + 2) % 3];
-                std::vector<unsigned int> isect;
-                std::set_intersection(verticesConnect[vi0].triangles.begin(), verticesConnect[vi0].triangles.end(),
-                    verticesConnect[vi1].triangles.begin(), verticesConnect[vi1].triangles.end(), std::back_inserter(isect));
-                // if the mesh is planar and has borders only ONE triangle may be found!!!
-                // this triangle is the triangle itself not its neighbor
-                assert(isect.size() <= 2); // both this triangle and the neighbor should be found
-                if (isect.size() == 2) {
-                    tri.neighbors[ni] = isect[0] == i ? isect[1] : isect[0];
-                } else {
-                    tri.neighbors[ni] = -1;
-                }
-            }
-        }
-    }
-
-    /**
-     *  Calculates the meshes normals.
-     */
-    void Mesh::CalculateNormals()
-    {
-        for (const auto& tc : triangleConnect) {
-            for (unsigned int vi0 = 0; vi0 < 3; ++vi0) {
-                auto vi1 = (vi0 + 1) % 3;
-                auto vi2 = (vi0 + 2) % 3;
-                auto v0 = vertices[tc.vertex[vi1]].xyz - vertices[tc.vertex[vi0]].xyz;
-                auto v1 = vertices[tc.vertex[vi2]].xyz - vertices[tc.vertex[vi0]].xyz;
-                faceVertices[tc.faceVertex[vi0]].normal += glm::cross(v0, v1);
-            }
-        }
-
-        for (auto& fv : faceVertices) {
-            fv.normal = glm::normalize(fv.normal);
-        }
-
-        faceHasNormal = true;
-    }
-
-    /**
-     *  Creates the sub meshes bounding box.
-     *  @param submesh the sub mesh to create the bounding box for.
-     */
-    void Mesh::CreateAABB(SubMesh* submesh)
-    {
-        if (trianglePtsIndices.empty()) return;
-        submesh->aabb.minmax[0] = submesh->aabb.minmax[1] = vertices[trianglePtsIndices.begin()->vertex[0]].xyz();
-        for (const auto& tri : trianglePtsIndices) {
-            for (auto vi : tri.vertex) {
-                submesh->aabb.minmax[0] = glm::min(submesh->aabb.minmax[0], vertices[vi].xyz());
-                submesh->aabb.minmax[1] = glm::max(submesh->aabb.minmax[1], vertices[vi].xyz());
-            }
-        }
-    }
-
-    /**
-     *  Creates the sub meshes r-tree for faster point in triangle tests.
-     *  @param submesh the sub mesh to create the tree for.
-     */
-    void Mesh::CreateRTree(SubMesh* submesh)
-    {
-        for (auto i = submesh->firstTriIndex; i < submesh->firstTriIndex + submesh->numTriangles; ++i) {
-            polygon poly;
-            for (unsigned int vi = 0; vi < 3; ++vi) {
-                auto vpt = vertices[triangleConnect[i].vertex[vi]].xyz();
-                poly.outer().push_back(point(vpt.x, vpt.y, vpt.z));
-            }
-            auto b = boost::geometry::return_envelope<box>(poly);
-            submesh->fastFindTree.insert(std::make_pair(b, i));
-        }
+        serializeHelper::read(ifs, rootTransform_);
+        rootNode_ = std::make_unique<SceneMeshNode>();
+        nodeMap[0] = nullptr;
+        rootNode_->read(ifs, meshMap, nodeMap);
     }
 }

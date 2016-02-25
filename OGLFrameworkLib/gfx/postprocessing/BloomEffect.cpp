@@ -8,21 +8,19 @@
 
 #include "BloomEffect.h"
 #include "app/ApplicationBase.h"
-#include "gfx/glrenderer/GLRenderTarget.h"
 #include "app/GLWindow.h"
 #include <imgui.h>
 
 namespace cgu {
 
-    BloomEffect::BloomEffect(ApplicationBase* app) :
-        renderable(app->GetScreenQuadRenderable()),
+    BloomEffect::BloomEffect(const glm::ivec2 sourceSize, ApplicationBase* app) :
         glareDetectProgram(app->GetGPUProgramManager()->GetResource("shader/tm/glareDetect.cp")),
         glareUniformIds(glareDetectProgram->GetUniformLocations({ "sourceTex", "targetTex", "exposure", "bloomThreshold" })),
         blurProgram(app->GetGPUProgramManager()->GetResource("shader/tm/blurBloom.cp")),
         blurUniformIds(blurProgram->GetUniformLocations({ "sourceTex", "targetTex", "dir", "bloomWidth" })),
         combineProgram(nullptr),
         combineUniformIds(),
-        sourceRTSize(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight())
+        sourceRTSize(sourceSize)
     {
         params.bloomThreshold = 0.63f;
         params.bloomWidth = 1.0f;
@@ -34,32 +32,25 @@ namespace cgu {
         passesToString << NUM_PASSES;
         combineProgram = app->GetGPUProgramManager()->GetResource("shader/tm/combineBloom.cp,NUM_PASSES " + passesToString.str());
         combineUniformIds = combineProgram->GetUniformLocations({ "sourceTex", "targetTex", "blurTex", "defocus", "bloomIntensity" });
-        TextureDescriptor texDesc{ 128, GL_RGBA32F, GL_RGBA, GL_FLOAT };
-        glm::uvec2 size(app->GetWindow()->GetWidth() / 2, app->GetWindow()->GetHeight() / 2);
-        glaresRT.reset(new GLTexture(size.x, size.y, texDesc, nullptr));
 
-        unsigned int base = 1;
-        auto blurTexUnit = 0;
-        for (auto& blurPassRTs : blurRTs) {
-            blurTextureUnitIds.emplace_back(++blurTexUnit);
-            glm::uvec2 sizeBlurRT(glm::max(size.x / base, 1u), glm::max(size.y / base, 1u));
-            blurPassRTs[0].reset(new GLTexture(sizeBlurRT.x, sizeBlurRT.y, texDesc, nullptr));
-            blurPassRTs[1].reset(new GLTexture(sizeBlurRT.x, sizeBlurRT.y, texDesc, nullptr));
-            base *= 2;
-        }
+        Resize(sourceSize);
     }
 
     BloomEffect::~BloomEffect() = default;
 
     void BloomEffect::RenderParameterSliders()
     {
-        ImGui::InputFloat("Bloom Threshold", &params.bloomThreshold, 0.01f);
-        ImGui::InputFloat("Bloom Width", &params.bloomWidth, 0.1f);
-        ImGui::InputFloat("Bloom Defocus", &params.defocus, 0.01f);
-        ImGui::InputFloat("Bloom Intensity", &params.bloomIntensity, 0.1f);
+        if (ImGui::TreeNode("Bloom Parameters"))
+        {
+            ImGui::InputFloat("Bloom Threshold", &params.bloomThreshold, 0.01f);
+            ImGui::InputFloat("Bloom Width", &params.bloomWidth, 0.1f);
+            ImGui::InputFloat("Bloom Defocus", &params.defocus, 0.01f);
+            ImGui::InputFloat("Bloom Intensity", &params.bloomIntensity, 0.1f);
+            ImGui::TreePop();
+        }
     }
 
-    void BloomEffect::ApplyEffect(GLRenderTarget* sourceRT, GLRenderTarget* targetRT)
+    void BloomEffect::ApplyEffect(GLTexture* sourceRT, GLTexture* targetRT)
     {
         const glm::vec2 groupSize{ 32.0f, 16.0f };
 
@@ -70,7 +61,7 @@ namespace cgu {
         glareDetectProgram->SetUniform(glareUniformIds[1], 0);
         glareDetectProgram->SetUniform(glareUniformIds[2], params.exposure);
         glareDetectProgram->SetUniform(glareUniformIds[3], params.bloomThreshold);
-        sourceRT->GetTextures()[0]->ActivateTexture(GL_TEXTURE0);
+        sourceRT->ActivateTexture(GL_TEXTURE0);
         glaresRT->ActivateImage(0, 0, GL_WRITE_ONLY);
         OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
@@ -113,11 +104,11 @@ namespace cgu {
         combineProgram->SetUniform(combineUniformIds[2], blurTextureUnitIds);
         combineProgram->SetUniform(combineUniformIds[3], params.defocus);
         combineProgram->SetUniform(combineUniformIds[4], params.bloomIntensity);
-        sourceRT->GetTextures()[0]->ActivateTexture(GL_TEXTURE0);
+        sourceRT->ActivateTexture(GL_TEXTURE0);
         for (unsigned int i = 0; i < NUM_PASSES; ++i) {
             blurRTs[i][1]->ActivateTexture(GL_TEXTURE1 + i);
         }
-        targetRT->GetTextures()[0]->ActivateImage(0, 0, GL_WRITE_ONLY);
+        targetRT->ActivateImage(0, 0, GL_WRITE_ONLY);
         OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_SCALL(glFinish);
@@ -125,12 +116,16 @@ namespace cgu {
 
     void BloomEffect::Resize(const glm::uvec2& screenSize)
     {
-        TextureDescriptor texDesc{ 128, GL_RGBA32F, GL_RGBA, GL_FLOAT };
+        blurTextureUnitIds.clear();
+        sourceRTSize = screenSize;
+        TextureDescriptor texDesc{ 16, GL_RGBA32F, GL_RGBA, GL_FLOAT };
         glm::uvec2 size(screenSize.x / 2, screenSize.y / 2);
         glaresRT.reset(new GLTexture(size.x, size.y, texDesc, nullptr));
 
         unsigned int base = 1;
+        auto blurTexUnit = 0;
         for (auto& blurPassRTs : blurRTs) {
+            blurTextureUnitIds.emplace_back(++blurTexUnit);
             glm::uvec2 sizeBlurRT(glm::max(size.x / base, 1u), glm::max(size.y / base, 1u));
             blurPassRTs[0].reset(new GLTexture(sizeBlurRT.x, sizeBlurRT.y, texDesc, nullptr));
             blurPassRTs[1].reset(new GLTexture(sizeBlurRT.x, sizeBlurRT.y, texDesc, nullptr));

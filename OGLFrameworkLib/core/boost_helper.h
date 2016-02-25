@@ -39,4 +39,5 @@ public:
     static boost::optional<external_type> get_value(internal_type const &v);
     static boost::optional<internal_type> put_value(external_type const& v);
 };
+
 #endif /* BOOST_HELPER_H */

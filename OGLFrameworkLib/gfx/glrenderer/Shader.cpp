@@ -180,11 +180,6 @@ namespace cgu {
     ShaderRAII Shader::CompileShader(const std::string& filename, const std::vector<std::string>& defines, GLenum type, const std::string& strType) const
     {
         unsigned int firstFileId = 0;
-        /*if (!boost::filesystem::exists(filename)) {
-            LOG(ERROR) << "Cannot open shader file \"" << filename.c_str() << "\".";
-            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << fileid_info(firstFileId) << resid_info(id)
-                << errdesc_info("Cannot open shader file.");
-        }*/
         auto shaderText = LoadShaderFile(filename, defines, firstFileId, 0);
 
         ShaderRAII shader{ OGL_CALL(glCreateShader, type) };
@@ -211,7 +206,6 @@ namespace cgu {
                 << filename.c_str() << "): " << std::endl << strInfoLog;
             std::string infoLog = strInfoLog;
             delete[] strInfoLog;
-            OGL_CALL(glDeleteShader, shader);
             throw shader_compiler_error() << ::boost::errinfo_file_name(filename)
                 << compiler_error_info(infoLog) << resid_info(getId())
                 << errdesc_info("Shader compilation failed.");

@@ -139,7 +139,7 @@ namespace cgu {
      * @param offset the offset into the buffer to the first of this attributes
      */
     void GLVertexAttributeArray::AddVertexAttribute(BindingLocation location, int size, GLenum type,
-        GLboolean normalized, GLsizei stride, unsigned int offset)
+        GLboolean normalized, GLsizei stride, size_t offset)
     {
         vertex_attribute_desc desc;
         desc.shaderType = VAShaderType::FLOAT;
@@ -148,7 +148,7 @@ namespace cgu {
         desc.type = type;
         desc.normalized = normalized;
         desc.stride = stride;
-        desc.offset = offset;
+        desc.offset = static_cast<unsigned int>(offset);
         v_desc.push_back(std::move(desc));
         OGL_CALL(glEnableVertexAttribArray, location->iBinding);
         OGL_CALL(glVertexAttribPointer, location->iBinding, size, type, normalized, stride,
@@ -164,7 +164,7 @@ namespace cgu {
      * @param offset the offset into the buffer to the first of this attributes
      */
     void GLVertexAttributeArray::AddVertexAttributeI(BindingLocation location, int size, GLenum type,
-        GLsizei stride, unsigned int offset)
+        GLsizei stride, size_t offset)
     {
         vertex_attribute_desc desc;
         desc.shaderType = VAShaderType::INTEGER;
@@ -172,7 +172,7 @@ namespace cgu {
         desc.size = size;
         desc.type = type;
         desc.stride = stride;
-        desc.offset = offset;
+        desc.offset = static_cast<unsigned int>(offset);
         v_desc.push_back(std::move(desc));
         OGL_CALL(glEnableVertexAttribArray, location->iBinding);
         OGL_CALL(glVertexAttribIPointer, location->iBinding, size, type, stride,
@@ -188,7 +188,7 @@ namespace cgu {
      * @param offset the offset into the buffer to the first of this attributes
      */
     void GLVertexAttributeArray::AddVertexAttributeL(BindingLocation location, int size, GLenum type,
-        GLsizei stride, unsigned int offset)
+        GLsizei stride, size_t offset)
     {
         vertex_attribute_desc desc;
         desc.shaderType = VAShaderType::DOUBLE;
@@ -196,7 +196,7 @@ namespace cgu {
         desc.size = size;
         desc.type = type;
         desc.stride = stride;
-        desc.offset = offset;
+        desc.offset = static_cast<unsigned int>(offset);
         v_desc.push_back(std::move(desc));
         OGL_CALL(glEnableVertexAttribArray, location->iBinding);
         OGL_CALL(glVertexAttribLPointer, location->iBinding, size, type, stride,

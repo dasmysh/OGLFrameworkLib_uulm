@@ -48,7 +48,7 @@ namespace cgu {
 
     void SceneRenderable::Draw(const CameraView& camera) const
     {
-        camera.SetView(worldMatrix);
-        renderable->Draw();
+        camera.SetView();
+        renderable->Draw(worldMatrix);
     }
 }

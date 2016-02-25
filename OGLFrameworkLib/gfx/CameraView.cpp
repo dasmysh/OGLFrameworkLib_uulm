@@ -38,7 +38,7 @@ namespace cgu {
     camUp(0.0f, 1.0f, 0.0f),
     camArcball(theButtonDownFlag, theButtonFlag),
     perspectiveUBO(uniformBindingPoints == nullptr ? nullptr : std::make_unique<GLUniformBuffer>(perspectiveProjectionUBBName,
-        static_cast<unsigned int>(sizeof(PerspectiveTransformBuffer)), uniformBindingPoints))
+        static_cast<unsigned int>(sizeof(glm::mat4)), uniformBindingPoints))
     {
         Resize(screenSize);
     }
@@ -177,22 +177,17 @@ namespace cgu {
         view = glm::lookAt(camPos, glm::vec3(0.0f), camUp);
     }
 
-    cguMath::Frustum<float> CameraView::SetView(const glm::mat4& modelM) const
+    void CameraView::SetView() const
     {
-        PerspectiveTransformBuffer perspectiveBuffer;
-        perspectiveBuffer.mat_m = modelM;
-        perspectiveBuffer.mat_mvp = perspective * view * modelM;
-        perspectiveBuffer.mat_normal = glm::mat4(glm::mat3(modelM));
+        auto viewProjection = perspective * view;
 
         if (perspectiveUBO) {
-            perspectiveUBO->UploadData(0, sizeof(PerspectiveTransformBuffer), &perspectiveBuffer);
+            perspectiveUBO->UploadData(0, sizeof(glm::mat4), &viewProjection);
             perspectiveUBO->BindBuffer();
         }
-
-        return std::move(CalcViewFrustum(perspectiveBuffer.mat_mvp));
     }
 
-    void CameraView::SetViewShadowMap(const glm::mat4& modelM) const
+    void CameraView::SetViewShadowMap() const
     {
         /** see http://www.mvps.org/directx/articles/linear_z/linearz.htm */
         auto projectionLinear = perspective;
@@ -201,10 +196,10 @@ namespace cgu {
         auto F = -perspective[3][2] / ( -perspective[2][2] - 1.0f);
         projectionLinear[2][2] /= F;
         projectionLinear[3][2] /= F;*/
-        auto mvp = projectionLinear * view * modelM;
+        auto viewProjection = projectionLinear * view;
 
         if (perspectiveUBO) {
-            perspectiveUBO->UploadData(sizeof(glm::mat4), sizeof(glm::mat4), &mvp);
+            perspectiveUBO->UploadData(0, sizeof(glm::mat4), &viewProjection);
             perspectiveUBO->BindBuffer();
         }
     }
@@ -275,6 +270,12 @@ namespace cgu {
         return glm::dot(clampedCamPos - camPos, clampedCamPos - camPos);
     }
 
+    void CameraView::SetFOV(float fov)
+    {
+        fovY = fov;
+        perspective = glm::perspective(glm::radians(fovY), aspectRatio, nearZ, farZ);
+    }
+
     /**
      *  Handles keyboard input for camera positioning.
      *  @param vkCode the virtual key code of the key event.
@@ -301,7 +302,7 @@ namespace cgu {
             camPos += glm::vec3(0.5f, 0.0f, 0.0f);
             handled = true;
             break;
-        case VK_SPACE:
+        /*case VK_SPACE:
             camPos += glm::vec3(0.0f, 0.5f, 0.0f);
             handled = true;
             break;
@@ -309,7 +310,7 @@ namespace cgu {
         case VK_LCONTROL:
             camPos -= glm::vec3(0.0f, 0.5f, 0.0f);
             handled = true;
-            break;
+            break;*/
         }
 
         view = glm::lookAt(camPos, glm::vec3(0.0f), camUp);

@@ -6,68 +6,37 @@
  * @brief  Implementation of the SubMesh.
  */
 
+#define GLM_SWIZZLE
+
 #include "SubMesh.h"
+#include "core/serializationHelper.h"
+#include "Mesh.h"
+
+#undef min
+#undef max
 
 namespace cgu {
 
-    /** Default constructor. */
-    ObjCountState::ObjCountState() :
-        numVerts(0),
-        numTexCoords(0),
-        numNormals(0),
-        numParameterVerts(0),
-        numPoints(0),
-        numLineIndices(0),
-        numFaceIndices(0),
-        numCurv2(0),
-        numCurv(0),
-        numSurf(0),
-        numMtls(0)
-    {
-    }
-
-    /**
-     * Resets the count state values for sub-meshes.
-     */
-    void ObjCountState::ResetSubMesh()
-    {
-        numPoints = 0;
-        numLineIndices = 0;
-        numFaceIndices = 0;
-        numCurv = 0;
-        numCurv2 = 0;
-        numSurf = 0;
-        numMtls = 0;
-    }
-
     /** Constructor. */
-    SubMesh::SubMesh() :
-        objectName(""),
-        lineHasTexture(false),
-        faceHasTexture(false),
-        faceHasNormal(false),
-        firstTriIndex(0),
-        numTriangles(0)
+    SubMesh::SubMesh(const Mesh* mesh, const std::string& objectName, unsigned int indexOffset, unsigned int numIndices, Material* material) :
+        objectName_(objectName),
+        indexOffset_(indexOffset),
+        numIndices_(numIndices),
+        material_(material)
     {
+        aabb_.minmax[0] = glm::vec3(std::numeric_limits<float>::infinity()); aabb_.minmax[1] = glm::vec3(-std::numeric_limits<float>::infinity());
+        if (numIndices_ == 0) return;
+        auto& vertices = mesh->GetVertices();
+        auto& indices = mesh->GetIndices();
+        aabb_.minmax[0] = aabb_.minmax[1] = vertices[indices[indexOffset_]].xyz();
+        for (auto i = indexOffset_; i < indexOffset_ + numIndices_; ++i) {
+            aabb_.minmax[0] = glm::min(aabb_.minmax[0], vertices[indices[i]].xyz());
+            aabb_.minmax[1] = glm::max(aabb_.minmax[1], vertices[indices[i]].xyz());
+        }
     }
 
     /** Default destructor. */
     SubMesh::~SubMesh() = default;
-
-    /**
-     * Constructor.
-     * @param name the sub-meshes name
-     */
-    SubMesh::SubMesh(const std::string& name) :
-        objectName(name),
-        lineHasTexture(false),
-        faceHasTexture(false),
-        faceHasNormal(false),
-        firstTriIndex(0),
-        numTriangles(0)
-    {
-    }
-
     /** Default copy constructor. */
     SubMesh::SubMesh(const SubMesh&) = default;
     /** Default copy assignment operator. */
@@ -75,21 +44,11 @@ namespace cgu {
 
     /** Default move constructor. */
     SubMesh::SubMesh(SubMesh&& rhs) :
-        objectName(std::move(rhs.objectName)),
-        mtlChunks(std::move(rhs.mtlChunks)),
-        lineHasTexture(rhs.lineHasTexture),
-        faceHasTexture(rhs.faceHasTexture),
-        faceHasNormal(rhs.faceHasNormal),
-        pointIndices(std::move(rhs.pointIndices)),
-        lineIndices(std::move(rhs.lineIndices)),
-        curves(std::move(rhs.curves)),
-        curv2es(std::move(rhs.curv2es)),
-        surfaces(std::move(rhs.surfaces)),
-        trianglePtsIndices(std::move(rhs.trianglePtsIndices)),
-        firstTriIndex(rhs.firstTriIndex),
-        numTriangles(rhs.numTriangles),
-        aabb(std::move(rhs.aabb)),
-        fastFindTree(std::move(rhs.fastFindTree))
+        objectName_(std::move(rhs.objectName_)),
+        indexOffset_(std::move(rhs.indexOffset_)),
+        numIndices_(std::move(rhs.numIndices_)),
+        aabb_(std::move(rhs.aabb_)),
+        material_(std::move(rhs.material_))
     {
     }
 
@@ -98,52 +57,37 @@ namespace cgu {
     {
         if (this != &rhs) {
             this->~SubMesh();
-            objectName = std::move(rhs.objectName);
-            mtlChunks = std::move(rhs.mtlChunks);
-            lineHasTexture = rhs.lineHasTexture;
-            faceHasTexture = rhs.faceHasTexture;
-            faceHasNormal = rhs.faceHasNormal;
-            pointIndices = std::move(rhs.pointIndices);
-            lineIndices = std::move(rhs.lineIndices);
-            curves = std::move(rhs.curves);
-            curv2es = std::move(rhs.curv2es);
-            surfaces = std::move(rhs.surfaces);
-            trianglePtsIndices = std::move(rhs.trianglePtsIndices);
-            firstTriIndex = rhs.firstTriIndex;
-            numTriangles = rhs.numTriangles;
-            aabb = std::move(rhs.aabb);
-            fastFindTree = std::move(rhs.fastFindTree);
+            objectName_ = std::move(rhs.objectName_);
+            indexOffset_ = std::move(rhs.indexOffset_);
+            numIndices_ = std::move(rhs.numIndices_);
+            aabb_ = std::move(rhs.aabb_);
+            material_ = std::move(rhs.material_);
         }
         return *this;
     }
 
-    /**
-     * Reserves memory in the sub-mesh according to the simplex count
-     * @param countState the state of the simplex count
-     */
-    void SubMesh::ReserveSubMesh(ObjCountState& countState)
+    void SubMesh::write(std::ofstream& ofs) const
     {
-        pointIndices.reserve(countState.numPoints);
-        lineIndices.reserve(countState.numLineIndices);
-        faceIndices.reserve(countState.numFaceIndices);
-        curves.reserve(countState.numCurv);
-        curv2es.reserve(countState.numCurv2);
-        surfaces.reserve(countState.numSurf);
-        mtlChunks.reserve(countState.numMtls);
-        countState.ResetSubMesh();
+        serializeHelper::write(ofs, reinterpret_cast<uint64_t>(this));
+        serializeHelper::write(ofs, objectName_);
+        serializeHelper::write(ofs, indexOffset_);
+        serializeHelper::write(ofs, numIndices_);
+        serializeHelper::write(ofs, aabb_.minmax[0]);
+        serializeHelper::write(ofs, aabb_.minmax[1]);
+        serializeHelper::write(ofs, reinterpret_cast<uint64_t>(material_));
     }
 
-    /**
-     * Finishes a material chunk.
-     * @param matChunk the chunk to finish
-     */
-    void SubMesh::FinishMaterial(SubMeshMaterialChunk& matChunk)
+    void SubMesh::read(std::ifstream& ifs, std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, Material*>& materials)
     {
-        matChunk.Finish(static_cast<unsigned int>(pointIndices.size()),
-            static_cast<unsigned int>(lineIndices.size()),
-            static_cast<unsigned int>(faceIndices.size()));
-        if (!matChunk.IsEmpty()) {
-            mtlChunks.push_back(matChunk);
-        }
+        uint64_t meshID, materialID;
+        serializeHelper::read(ifs, meshID);
+        serializeHelper::read(ifs, objectName_);
+        serializeHelper::read(ifs, indexOffset_);
+        serializeHelper::read(ifs, numIndices_);
+        serializeHelper::read(ifs, aabb_.minmax[0]);
+        serializeHelper::read(ifs, aabb_.minmax[1]);
+        serializeHelper::read(ifs, materialID);
+        meshes[meshID] = this;
+        material_ = materials[materialID];
     }
 }

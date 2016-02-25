@@ -142,7 +142,7 @@ namespace cgu {
      *  Constructor.
      */
     SpotLightArray::SpotLightArray(const std::string& lightArrayName, ShaderBufferBindingPoints* uniformBindingPoints) :
-        lightsUBO(new GLUniformBuffer(lightArrayName, sizeof(SpotLightParams) * static_cast<unsigned int>(lightParams.size()), uniformBindingPoints))
+        lightsUBO(new GLUniformBuffer(lightArrayName, sizeof(SpotLightParams), uniformBindingPoints))
     {
     }
 

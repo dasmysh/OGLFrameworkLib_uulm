@@ -51,11 +51,13 @@ namespace cgu {
         template<typename T> T GetNamedParameterValue(const std::string& name, const T& def) const { 
             auto resultString = GetNamedParameterString(name);
             T result = def;
-            if (resultString.size() != 0) result = boost::lexical_cast<unsigned int>(resultString);
+            if (resultString.size() != 0) result = boost::lexical_cast<T>(resultString);
             return result;
         };
         bool CheckNamedParameterFlag(const std::string& name) const;
 
+        static bool parseNamedValue(const std::string& str, std::string& name, std::string& value);
+        static bool parseNamedFlag(const std::string& str, std::string& name);
 
         /** Holds the application object for dependencies. */
         ApplicationBase* application;

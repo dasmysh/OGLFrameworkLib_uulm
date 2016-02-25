@@ -2,13 +2,12 @@
 
 #include "perspective.glsl"
 
-layout(location = 0) in vec3 pos;
-
-uniform mat4 depthMVP;
+layout(location = 0) in vec3 position;
 
 void main()
 {
-    vec4 position = mat_mvp * vec4(pos, 1);
+    mat4 mvp = mat_vp * modelMatrix;
+    vec4 pos = mvp * vec4(position, 1);
     // position.z *= position.w;
-    gl_Position = position;
+    gl_Position = pos;
 }
