@@ -31,6 +31,7 @@ namespace cgu {
         fbd.texDesc.emplace_back(4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT);
         shadowMapRT.reset(new GLRenderTarget(size.x, size.y, fbd));
         shadowMapRT->GetTextures()[0]->ActivateShadowMapComparison();
+        shadowMapRT->GetTextures()[0]->SampleWrapBorderColor(glm::vec4(1.0f));
     }
 
     ShadowMap::~ShadowMap() = default;

@@ -84,6 +84,9 @@ namespace cgu {
 
         void SampleWrapMirror() const;
         void SampleWrapClamp() const;
+        void SampleWrapRepeat() const;
+        void SampleWrapMirrorClamp() const;
+        void SampleWrapBorderColor(const glm::vec4& color) const;
         void SampleLinear() const;
         void SampleNearest() const;
 
@@ -92,6 +95,8 @@ namespace cgu {
         const TextureGLIdentifierAccessor& GetGLIdentifier() const { return id; };
 
     private:
+        void SetSampleWrap(GLint param) const;
+
         /** Holds the OpenGL texture id. */
         TextureGLIdentifierAccessor id;
         /** Holds the texture descriptor. */

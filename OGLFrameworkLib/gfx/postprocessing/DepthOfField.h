@@ -36,12 +36,12 @@ namespace cgu {
         void Resize(const glm::uvec2& screenSize);
 
     private:
-        static const unsigned int RT_SIZE_FACTOR = 1;
+        static const unsigned int RT_SIZE_FACTOR = 4;
         using FrontBackTargets = std::array<std::unique_ptr<GLTexture>, 2>;
 
         float CalculateFocalLength(const CameraView& cam) const;
         float CalculateCoCRadius(const CameraView& cam, float z) const;
-        int CalculateMaxCoCRadius(const CameraView& cam) const;
+        float CalculateMaxCoCRadius(const CameraView& cam) const;
 
         /** Holds the render target for storing color information with circle of confusion. */
         std::unique_ptr<GLTexture> cocRT;

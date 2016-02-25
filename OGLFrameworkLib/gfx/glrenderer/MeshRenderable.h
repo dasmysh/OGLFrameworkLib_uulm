@@ -13,6 +13,7 @@
 #include "main.h"
 #include "GPUProgram.h"
 #include "gfx/glrenderer/ShaderMeshAttributes.h"
+#include "gfx/Vertices.h"
 
 namespace cgu {
 
@@ -32,13 +33,13 @@ namespace cgu {
         MeshRenderable(MeshRenderable&&);
         MeshRenderable& operator=(MeshRenderable&&);
 
-        void Draw(const glm::mat4& modelMatrix) const;
+        void Draw(const glm::mat4& modelMatrix, bool overrideBump = false) const;
 
     protected:
         MeshRenderable(const Mesh* renderMesh, GPUProgram* program);
         template<class VTX> void CreateVertexBuffer();
-        template<bool useMaterials> void Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds) const;
-        template<bool useMaterials> void DrawNode(const glm::mat4& modelMatrix, const SceneMeshNode* node, GPUProgram* program, const ShaderMeshAttributes& attribBinds) const;
+        template<bool useMaterials> void Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump = false) const;
+        template<bool useMaterials> void DrawNode(const glm::mat4& modelMatrix, const SceneMeshNode* node, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump = false) const;
         template<class VTX> void FillMeshAttributeBindings(GPUProgram* program, ShaderMeshAttributes& attribBinds) const;
 
     private:
@@ -55,9 +56,9 @@ namespace cgu {
 
         template<class VTX> static void GenerateVertexAttribute(GLVertexAttributeArray* vao, const std::vector<BindingLocation>& shaderPositions);
         template<bool useMaterials> void DrawSubMesh(const glm::mat4& modelMatrix, GPUProgram* program,
-            const ShaderMeshAttributes& attribBinds, const SubMesh* subMesh) const;
+            const ShaderMeshAttributes& attribBinds, const SubMesh* subMesh, bool overrideBump = false) const;
         template<bool useMaterials> void UseMaterials(GPUProgram* program, const ShaderMeshAttributes& attribBinds,
-            const SubMesh* subMesh) const;
+            const SubMesh* subMesh, bool overrideBump = false) const;
     };
 
     /**
@@ -99,6 +100,7 @@ namespace cgu {
     template <class VTX>
     void MeshRenderable::CreateVertexBuffer()
     {
+        // TODO: Visual studio does now know EBCO. [2/23/2016 Sebastian Maisch]
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
         std::vector<VTX> vertices;
         mesh_->GetVertices(vertices);
@@ -114,51 +116,20 @@ namespace cgu {
         assert(attribBinds.GetVertexAttributes().size() == 0);
         std::vector<std::string> attributeNames;
         VTX::GatherAttributeNames(attributeNames);
-        /*{ { "position", "normal", "tangent", "binormal" } };
-        std::stringstream attributeNameStr;
-        for (auto i = 0; i < VTX::NUM_TEXTURECOORDS; ++i) { attributeNameStr.clear(); attributeNameStr << "tex[" << i << "]"; attributeNames.push_back(attributeNameStr.str()); }
-        for (auto i = 0; i < VTX::NUM_COLORS; ++i) { attributeNameStr.clear(); attributeNameStr << "color[" << i << "]"; attributeNames.push_back(attributeNameStr.str()); }*/
 
         auto shaderPositions = program->GetAttributeLocations(attributeNames);
 
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
         attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer_, iBuffer_));
         GenerateVertexAttribute<VTX>(attribBinds.GetVertexAttributes().back(), shaderPositions);
-        /*for (unsigned int idx = 0; idx < mesh->subMeshes.size(); ++idx) {
-        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer, iBuffers[idx]));
-        GenerateVertexAttribute(attribBinds.GetVertexAttributes().back(), mesh->subMeshes[idx], shaderPositions);
-        }*/
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
 
-        attribBinds.GetUniformIds() = program->GetUniformLocations({ "modelMatrix", "diffuseTex", "bumpTex", "bumpMultiplier" });
+        attribBinds.GetUniformIds() = program->GetUniformLocations({ "modelMatrix", "normalMatrix", "diffuseTex", "bumpTex", "bumpMultiplier" });
     }
 
     template<class VTX> void MeshRenderable::GenerateVertexAttribute(GLVertexAttributeArray* vao, const std::vector<BindingLocation>& shaderPositions)
     {
         VTX::VertexAttributeSetup(vao, shaderPositions);
-        /*vao->StartAttributeSetup();
-        auto cPos = 0;
-        if (shaderPositions[cPos]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[cPos++], VTX::POSITION_DIMENSION, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, pos));
-        }
-        if (shaderPositions[cPos]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[cPos++], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, normal));
-        }
-        if (shaderPositions[cPos]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[cPos++], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, tangent));
-        }
-        if (shaderPositions[cPos]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[cPos++], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, binormal));
-        }
-        for (auto i = 0; i < VTX::NUM_TEXTURECOORDS; ++i) {
-            if (shaderPositions[cPos]->iBinding >= 0)
-                vao->AddVertexAttribute(shaderPositions[cPos++], VTX::TEXCOORD_DIMENSION, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, tex[i]));
-        }
-        for (auto i = 0; i < VTX::NUM_COLORS; ++i) {
-            if (shaderPositions[cPos]->iBinding >= 0)
-                vao->AddVertexAttribute(shaderPositions[cPos++], 4, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, color[i]));
-        }
-        vao->EndAttributeSetup();*/
     }
 
     template <class VTX>

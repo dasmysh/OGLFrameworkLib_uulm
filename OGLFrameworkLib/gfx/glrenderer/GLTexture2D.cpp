@@ -55,6 +55,12 @@ namespace cgu {
         if (CheckNamedParameterFlag("sRGB") && application->GetConfig().useSRGB) internalFmt = GL_SRGB8_ALPHA8;
         TextureDescriptor texDesc(4, internalFmt, fmt, GL_UNSIGNED_BYTE);
         texture = std::make_unique<GLTexture>(width, height, texDesc, data);
+        if (CheckNamedParameterFlag("mirror")) texture->SampleWrapMirror();
+        if (CheckNamedParameterFlag("repeat")) texture->SampleWrapRepeat();
+        if (CheckNamedParameterFlag("clamp")) texture->SampleWrapClamp();
+        if (CheckNamedParameterFlag("mirror-clamp")) texture->SampleWrapMirrorClamp();
+
+        
         FreeImage_Unload(bitmap32);
         FreeImage_Unload(bitmap);
     }

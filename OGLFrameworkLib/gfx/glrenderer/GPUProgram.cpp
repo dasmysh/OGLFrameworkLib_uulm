@@ -9,6 +9,7 @@
 #include "GPUProgram.h"
 #include "ShaderBufferBindingPoints.h"
 #include "app/ApplicationBase.h"
+#include <glm/gtc/type_ptr.hpp>
 
 namespace cgu {
 
@@ -286,6 +287,19 @@ namespace cgu {
     }
 
     /**
+     * Sets a uniform with given OpenGL name/location (mat4 version)
+     * @param name the location of the uniform
+     * @param data the mat4 to set the uniform to
+     */
+    void GPUProgram::SetUniform(BindingLocation name, const glm::mat3& data) const
+    {
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
+        assert(program == cProg);
+        OGL_CALL(glUniformMatrix3fv, name->iBinding, 1, GL_FALSE, glm::value_ptr(data));
+    }
+
+    /**
      * Sets a uniform with given OpenGL name/location (vec4 version)
      * @param name the location of the uniform
      * @param data the vec4 to set the uniform to
@@ -308,7 +322,7 @@ namespace cgu {
         GLuint cProg;
         OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
-        OGL_CALL(glUniformMatrix4fv, name->iBinding, 1, GL_FALSE, reinterpret_cast<const GLfloat*> (&data));
+        OGL_CALL(glUniformMatrix4fv, name->iBinding, 1, GL_FALSE, glm::value_ptr(data));
     }
 
     /**

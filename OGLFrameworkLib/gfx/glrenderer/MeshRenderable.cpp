@@ -13,6 +13,7 @@
 #include "gfx/Material.h"
 #include "GLTexture2D.h"
 #include "GLTexture.h"
+#include <glm/gtc/matrix_inverse.hpp>
 
 namespace cgu {
 
@@ -108,52 +109,53 @@ namespace cgu {
         return *this;
     }
 
-    void MeshRenderable::Draw(const glm::mat4& modelMatrix) const
+    void MeshRenderable::Draw(const glm::mat4& modelMatrix, bool overrideBump) const
     {
-        Draw<true>(modelMatrix, drawProgram_, drawAttribBinds_);
+        Draw<true>(modelMatrix, drawProgram_, drawAttribBinds_, overrideBump);
     }
 
     template <bool useMaterials>
-    void MeshRenderable::Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds) const
+    void MeshRenderable::Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump) const
     {
         program->UseProgram();
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
         attribBinds.GetVertexAttributes()[0]->EnableVertexAttributeArray();
-        DrawNode<useMaterials>(mesh_->GetRootTransform() * modelMatrix, mesh_->GetRootNode(), program, attribBinds);
+        DrawNode<useMaterials>(mesh_->GetRootTransform() * modelMatrix, mesh_->GetRootNode(), program, attribBinds, overrideBump);
         attribBinds.GetVertexAttributes()[0]->DisableVertexAttributeArray();
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
     }
 
     template <bool useMaterials>
-    void MeshRenderable::DrawNode(const glm::mat4& modelMatrix, const SceneMeshNode* node, GPUProgram* program, const ShaderMeshAttributes& attribBinds) const
+    void MeshRenderable::DrawNode(const glm::mat4& modelMatrix, const SceneMeshNode* node, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump) const
     {
         auto localMatrix = node->GetLocalTransform() * modelMatrix;
-        for (unsigned int i = 0; i < node->GetNumMeshes(); ++i) DrawSubMesh<useMaterials>(localMatrix, program, attribBinds, node->GetMesh(i));
-        for (unsigned int i = 0; i < node->GetNumNodes(); ++i) DrawNode<useMaterials>(localMatrix, node->GetChild(i), program, attribBinds);
+        for (unsigned int i = 0; i < node->GetNumMeshes(); ++i) DrawSubMesh<useMaterials>(localMatrix, program, attribBinds, node->GetMesh(i), overrideBump);
+        for (unsigned int i = 0; i < node->GetNumNodes(); ++i) DrawNode<useMaterials>(localMatrix, node->GetChild(i), program, attribBinds, overrideBump);
     }
 
     template<bool useMaterials> void MeshRenderable::DrawSubMesh(const glm::mat4& modelMatrix, GPUProgram* program,
-        const ShaderMeshAttributes& attribBinds, const SubMesh* subMesh) const
+        const ShaderMeshAttributes& attribBinds, const SubMesh* subMesh, bool overrideBump) const
     {
         program->SetUniform(attribBinds.GetUniformIds()[0], modelMatrix);
-        UseMaterials<useMaterials>(program, attribBinds, subMesh);
-        OGL_CALL(glDrawElements, GL_TRIANGLES, subMesh->GetNumberOfTriangles(), GL_UNSIGNED_INT,
+        program->SetUniform(attribBinds.GetUniformIds()[1], glm::inverseTranspose(glm::mat3(modelMatrix)));
+        UseMaterials<useMaterials>(program, attribBinds, subMesh, overrideBump);
+        OGL_CALL(glDrawElements, GL_TRIANGLES, subMesh->GetNumberOfIndices(), GL_UNSIGNED_INT,
             (static_cast<char*> (nullptr)) + (subMesh->GetIndexOffset() * sizeof(unsigned int)));
     }
 
-    template<bool useMaterials> void MeshRenderable::UseMaterials(GPUProgram*, const ShaderMeshAttributes&, const SubMesh*) const {}
+    template<bool useMaterials> void MeshRenderable::UseMaterials(GPUProgram*, const ShaderMeshAttributes&, const SubMesh*, bool) const {}
 
     template<> void MeshRenderable::UseMaterials<true>(GPUProgram* program, const ShaderMeshAttributes& attribBinds,
-        const SubMesh* subMesh) const
+        const SubMesh* subMesh, bool overrideBump) const
     {
         if (subMesh->GetMaterial()->diffuseTex && attribBinds.GetUniformIds().size() != 0) {
             subMesh->GetMaterial()->diffuseTex->GetTexture()->ActivateTexture(GL_TEXTURE0);
-            program->SetUniform(attribBinds.GetUniformIds()[1], 0);
+            program->SetUniform(attribBinds.GetUniformIds()[2], 0);
         }
         if (subMesh->GetMaterial()->bumpTex && attribBinds.GetUniformIds().size() >= 2) {
             subMesh->GetMaterial()->bumpTex->GetTexture()->ActivateTexture(GL_TEXTURE1);
-            program->SetUniform(attribBinds.GetUniformIds()[2], 1);
-            program->SetUniform(attribBinds.GetUniformIds()[3], subMesh->GetMaterial()->bumpMultiplier);
+            program->SetUniform(attribBinds.GetUniformIds()[3], 1);
+            if (!overrideBump) program->SetUniform(attribBinds.GetUniformIds()[4], subMesh->GetMaterial()->bumpMultiplier);
         }
     }
 

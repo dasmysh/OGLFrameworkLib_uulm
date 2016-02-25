@@ -22,7 +22,7 @@ void main() {
     vec4 result;
     result.rgb = texelFetch(colorTex, pos, 0).rgb;
     float z = reconstructLinearZ(texelFetch(depthTex, pos, 0).r);
-    result.a = (z - focusZ) * scale / z;
+    result.a = (focusZ - z) * scale;
     result.a = (result.a * 0.5f) + 0.5f;
 
     imageStore(targetTex, pos, result);

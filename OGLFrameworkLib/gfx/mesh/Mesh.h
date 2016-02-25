@@ -53,7 +53,7 @@ namespace cgu {
                 for (auto pd = 0; pd < VTX::POSITION_DIMENSION; ++pd) vertices[i].SetPosition(vertices_[i][pd], pd);
                 vertices[i].SetNormal(normals_[i]);
                 for (auto ti = 0; ti < VTX::NUM_TEXTURECOORDS; ++ti) {
-                    for (auto td = 0; td < VTX::NUM_TEXTURECOORDS; ++td) vertices[i].SetTexCoord(texCoords_[ti][i][td], ti, td);
+                    for (auto td = 0; td < VTX::TEXCOORD_DIMENSION; ++td) vertices[i].SetTexCoord(texCoords_[ti][i][td], ti, td);
                 }
                 vertices[i].SetTangent(tangents_[i]);
                 vertices[i].SetBinormal(binormals_[i]);

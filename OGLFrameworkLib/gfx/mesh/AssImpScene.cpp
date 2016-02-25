@@ -8,6 +8,7 @@
 
 #define GLM_SWIZZLE
 #include "AssimpScene.h"
+#include "core/glm_helper.h"
 #include "app/ApplicationBase.h"
 #include <fstream>
 #include <boost/filesystem.hpp>
@@ -16,6 +17,7 @@
 #include <assimp/postprocess.h>
 #include <unordered_map>
 #include <glm/gtx/transform.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 namespace cgu {
 
@@ -31,15 +33,20 @@ namespace cgu {
     {
         auto filename = FindResourceLocation(GetParameter(0));
         auto binFilename = filename + ".myshbin";
+        std::vector<std::string> textureParams;
+        if (CheckNamedParameterFlag("textureRepeat")) textureParams.push_back("-repeat");
+        if (CheckNamedParameterFlag("textureMirror")) textureParams.push_back("-mirror");
+        if (CheckNamedParameterFlag("textureClamp")) textureParams.push_back("-clamp");
+        if (CheckNamedParameterFlag("textureMirrorClamp")) textureParams.push_back("-mirror-clamp");
+
+        auto textureParamsString = boost::algorithm::join(textureParams, ",");
         if (boost::filesystem::exists(binFilename)) {
             try {
                 load(binFilename, app);
-                return;
             }
             catch (model_binload_exception) {
             }
         } else {
-
             unsigned int assimpFlags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_LimitBoneWeights
                 | aiProcess_ImproveCacheLocality | aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes
                 | aiProcess_OptimizeGraph;
@@ -82,14 +89,14 @@ namespace cgu {
                 material->Get(AI_MATKEY_REFRACTI, mat->N_i);
                 aiString diffuseTexPath, bumpTexPath;
                 if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), diffuseTexPath)) {
-                    mat->diffuseTex = loadTexture(diffuseTexPath.C_Str(), "-sRGB", app);
+                    mat->diffuseTex = loadTexture(diffuseTexPath.C_Str(), textureParamsString + ",-sRGB", app);
                 }
 
                 if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_HEIGHT, 0), bumpTexPath)) {
-                    mat->bumpTex = loadTexture(bumpTexPath.C_Str(), "", app);
+                    mat->bumpTex = loadTexture(bumpTexPath.C_Str(), textureParamsString, app);
                     material->Get(AI_MATKEY_TEXBLEND(aiTextureType_HEIGHT, 0), mat->bumpMultiplier);
                 } else if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), bumpTexPath)) {
-                    mat->bumpTex = loadTexture(diffuseTexPath.C_Str(), "", app);
+                    mat->bumpTex = loadTexture(diffuseTexPath.C_Str(), textureParamsString, app);
                     material->Get(AI_MATKEY_TEXBLEND(aiTextureType_NORMALS, 0), mat->bumpMultiplier);
                 }
             }
@@ -129,8 +136,12 @@ namespace cgu {
             save(binFilename);
         }
 
-        auto rootScale = GetNamedParameterValue("scale", 0.0f);
-        SetRootTransform(glm::scale(glm::mat4(), glm::vec3(rootScale, rootScale, rootScale)));
+        auto rootScale = GetNamedParameterValue("scale", 1.0f);
+        auto rootScaleV = GetNamedParameterValue("scaleV", glm::vec3(1.0f));
+        auto rootTranslate = GetNamedParameterValue("translate", glm::vec3(0.0f));
+        auto matScale = glm::scale(rootScaleV * rootScale);
+        auto matTranslate = glm::translate(rootTranslate);
+        SetRootTransform(matTranslate * matScale);
     }
 
     /** Default copy constructor. */

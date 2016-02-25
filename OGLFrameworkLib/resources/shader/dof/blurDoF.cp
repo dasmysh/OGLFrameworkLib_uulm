@@ -48,7 +48,8 @@ void main() {
 
         vec4 frontInput;
 #ifdef HORIZONTAL
-        frontInput.a = float(abs(delta) <= sampleCoC) * clamp(sampleCoC * invFrontBlurRadius * float(SIZE_FACTOR), 0.0f, 1.0f);
+        float fIFact = ((abs(delta) <= sampleCoC) ? 1.0f : 0.0f);
+        frontInput.a = fIFact * clamp(sampleCoC * invFrontBlurRadius * float(SIZE_FACTOR), 0.0f, 1.0f);
         frontInput.a *= frontInput.a; frontInput.a *= frontInput.a;
         frontInput.rgb = backInput.rgb * frontInput.a;
 #else

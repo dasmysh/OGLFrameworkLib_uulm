@@ -49,7 +49,7 @@ namespace cgu {
         if (ImGui::TreeNode("DepthOfField Parameters"))
         {
             ImGui::InputFloat("DoF Focus", &params.focusZ, 0.1f);
-            ImGui::InputFloat("Aperture Radius", &params.apertureRadius, 0.01f);
+            ImGui::InputFloat("Aperture Radius", &params.apertureRadius, 0.001f);
             ImGui::TreePop();
         }
     }
@@ -61,12 +61,13 @@ namespace cgu {
         auto targetSize = glm::vec2(sourceRTSize);
         auto numGroups = glm::ivec2(glm::ceil(targetSize / groupSize));
 
-        auto focalLength = CalculateFocalLength(cam);
+        auto focalLength = CalculateFocalLength(cam) * targetSize.y;
         auto maxCoCRadius = CalculateMaxCoCRadius(cam);
+        auto imaxCoCRadius = static_cast<int>(maxCoCRadius);
         auto nearBlurRadius = static_cast<int>(glm::ceil(glm::max(static_cast<float>(sourceRTSize.y) / 100.0f, 12.0f)));
         auto invNearBlurRadius = 1.0f / glm::max(static_cast<float>(nearBlurRadius), 0.0001f);
-        const auto scale = (params.apertureRadius * focalLength) / (params.focusZ - focalLength);
-        // * CalculateImagePlanePixelsPerMeter(cam)
+        // const auto scale = (params.apertureRadius * focalLength) / (params.focusZ - focalLength);
+        const auto scale = (params.apertureRadius * focalLength) / (params.focusZ * maxCoCRadius);
         glm::vec3 clipInfo(2.0f * cam.GetNearZ() * cam.GetFarZ(), cam.GetFarZ() - cam.GetNearZ(), cam.GetFarZ() + cam.GetNearZ());
 
         cocProgram->UseProgram();
@@ -97,7 +98,7 @@ namespace cgu {
         hBlurProgram->SetUniform(hBlurUniformIds[0], 0);
         hBlurProgram->SetUniform(hBlurUniformIds[1], 0);
         hBlurProgram->SetUniform(hBlurUniformIds[2], 1);
-        hBlurProgram->SetUniform(hBlurUniformIds[3], maxCoCRadius);
+        hBlurProgram->SetUniform(hBlurUniformIds[3], imaxCoCRadius);
         hBlurProgram->SetUniform(hBlurUniformIds[4], nearBlurRadius);
         hBlurProgram->SetUniform(hBlurUniformIds[5], invNearBlurRadius);
         cocRT->ActivateTexture(GL_TEXTURE0);
@@ -121,7 +122,7 @@ namespace cgu {
         vBlurProgram->SetUniform(vBlurUniformIds[1], 1);
         vBlurProgram->SetUniform(vBlurUniformIds[2], 0);
         vBlurProgram->SetUniform(vBlurUniformIds[3], 1);
-        vBlurProgram->SetUniform(vBlurUniformIds[4], maxCoCRadius);
+        vBlurProgram->SetUniform(vBlurUniformIds[4], imaxCoCRadius);
         vBlurProgram->SetUniform(vBlurUniformIds[5], nearBlurRadius);
         vBlurProgram->SetUniform(vBlurUniformIds[6], invNearBlurRadius);
         blurRTs[0][0]->ActivateTexture(GL_TEXTURE0);
@@ -170,20 +171,24 @@ namespace cgu {
 
     float DepthOfField::CalculateFocalLength(const CameraView& cam) const
     {
-        const auto scale = 2.0f * glm::tan(cam.GetFOV() * 0.5f);
-        return static_cast<float>(sourceRTSize.y) / scale;
+        const auto scale = 2.0f * glm::tan(glm::radians(cam.GetFOV()) * 0.5f);
+        return 1.0f / scale;
+        // return static_cast<float>(sourceRTSize.y) / scale;
     }
 
     float DepthOfField::CalculateCoCRadius(const CameraView& cam, float z) const
     {
         // TODO: this returns negative values. [2/12/2016 Sebastian Maisch]
         auto focalLength = CalculateFocalLength(cam);
-        return ((z - params.focusZ) * params.apertureRadius * focalLength) / (z * (params.focusZ - focalLength));
+        // const float rzmeters = (z - params.focusZ) * params.apertureRadius / (-params.focusZ);
+        // const float rimeters = rzmeters / z;
+        auto resultMeters = (glm::abs(z - params.focusZ) * params.apertureRadius * focalLength) / (z * (params.focusZ - focalLength));
+        return resultMeters;
     }
 
-    int DepthOfField::CalculateMaxCoCRadius(const CameraView& cam) const
+    float DepthOfField::CalculateMaxCoCRadius(const CameraView& cam) const
     {
         auto maxR = glm::max(CalculateCoCRadius(cam, cam.GetNearZ()), CalculateCoCRadius(cam, cam.GetFarZ()));
-        return static_cast<int>(glm::ceil(glm::min(maxR, sourceRTSize.x * 0.02f)));
+        return glm::ceil(glm::min(sourceRTSize.y * maxR, sourceRTSize.x * 0.02f));
     }
 }

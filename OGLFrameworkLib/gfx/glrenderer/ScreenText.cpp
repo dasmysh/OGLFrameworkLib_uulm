@@ -210,14 +210,15 @@ namespace cgu {
                 nullptr, GL_DYNAMIC_DRAW);
             textVBOSizes[currentBuffer] = static_cast<GLuint>(text.size());
 
+            // TODO: Visual studio does now know EBCO. [2/23/2016 Sebastian Maisch]
             attribBind[currentBuffer]->StartAttributeSetup();
             if (vertexAttribPos[0]->iBinding >= 0) {
                 attribBind[currentBuffer]->AddVertexAttribute(vertexAttribPos[0], 3,
-                    GL_FLOAT, GL_FALSE, sizeof(FontVertex), 0);
+                    GL_FLOAT, GL_FALSE, sizeof(FontVertex), offsetof(FontVertex, pos));
             }
             if (vertexAttribPos[1]->iBinding >= 0) {
                 attribBind[currentBuffer]->AddVertexAttributeI(vertexAttribPos[1], 1,
-                    GL_UNSIGNED_INT, sizeof(FontVertex), sizeof(glm::vec3));
+                    GL_UNSIGNED_INT, sizeof(FontVertex), offsetof(FontVertex, idx[0]));
             }
             attribBind[currentBuffer]->EndAttributeSetup();
         }

@@ -198,26 +198,6 @@ namespace cgu {
             TangentType::template tangentAttribBind<VertexType>(vao, shaderPositions, cPos);
             ColorType::template colAttribBind<VertexType>(vao, shaderPositions, cPos);
             IndexType::template idxAttribBind<VertexType>(vao, shaderPositions, cPos);
-            /*if (shaderPositions[cPos]->iBinding >= 0) {
-                vao->AddVertexAttribute(shaderPositions[cPos++], POSITION_DIMENSION, GL_FLOAT, GL_FALSE, sizeof(VertexType), offsetof(VertexType, pos));
-            }
-            if (shaderPositions[cPos]->iBinding >= 0) {
-                vao->AddVertexAttribute(shaderPositions[cPos++], 3, GL_FLOAT, GL_FALSE, sizeof(VertexType), offsetof(VertexType, normal));
-            }
-            if (shaderPositions[cPos]->iBinding >= 0) {
-                vao->AddVertexAttribute(shaderPositions[cPos++], 3, GL_FLOAT, GL_FALSE, sizeof(VertexType), offsetof(VertexType, tangent));
-            }
-            if (shaderPositions[cPos]->iBinding >= 0) {
-                vao->AddVertexAttribute(shaderPositions[cPos++], 3, GL_FLOAT, GL_FALSE, sizeof(VertexType), offsetof(VertexType, binormal));
-            }
-            for (auto i = 0; i < NUM_TEXTURECOORDS; ++i) {
-                if (shaderPositions[cPos]->iBinding >= 0)
-                    vao->AddVertexAttribute(shaderPositions[cPos++], TEXCOORD_DIMENSION, GL_FLOAT, GL_FALSE, sizeof(VertexType), offsetof(VertexType, tex[i]));
-            }
-            for (auto i = 0; i < NUM_COLORS; ++i) {
-                if (shaderPositions[cPos]->iBinding >= 0)
-                    vao->AddVertexAttribute(shaderPositions[cPos++], 4, GL_FLOAT, GL_FALSE, sizeof(VertexType), offsetof(VertexType, color[i]));
-            }*/
             vao->EndAttributeSetup();
         }
     };
@@ -225,19 +205,22 @@ namespace cgu {
     template <class VTX>
     void UberMeshPos<2>::posAttribBind(GLVertexAttributeArray* vao, const std::vector<BindingLocation>& shaderPositions, int& acnt)
     {
-        if (shaderPositions[acnt]->iBinding >= 0) vao->AddVertexAttribute(shaderPositions[acnt++], 2, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, pos));
+        if (shaderPositions[acnt]->iBinding >= 0) vao->AddVertexAttribute(shaderPositions[acnt], 2, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, pos));
+        acnt += 1;
     }
 
     template <class VTX>
     void UberMeshPos<3>::posAttribBind(GLVertexAttributeArray* vao, const std::vector<BindingLocation>& shaderPositions, int& acnt)
     {
-        if (shaderPositions[acnt]->iBinding >= 0) vao->AddVertexAttribute(shaderPositions[acnt++], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, pos));
+        if (shaderPositions[acnt]->iBinding >= 0) vao->AddVertexAttribute(shaderPositions[acnt], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, pos));
+        acnt += 1;
     }
 
     template <class VTX>
     void UberMeshNormal<true>::normalAttribBind(GLVertexAttributeArray* vao, const std::vector<BindingLocation>& shaderPositions, int& acnt)
     {
-        if (shaderPositions[acnt]->iBinding >= 0) vao->AddVertexAttribute(shaderPositions[acnt++], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, normal));
+        if (shaderPositions[acnt]->iBinding >= 0) vao->AddVertexAttribute(shaderPositions[acnt], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, normal));
+        acnt += 1;
     }
 
     template <int NUM_TEXCOORDS>
@@ -252,8 +235,8 @@ namespace cgu {
     void UberMeshTexCoords<true, 2, NUM_TEXCOORDS>::texAttribBind(GLVertexAttributeArray* vao, const std::vector<BindingLocation>& shaderPositions, int& acnt)
     {
         for (auto i = 0; i < NUM_TEXCOORDS; ++i) {
-            if (shaderPositions[acnt]->iBinding >= 0)
-                vao->AddVertexAttribute(shaderPositions[acnt++], 2, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, tex[i]));
+            if (shaderPositions[acnt]->iBinding >= 0) vao->AddVertexAttribute(shaderPositions[acnt], 2, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, tex[i]));
+            acnt += 1;
         }
     }
 
@@ -269,8 +252,8 @@ namespace cgu {
     void UberMeshTexCoords<true, 3, NUM_TEXCOORDS>::texAttribBind(GLVertexAttributeArray* vao, const std::vector<BindingLocation>& shaderPositions, int& acnt)
     {
         for (auto i = 0; i < NUM_TEXCOORDS; ++i) {
-            if (shaderPositions[acnt]->iBinding >= 0)
-                vao->AddVertexAttribute(shaderPositions[acnt++], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, tex[i]));
+            if (shaderPositions[acnt]->iBinding >= 0) vao->AddVertexAttribute(shaderPositions[acnt], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, tex[i]));
+            acnt += 1;
         }
     }
 
@@ -278,11 +261,13 @@ namespace cgu {
     void UberMeshTangentSpace<true>::tangentAttribBind(GLVertexAttributeArray* vao, const std::vector<BindingLocation>& shaderPositions, int& acnt)
     {
         if (shaderPositions[acnt]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[acnt++], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, tangent));
+            vao->AddVertexAttribute(shaderPositions[acnt], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, tangent));
         }
+        acnt += 1;
         if (shaderPositions[acnt]->iBinding >= 0) {
-            vao->AddVertexAttribute(shaderPositions[acnt++], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, binormal));
+            vao->AddVertexAttribute(shaderPositions[acnt], 3, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, binormal));
         }
+        acnt += 1;
     }
 
     template <int NUM_COLS>
@@ -298,7 +283,9 @@ namespace cgu {
     {
         for (auto i = 0; i < NUM_COLS; ++i) {
             if (shaderPositions[acnt]->iBinding >= 0)
-                vao->AddVertexAttribute(shaderPositions[acnt++], 4, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, color[i]));
+                vao->AddVertexAttribute(shaderPositions[acnt], 4, GL_FLOAT, GL_FALSE, sizeof(VTX), offsetof(VTX, color[i]));
+
+            acnt += 1;
         }
     }
 
@@ -315,11 +302,14 @@ namespace cgu {
     {
         for (auto i = 0; i < NUM_IDX; ++i) {
             if (shaderPositions[acnt]->iBinding >= 0)
-                vao->AddVertexAttribute(shaderPositions[acnt++], 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(VTX), offsetof(VTX, idx[i]));
+                vao->AddVertexAttribute(shaderPositions[acnt], 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(VTX), offsetof(VTX, idx[i]));
+
+            acnt += 1;
         }
     }
 
     using FaceVertex = UberMeshVertex<3, true, 2, 1, false, 0, 0>;
+    using FaceTangentVertex = UberMeshVertex<3, true, 2, 1, true, 0, 0>;
     using LineVertex = UberMeshVertex<3, false, 2, 1, false, 0, 0>;
     using FontVertex = UberMeshVertex<3, false, 2, 0, false, 0, 1>;
     using GUIVertex = UberMeshVertex<3, false, 2, 1, false, 0, 0>;
