@@ -10,7 +10,7 @@
 #define SPOTLIGHT_H
 
 #include "main.h"
-#include "gfx/CameraView.h"
+#include "gfx/ArcballCamera.h"
 
 namespace cgu {
 
@@ -60,13 +60,13 @@ namespace cgu {
         /** Returns the lights intensity. */
         glm::vec3& GetIntensity() { return intensity; }
         /** Returns the camera view. */
-        const CameraView& GetCamera() const { return camera; }
+        const ArcballCamera& GetCamera() const { return camera; }
         /** Returns the shadow map. */
         ShadowMap* GetShadowMap() const { return shadowMap.get(); }
 
     private:
         /** Holds the lights camera object. */
-        CameraView camera;
+        ArcballCamera camera;
         /** Holds the falloff. */
         float falloffWidth;
         /** Holds the lights intensity (power per solid angle). */

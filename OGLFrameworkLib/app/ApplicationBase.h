@@ -16,7 +16,7 @@
 #include "core/GPUProgramManager.h"
 #include "core/FontManager.h"
 #include "gfx/OrthogonalView.h"
-#include "gfx/CameraView.h"
+#include "gfx/ArcballCamera.h"
 #include "main.h"
 #include "core/VolumeManager.h"
 #include "gfx/glrenderer/ScreenQuadRenderable.h"
@@ -128,7 +128,7 @@ namespace cgu {
         /** Holds the orthographic view. */
         std::unique_ptr<OrthogonalView> orthoView;
         /** Holds the perspective camera view. */
-        std::unique_ptr<CameraView> cameraView;
+        std::unique_ptr<ArcballCamera> cameraView;
         /** Holds the GPUProgram for font rendering. */
         std::shared_ptr<GPUProgram> fontProgram;
         /** Holds the screen quad renderable. */

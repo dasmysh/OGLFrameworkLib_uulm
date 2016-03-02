@@ -50,7 +50,7 @@ namespace cgu {
         win.ShowWindow();
         glm::vec2 screenSize(static_cast<float> (win.GetWidth()), static_cast<float> (win.GetHeight()));
         orthoView.reset(new OrthogonalView(screenSize, &uniformBindingPoints));
-        cameraView.reset(new CameraView(60.0f, screenSize, 1.0f, 100.0f, camPos, &uniformBindingPoints));
+        cameraView.reset(new ArcballCamera(60.0f, screenSize, 1.0f, 100.0f, camPos, &uniformBindingPoints));
 
         imguiImpl::ImGui_ImplGL3_Init(win.GetHWnd());
         fontProgram = programManager->GetResource(fontProgramID);
