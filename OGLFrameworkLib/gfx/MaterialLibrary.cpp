@@ -46,17 +46,17 @@ namespace cgu {
             } else if (boost::regex_match(currLine, lineMatch, reg_Ka)) {
                 currMat->ambient = parseColor(lineMatch);
             } else if (boost::regex_match(currLine, lineMatch, reg_Kd)) {
-                currMat->diffuse = parseColor(lineMatch);
+                currMat->params.diffuseAlbedo = parseColor(lineMatch);
             } else if (boost::regex_match(currLine, lineMatch, reg_Ks)) {
-                currMat->specular = parseColor(lineMatch);
+                currMat->params.specularScaling = parseColor(lineMatch);
             } else if (boost::regex_match(currLine, lineMatch, reg_d)) {
                 currMat->alpha = boost::lexical_cast<float>(lineMatch[1].str());
             } else if (boost::regex_match(currLine, lineMatch, reg_d_halo)) {
                 currMat->minOrientedAlpha = boost::lexical_cast<float>(lineMatch[1].str());
             } else if (boost::regex_match(currLine, lineMatch, reg_Ns)) {
-                currMat->N_s = boost::lexical_cast<float>(lineMatch[1].str());
+                currMat->params.specularExponent = boost::lexical_cast<float>(lineMatch[1].str());
             } else if (boost::regex_match(currLine, lineMatch, reg_Ni)) {
-                currMat->N_i = boost::lexical_cast<float>(lineMatch[1].str());
+                currMat->params.refraction = boost::lexical_cast<float>(lineMatch[1].str());
             } else if (boost::regex_match(currLine, lineMatch, reg_map_Kd)) {
                 currMat->diffuseTex = std::move(parseTexture(lineMatch[2].str(), "-sRGB", libfile, app));
             } else if (boost::regex_match(currLine, lineMatch, reg_map_bump)) {

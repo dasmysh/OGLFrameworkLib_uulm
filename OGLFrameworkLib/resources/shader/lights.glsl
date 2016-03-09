@@ -1,5 +1,9 @@
 
-#define M_PI 3.1415926535897932384626433832795f
+#include "brdfs.glsl"
+
+#ifndef LIGHT_TYPE
+    #define LIGHT_TYPE point
+#endif
 
 struct Light
 {
@@ -14,7 +18,6 @@ struct Light
 };
 
 uniform sampler2DShadow shadowTextures[NUM_LIGHTS];
-// uniform sampler2D shadowTextures[NUM_LIGHTS];
 
 layout(std140) uniform lightsBuffer
 {
@@ -28,7 +31,7 @@ float shadow(vec3 worldPos, int i) {
     return texture(shadowTextures[i], shadowPos.xyz);
 }
 
-vec3 lightIntensity(vec3 position, vec3 normal) {
+vec3 pointLightIntensity(vec3 position, vec3 normal, vec3 view, int matIdx) {
     vec3 intensity = vec3(0.0f);
     for (int i = 0; i < NUM_LIGHTS; ++i) {
         vec3 light = vec3(lights[i].position) - position;
@@ -36,9 +39,24 @@ vec3 lightIntensity(vec3 position, vec3 normal) {
         light /= lDist;
 
         float cosTerm = clamp(dot(light, normal), 0.0f, 1.0f);
-
-        vec3 lambert = (cosTerm * vec3(lights[i].intensity)) / M_PI;
-        intensity += shadow(position, i) * lambert;
+        intensity += shadow(position, i) * vec3(lights[i].intensity) * brdf(light, normal, view, matIdx) * cosTerm;
     }
     return intensity;
 }
+
+vec3 spotLightIntensity(vec3 position, vec3 normal, vec3 view, int matIdx) {
+    vec3 intensity = vec3(0.0f);
+    for (int i = 0; i < NUM_LIGHTS; ++i) {
+        vec3 light = vec3(lights[i].position) - position;
+        float lDist = length(light);
+        light /= lDist;
+
+        float cosTerm = clamp(dot(light, normal), 0.0f, 1.0f);
+        intensity += shadow(position, i) * vec3(lights[i].intensity) * brdf(light, normal, view, matIdx) * cosTerm;
+    }
+    return intensity;
+}
+
+#define LIGHT_PASTE(type, fname, position, normal, view, matIdx) type ## fname ## (position, normal, view, matIdx)
+#define LIGHT_PASTE2(type, fname, position, normal, view, matIdx) LIGHT_PASTE(type, fname, position, normal, view, matIdx)
+#define lightIntensity(position, normal, view, matIdx)  LIGHT_PASTE2(LIGHT_TYPE, LightIntensity, position, normal, view, matIdx)

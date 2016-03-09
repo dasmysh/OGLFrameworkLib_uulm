@@ -365,6 +365,19 @@ namespace cgu {
     }
 
     /**
+     * Sets a uniform with given OpenGL name/location (ivec2 version)
+     * @param name the location of the uniform
+     * @param data the ivec2 to set the uniform to
+     */
+    void GPUProgram::SetUniform(BindingLocation name, const glm::ivec2& data) const
+    {
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
+        assert(program == cProg);
+        OGL_CALL(glUniform2iv, name->iBinding, 1, glm::value_ptr(data));
+    }
+
+    /**
      * Sets a uniform with given OpenGL name/location (float version)
      * @param name the location of the uniform
      * @param data the float to set the uniform to

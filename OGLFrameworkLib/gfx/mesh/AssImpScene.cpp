@@ -82,11 +82,11 @@ namespace cgu {
                 auto material = scene->mMaterials[i];
                 auto mat = GetMaterial(i);
                 material->Get(AI_MATKEY_COLOR_AMBIENT, mat->ambient);
-                material->Get(AI_MATKEY_COLOR_DIFFUSE, mat->diffuse);
-                material->Get(AI_MATKEY_COLOR_SPECULAR, mat->specular);
+                material->Get(AI_MATKEY_COLOR_DIFFUSE, mat->params.diffuseAlbedo);
+                material->Get(AI_MATKEY_COLOR_SPECULAR, mat->params.specularScaling);
                 material->Get(AI_MATKEY_OPACITY, mat->alpha);
-                material->Get(AI_MATKEY_SHININESS, mat->N_s);
-                material->Get(AI_MATKEY_REFRACTI, mat->N_i);
+                material->Get(AI_MATKEY_SHININESS, mat->params.specularExponent);
+                material->Get(AI_MATKEY_REFRACTI, mat->params.refraction);
                 aiString diffuseTexPath, bumpTexPath;
                 if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), diffuseTexPath)) {
                     mat->diffuseTex = loadTexture(diffuseTexPath.C_Str(), textureParamsString + ",-sRGB", app);

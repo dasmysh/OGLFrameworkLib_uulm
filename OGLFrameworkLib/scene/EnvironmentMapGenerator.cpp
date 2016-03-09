@@ -9,18 +9,23 @@
 #include "EnvironmentMapGenerator.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "gfx/glrenderer/GLUniformBuffer.h"
+#include "app/ApplicationBase.h"
 
 namespace cgu {
 
     EnvironmentMapGenerator::EnvironmentMapGenerator(unsigned int size, float nearZ, float farZ,
-        const TextureDescriptor& texDesc, ShaderBufferBindingPoints* uniformBindingPoints) :
+        const TextureDescriptor& texDesc, ApplicationBase* app) :
     cubeMapRT_(size, size,
         FrameBufferDescriptor(std::vector<FrameBufferTextureDescriptor>({ FrameBufferTextureDescriptor{ texDesc, GL_TEXTURE_CUBE_MAP } }),
         std::vector<RenderBufferDescriptor>{ { GL_DEPTH_COMPONENT32F } })),
     perspective_(glm::perspective(glm::half_pi<float>(), 1.0f, nearZ, farZ)),
-    perspectiveUBO_(uniformBindingPoints == nullptr ? nullptr : std::make_unique<GLUniformBuffer>(perspectiveProjectionUBBName,
-        static_cast<unsigned int>(sizeof(glm::mat4)), uniformBindingPoints))
+    perspectiveUBO_(std::make_unique<GLUniformBuffer>(perspectiveProjectionUBBName, static_cast<unsigned int>(sizeof(glm::mat4)), app->GetUBOBindingPoints())),
+    sphProgram(app->GetGPUProgramManager()->GetResource("shader/envmap/cubetospherical.cp")),
+    sphUniformIds(sphProgram->GetUniformLocations({ "cubeMap", "sphericalTex" })),
+    irrProgram(app->GetGPUProgramManager()->GetResource("shader/envmap/sphericalirradiance.cp,NUM_MATS 2,BRDF_TYPE torranceSparrow")),
+    irrUniformIds(irrProgram->GetUniformLocations({ "sphericalTex", "irradianceMap", "sourceRectMin", "sourceRectMax", "materialIdx" }))
     {
+        irrProgram->BindUniformBlock("materialsBuffer", *app->GetUBOBindingPoints());
         dir_.emplace_back(-1.0f, 0.0f, 0.0f);
         up_.emplace_back(0.0f, 1.0f, 0.0f);
         right_.emplace_back(0.0f, 0.0f, 1.0f);
@@ -117,5 +122,56 @@ namespace cgu {
                 batch(brt);
             });
         }
+    }
+
+    std::unique_ptr<GLTexture> EnvironmentMapGenerator::GenerateIrradianceMap()
+    {
+        const glm::uvec2 sphSize(1024, 512);
+        const unsigned int irrMipLevel = 3;
+
+        auto oldSeamless = glIsEnabled(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+        auto sphEnvMapDesc = cubeMapRT_.GetTextures()[0]->GetDescriptor();
+        TextureRAII texID;
+        OGL_CALL(glBindTexture, GL_TEXTURE_2D, texID);
+        OGL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, sphEnvMapDesc.internalFormat, sphSize.x, sphSize.y, 0, sphEnvMapDesc.format, sphEnvMapDesc.type, nullptr);
+        auto sphEnvMap = std::make_unique<GLTexture>(std::move(texID), GL_TEXTURE_2D, sphEnvMapDesc);
+
+        sphProgram->UseProgram();
+        sphProgram->SetUniform(sphUniformIds[0], 0);
+        sphProgram->SetUniform(sphUniformIds[1], 0);
+        cubeMapRT_.GetTextures()[0]->ActivateTexture(GL_TEXTURE0);
+        sphEnvMap->ActivateImage(0, 0, GL_WRITE_ONLY);
+        OGL_CALL(glDispatchCompute, sphSize.x / 32, sphSize.y / 16, 1);
+        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
+        OGL_SCALL(glFinish);
+
+        sphEnvMap->GenerateMipMaps();
+        auto dim = sphEnvMap->GetLevelDimensions(irrMipLevel);
+
+        auto irrMap = std::make_unique<GLTexture>(dim.x, dim.y, sphEnvMapDesc, nullptr);
+
+        irrProgram->UseProgram();
+        irrProgram->SetUniform(irrUniformIds[0], 0);
+        irrProgram->SetUniform(irrUniformIds[1], 1);
+        irrProgram->SetUniform(irrUniformIds[4], 1);
+        sphEnvMap->ActivateImage(0, irrMipLevel, GL_READ_ONLY);
+        irrMap->ActivateImage(1, 0, GL_READ_WRITE);
+
+        const unsigned int chunkSize = 8;
+        for (unsigned int ix = 0; ix < dim.x; ix += chunkSize) {
+            for (unsigned int iy = 0; iy < dim.y; iy += chunkSize) {
+                irrProgram->SetUniform(irrUniformIds[2], glm::ivec2(ix, iy));
+                irrProgram->SetUniform(irrUniformIds[3], glm::ivec2(ix + chunkSize, iy + chunkSize));
+
+                OGL_CALL(glDispatchCompute, dim.x / 32, dim.y / 16, 1);
+                OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
+                OGL_SCALL(glFinish);
+            }
+        }
+
+        if (!oldSeamless) glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        return std::move(irrMap);
     }
 }

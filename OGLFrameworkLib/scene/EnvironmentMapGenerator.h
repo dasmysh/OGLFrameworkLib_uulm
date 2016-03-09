@@ -14,12 +14,13 @@
 namespace cgu {
 
     class GLUniformBuffer;
+    class GLTexture;
 
     class EnvironmentMapGenerator final
     {
     public:
         EnvironmentMapGenerator(unsigned int size, float nearZ, float farZ,
-            const TextureDescriptor& texDesc, ShaderBufferBindingPoints* uniformBindingPoints);
+            const TextureDescriptor& texDesc, ApplicationBase* app);
         EnvironmentMapGenerator(const EnvironmentMapGenerator&);
         EnvironmentMapGenerator& operator=(const EnvironmentMapGenerator&);
         EnvironmentMapGenerator(EnvironmentMapGenerator&&);
@@ -28,6 +29,7 @@ namespace cgu {
 
         void Resize(unsigned int size);
         void DrawToCubeMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&) > batch);
+        std::unique_ptr<GLTexture> GenerateIrradianceMap();
 
     private:
         /** Holds the frame-buffer for the cube map. */
@@ -42,6 +44,15 @@ namespace cgu {
         std::vector<glm::vec3> right_;
         /** Holds the perspective projection uniform buffer. */
         std::unique_ptr<GLUniformBuffer> perspectiveUBO_;
+
+        /** Holds the GPU program used to create a spherical map. */
+        std::shared_ptr<GPUProgram> sphProgram;
+        /** Holds the spherical program uniform ids. */
+        std::vector<BindingLocation> sphUniformIds;
+        /** Holds the GPU program used to create an irradiance map. */
+        std::shared_ptr<GPUProgram> irrProgram;
+        /** Holds the irradiance program uniform ids. */
+        std::vector<BindingLocation> irrUniformIds;
     };
 }
 

@@ -13,7 +13,6 @@
 #include "main.h"
 #include "GPUProgram.h"
 #include "gfx/glrenderer/ShaderMeshAttributes.h"
-#include "gfx/Vertices.h"
 
 namespace cgu {
 

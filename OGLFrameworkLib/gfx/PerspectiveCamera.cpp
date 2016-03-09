@@ -36,7 +36,7 @@ namespace cgu {
         camOrient_(1.0f, 0.0f, 0.0f, 0.0f),
         camUp_(0.0f, 1.0f, 0.0f),
         perspectiveUBO_(uniformBindingPoints == nullptr ? nullptr : std::make_unique<GLUniformBuffer>(perspectiveProjectionUBBName,
-            static_cast<unsigned int>(sizeof(glm::mat4)), uniformBindingPoints))
+            static_cast<unsigned int>(sizeof(PerspectiveParams)), uniformBindingPoints))
     {
         Resize(screenSize_);
     }
@@ -130,10 +130,10 @@ namespace cgu {
 
     void PerspectiveCamera::SetView() const
     {
-        auto viewProjection = perspective_ * view_;
+        PerspectiveParams params{ perspective_ * view_, camPos_ };
 
         if (perspectiveUBO_) {
-            perspectiveUBO_->UploadData(0, sizeof(glm::mat4), &viewProjection);
+            perspectiveUBO_->UploadData(0, sizeof(PerspectiveParams), &params);
             perspectiveUBO_->BindBuffer();
         }
     }
@@ -147,10 +147,10 @@ namespace cgu {
         auto F = -perspective[3][2] / ( -perspective[2][2] - 1.0f);
         projectionLinear[2][2] /= F;
         projectionLinear[3][2] /= F;*/
-        auto viewProjection = projectionLinear * view_;
+        PerspectiveParams params{ perspective_ * view_, camPos_ };
 
         if (perspectiveUBO_) {
-            perspectiveUBO_->UploadData(0, sizeof(glm::mat4), &viewProjection);
+            perspectiveUBO_->UploadData(0, sizeof(PerspectiveParams), &params);
             perspectiveUBO_->BindBuffer();
         }
     }

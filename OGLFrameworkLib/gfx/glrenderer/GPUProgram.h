@@ -48,6 +48,7 @@ namespace cgu {
         void SetUniform(BindingLocation name, const glm::mat4& data) const;
         void SetUniform(BindingLocation name, const std::vector<float>& data) const;
         void SetUniform(BindingLocation name, int data) const;
+        void SetUniform(BindingLocation name, const glm::ivec2& data) const;
         void SetUniform(BindingLocation name, const std::vector<int>& data) const;
         void SetUniform(BindingLocation name, const glm::uvec3& data) const;
         BindingLocation GetUniformBufferLocation(const std::string& uBufferName);

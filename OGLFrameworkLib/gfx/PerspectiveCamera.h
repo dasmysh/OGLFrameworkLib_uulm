@@ -18,6 +18,12 @@ namespace cgu {
     class ShaderBufferBindingPoints;
     class GLUniformBuffer;
 
+    struct PerspectiveParams
+    {
+        glm::mat4 viewProjection;
+        glm::vec3 cameraPosition;
+    };
+
     /**
      *  Represents a pinhole camera independent of input.
      */

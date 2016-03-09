@@ -1,0 +1,27 @@
+#version 330
+
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 tex[1];
+layout(location = 3) in vec3 tangent;
+layout(location = 4) in vec3 binormal;
+
+#include "perspective.glsl"
+
+out vec3 vPos;
+out vec3 vNormal;
+out vec3 vTangent;
+out vec3 vBinormal;
+out vec2 vTex;
+
+void main()
+{
+    vec4 posV4 = modelMatrix * vec4(position, 1);
+    vPos = vec3(posV4);
+    vNormal = normalMatrix * normal;
+    vTangent = normalMatrix * tangent;
+    vBinormal = normalMatrix * binormal;
+    vTex = tex[0];
+
+    gl_Position = mat_vp * posV4;
+}

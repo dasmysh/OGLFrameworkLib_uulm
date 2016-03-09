@@ -23,8 +23,8 @@ namespace cgu {
         debugUniformIds(debugProgram->GetUniformLocations({ "sourceTex" })),
         sourceRTSize(sourceSize)
     {
-        params.focusZ = 50.0f;
-        params.apertureRadius = 0.02f;
+        params.focusZ = 2.3f;
+        params.apertureRadius = 0.001f;
 
         std::stringstream shaderDefines;
         shaderDefines << "SIZE_FACTOR " << RT_SIZE_FACTOR;
