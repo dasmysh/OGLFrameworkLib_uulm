@@ -7,7 +7,7 @@
  */
 
 #include "ArcballRotatedSceneRenderable.h"
-#include "gfx/CameraView.h"
+#include "gfx/ArcballCamera.h"
 
 namespace cgu {
 
@@ -34,7 +34,7 @@ namespace cgu {
         return rotArcball.HandleMouse(buttonAction, sender);
     }
 
-    void ArcballRotatedSceneRenderable::Update(const CameraView& camera, float, float)
+    void ArcballRotatedSceneRenderable::Update(const ArcballCamera& camera, float, float)
     {
         auto orient = glm::inverse(rotArcball.GetWorldRotation(camera.GetViewMatrix())) * orientation;
         UpdatePositionOrientation(position, orient);

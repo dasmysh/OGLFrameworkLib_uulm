@@ -134,12 +134,25 @@ namespace cgu {
         drawBuffers.clear();
         for (const auto& texDesc : desc.texDesc) {
             TextureRAII tex;
-            OGL_CALL(glBindTexture, GL_TEXTURE_2D, tex);
-            OGL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, texDesc.internalFormat, width, height, 0, texDesc.format, texDesc.type, nullptr);
-            std::unique_ptr<GLTexture> texture{ new GLTexture{ std::move(tex), GL_TEXTURE_2D, texDesc } };
+            OGL_CALL(glBindTexture, texDesc.texType_, tex);
+            if (texDesc.texType_ == GL_TEXTURE_CUBE_MAP) {
+                for (auto i = 0; i < 6; ++i) {
+                    OGL_CALL(glTexImage2D, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
+                }
+            } else {
+                OGL_CALL(glTexImage2D, texDesc.texType_, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
+            }
+            std::unique_ptr<GLTexture> texture{ new GLTexture{ std::move(tex), texDesc.texType_, texDesc.texDesc_ } };
 
-            auto attachment = findAttachment(texDesc.internalFormat, colorAtt, drawBuffers);
-            OGL_CALL(glFramebufferTexture, GL_FRAMEBUFFER, attachment, texture->GetGLIdentifier().textureId, 0);
+            if (texDesc.texType_ == GL_TEXTURE_CUBE_MAP) {
+                for (auto i = 0; i < 6; ++i) {
+                    auto attachment = findAttachment(texDesc.texDesc_.internalFormat, colorAtt, drawBuffers);
+                    OGL_CALL(glFramebufferTexture2D, GL_FRAMEBUFFER, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, texture->GetGLIdentifier().textureId, 0);
+                }
+            } else {
+                auto attachment = findAttachment(texDesc.texDesc_.internalFormat, colorAtt, drawBuffers);
+                OGL_CALL(glFramebufferTexture, GL_FRAMEBUFFER, attachment, texture->GetGLIdentifier().textureId, 0);
+            }
             textures.emplace_back(std::move(texture));
         }
 

@@ -139,13 +139,14 @@ namespace cgu {
         serializeHelper::write(ofs, static_cast<uint64_t>(materials_.size()));
         for (const auto& mat : materials_) {
             serializeHelper::write(ofs, reinterpret_cast<uint64_t>(mat.get()));
+            serializeHelper::write(ofs, mat->params.diffuseAlbedo);
+            serializeHelper::write(ofs, mat->params.refraction);
+            serializeHelper::write(ofs, mat->params.specularScaling);
+            serializeHelper::write(ofs, mat->params.roughness);
+            serializeHelper::write(ofs, mat->params.specularExponent);
             serializeHelper::write(ofs, mat->ambient);
-            serializeHelper::write(ofs, mat->diffuse);
-            serializeHelper::write(ofs, mat->specular);
             serializeHelper::write(ofs, mat->alpha);
             serializeHelper::write(ofs, mat->minOrientedAlpha);
-            serializeHelper::write(ofs, mat->N_s);
-            serializeHelper::write(ofs, mat->N_i);
             serializeHelper::write(ofs, mat->bumpMultiplier);
             if (mat->diffuseTex) serializeHelper::write(ofs, mat->diffuseTex->getId());
             else serializeHelper::write(ofs, std::string());
@@ -181,13 +182,14 @@ namespace cgu {
             mat.reset(new Material());
             uint64_t materialID;
             serializeHelper::read(ifs, materialID);
+            serializeHelper::read(ifs, mat->params.diffuseAlbedo);
+            serializeHelper::read(ifs, mat->params.refraction);
+            serializeHelper::read(ifs, mat->params.specularScaling);
+            serializeHelper::read(ifs, mat->params.roughness);
+            serializeHelper::read(ifs, mat->params.specularExponent);
             serializeHelper::read(ifs, mat->ambient);
-            serializeHelper::read(ifs, mat->diffuse);
-            serializeHelper::read(ifs, mat->specular);
             serializeHelper::read(ifs, mat->alpha);
             serializeHelper::read(ifs, mat->minOrientedAlpha);
-            serializeHelper::read(ifs, mat->N_s);
-            serializeHelper::read(ifs, mat->N_i);
             serializeHelper::read(ifs, mat->bumpMultiplier);
             std::string diffuseTexId, bumpTexId;
             serializeHelper::read(ifs, diffuseTexId);

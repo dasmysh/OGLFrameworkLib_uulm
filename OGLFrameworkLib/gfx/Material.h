@@ -15,6 +15,23 @@ namespace cgu {
 
     class GLTexture2D;
 
+    struct MaterialParameters
+    {
+        MaterialParameters();
+        MaterialParameters(const MaterialParameters&);
+        MaterialParameters& operator=(const MaterialParameters&);
+        MaterialParameters(MaterialParameters&&);
+        MaterialParameters& operator=(MaterialParameters&&);
+        ~MaterialParameters();
+
+        glm::vec3 diffuseAlbedo;
+        float refraction;
+        glm::vec3 specularScaling;
+        float roughness;
+        glm::vec3 forcePadding;
+        float specularExponent;
+    };
+
     /**
      * @brief  Class describing materials.
      *
@@ -31,20 +48,22 @@ namespace cgu {
         Material& operator=(Material&&);
         ~Material();
 
+        /** The material parameters used in the shader. */
+        MaterialParameters params;
         /** Holds the materials ambient color. */
         glm::vec3 ambient;
         /** Holds the materials diffuse color. */
-        glm::vec3 diffuse;
+        //glm::vec3 diffuse;
         /** Holds the materials specular color. */
-        glm::vec3 specular;
+        //glm::vec3 specular;
         /** Holds the materials alpha value. */
         float alpha;
         /** Holds the materials minimum oriented alpha value. */
         float minOrientedAlpha;
         /** Holds the materials specular exponent. */
-        float N_s;
+        // float N_s;
         /** Holds the materials index of refraction. */
-        float N_i;
+        // float N_i;
         /** Holds the materials diffuse texture. */
         std::shared_ptr<const GLTexture2D> diffuseTex;
         /** Holds the materials bump texture. */

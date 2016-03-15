@@ -136,11 +136,11 @@ namespace cgu {
     /** Recompiles the program. */
     void GPUProgram::RecompileProgram()
     {
-        auto shaderIds = GetSubresourceIds();
+        // auto shaderIds = GetSubresourceIds();
         std::vector<GLuint> newOGLShaders;
-        for (auto& shaderId : shaderIds) {
+        /*for (auto& shaderId : shaderIds) {
             shaders.emplace_back(std::move(application->GetShaderManager()->GetResource(shaderId)));
-        }
+        }*/
         for (unsigned int i = 0; i < shaders.size(); ++i) {
             newOGLShaders.emplace_back(ShaderRAII(0));
             while (!newOGLShaders[i]) {
@@ -362,6 +362,19 @@ namespace cgu {
         OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform1i, name->iBinding, data);
+    }
+
+    /**
+     * Sets a uniform with given OpenGL name/location (ivec2 version)
+     * @param name the location of the uniform
+     * @param data the ivec2 to set the uniform to
+     */
+    void GPUProgram::SetUniform(BindingLocation name, const glm::ivec2& data) const
+    {
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
+        assert(program == cProg);
+        OGL_CALL(glUniform2iv, name->iBinding, 1, glm::value_ptr(data));
     }
 
     /**

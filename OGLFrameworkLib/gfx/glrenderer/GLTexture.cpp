@@ -128,11 +128,13 @@ namespace cgu {
     {
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         GLint qResult;
-        OGL_CALL(glGetTexLevelParameteriv, id.textureType, 0, GL_TEXTURE_WIDTH, &qResult);
+        auto queryType = id.textureType;
+        if (id.textureType == GL_TEXTURE_CUBE_MAP) queryType = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+        OGL_CALL(glGetTexLevelParameteriv, queryType, 0, GL_TEXTURE_WIDTH, &qResult);
         width = static_cast<unsigned int>(qResult);
-        OGL_CALL(glGetTexLevelParameteriv, id.textureType, 0, GL_TEXTURE_HEIGHT, &qResult);
+        OGL_CALL(glGetTexLevelParameteriv, queryType, 0, GL_TEXTURE_HEIGHT, &qResult);
         height = static_cast<unsigned int>(qResult);
-        OGL_CALL(glGetTexLevelParameteriv, id.textureType, 0, GL_TEXTURE_DEPTH, &qResult);
+        OGL_CALL(glGetTexLevelParameteriv, queryType, 0, GL_TEXTURE_DEPTH, &qResult);
         depth = static_cast<unsigned int>(qResult);
         InitSampling();
     }

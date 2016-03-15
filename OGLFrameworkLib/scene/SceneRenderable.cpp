@@ -7,7 +7,7 @@
  */
 
 #include "SceneRenderable.h"
-#include "gfx/CameraView.h"
+#include "gfx/ArcballCamera.h"
 #include "gfx/glrenderer/MeshRenderable.h"
 #include <glm/glm.hpp>
 
@@ -46,7 +46,7 @@ namespace cgu {
         worldMatrix = glm::mat4(matOrient[0], matOrient[1], matOrient[2], glm::vec4(position, 1));
     }
 
-    void SceneRenderable::Draw(const CameraView& camera) const
+    void SceneRenderable::Draw(const ArcballCamera& camera) const
     {
         camera.SetView();
         renderable->Draw(worldMatrix);

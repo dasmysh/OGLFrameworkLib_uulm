@@ -22,11 +22,26 @@ namespace cgu {
         GLenum internalFormat;
     };
 
+    /** Describes a texture render target for frame buffers. */
+    struct FrameBufferTextureDescriptor
+    {
+        // ReSharper disable once CppNonExplicitConvertingConstructor
+        FrameBufferTextureDescriptor(TextureDescriptor texDesc, GLenum texType = GL_TEXTURE_2D) : texDesc_{texDesc}, texType_{ texType } {}
+
+        /** The texture descriptor. */
+        TextureDescriptor texDesc_;
+        /** The texture type. */
+        GLenum texType_;
+    };
+
     /** Describes a frame buffer. */
     struct FrameBufferDescriptor
     {
+        FrameBufferDescriptor() = default;
+        FrameBufferDescriptor(const std::vector<FrameBufferTextureDescriptor>& tex, const std::vector<RenderBufferDescriptor>& rb) : texDesc(tex), rbDesc(rb) {}
+
         /** Holds descriptions for all textures used. */
-        std::vector<TextureDescriptor> texDesc;
+        std::vector<FrameBufferTextureDescriptor> texDesc;
         /** Holds descriptions for all render buffers used. */
         std::vector<RenderBufferDescriptor> rbDesc;
     };

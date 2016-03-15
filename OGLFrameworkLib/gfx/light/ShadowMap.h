@@ -17,7 +17,7 @@ namespace cgu {
     class GLRenderTarget;
     class GLBatchRenderTarget;
     class SpotLight;
-    class CameraView;
+    class ArcballCamera;
     class GPUProgram;
     class GLTexture;
 
@@ -27,7 +27,7 @@ namespace cgu {
         ShadowMap(const glm::uvec2& size, const SpotLight& light, ApplicationBase* app);
         ~ShadowMap();
 
-        void RenderShadowGeometry(std::function<void(const CameraView&, GLBatchRenderTarget&) > batch);
+        void RenderShadowGeometry(std::function<void(GLBatchRenderTarget&) > batch);
         void Resize(const glm::uvec2& smSize);
         const glm::uvec2& GetSize() const { return shadowMapSize; }
         static glm::mat4 GetViewProjectionTextureMatrix(const glm::mat4& view, const glm::mat4& projection);

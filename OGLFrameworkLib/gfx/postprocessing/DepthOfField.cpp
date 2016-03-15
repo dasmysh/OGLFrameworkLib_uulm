@@ -10,7 +10,7 @@
 #include "app/ApplicationBase.h"
 #include "app/GLWindow.h"
 #include <imgui.h>
-#include "gfx/CameraView.h"
+#include "gfx/ArcballCamera.h"
 
 namespace cgu {
 
@@ -23,8 +23,8 @@ namespace cgu {
         debugUniformIds(debugProgram->GetUniformLocations({ "sourceTex" })),
         sourceRTSize(sourceSize)
     {
-        params.focusZ = 50.0f;
-        params.apertureRadius = 0.02f;
+        params.focusZ = 2.3f;
+        params.apertureRadius = 0.001f;
 
         std::stringstream shaderDefines;
         shaderDefines << "SIZE_FACTOR " << RT_SIZE_FACTOR;
@@ -34,8 +34,8 @@ namespace cgu {
         vBlurUniformIds = vBlurProgram->GetUniformLocations({ "sourceFrontTex", "sourceTex", "targetFrontTex", "targetBackTex", "maxCoCRadius", "frontBlurRadius", "invFrontBlurRadius" });
 
         FrameBufferDescriptor hdrFBODesc;
-        hdrFBODesc.texDesc.emplace_back(16, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-        hdrFBODesc.texDesc.emplace_back(4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT);
+        hdrFBODesc.texDesc.emplace_back(TextureDescriptor{ 16, GL_RGBA32F, GL_RGBA, GL_FLOAT });
+        hdrFBODesc.texDesc.emplace_back(TextureDescriptor{ 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT });
         debugRT.reset(new GLRenderTarget(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), hdrFBODesc));
         debugRenderable = app->GetScreenQuadRenderable();
 
@@ -54,7 +54,7 @@ namespace cgu {
         }
     }
 
-    void DepthOfField::ApplyEffect(const CameraView& cam, const GLTexture* color, const GLTexture* depth, const GLTexture* targetRT)
+    void DepthOfField::ApplyEffect(const ArcballCamera& cam, const GLTexture* color, const GLTexture* depth, const GLTexture* targetRT)
     {
         const glm::vec2 groupSize{ 32.0f, 16.0f };
 
@@ -169,14 +169,14 @@ namespace cgu {
         debugRT->Resize(screenSize.x, screenSize.y);
     }
 
-    float DepthOfField::CalculateFocalLength(const CameraView& cam) const
+    float DepthOfField::CalculateFocalLength(const ArcballCamera& cam) const
     {
         const auto scale = 2.0f * glm::tan(glm::radians(cam.GetFOV()) * 0.5f);
         return 1.0f / scale;
         // return static_cast<float>(sourceRTSize.y) / scale;
     }
 
-    float DepthOfField::CalculateCoCRadius(const CameraView& cam, float z) const
+    float DepthOfField::CalculateCoCRadius(const ArcballCamera& cam, float z) const
     {
         // TODO: this returns negative values. [2/12/2016 Sebastian Maisch]
         auto focalLength = CalculateFocalLength(cam);
@@ -186,7 +186,7 @@ namespace cgu {
         return resultMeters;
     }
 
-    float DepthOfField::CalculateMaxCoCRadius(const CameraView& cam) const
+    float DepthOfField::CalculateMaxCoCRadius(const ArcballCamera& cam) const
     {
         auto maxR = glm::max(CalculateCoCRadius(cam, cam.GetNearZ()), CalculateCoCRadius(cam, cam.GetFarZ()));
         return glm::ceil(glm::min(sourceRTSize.y * maxR, sourceRTSize.x * 0.02f));

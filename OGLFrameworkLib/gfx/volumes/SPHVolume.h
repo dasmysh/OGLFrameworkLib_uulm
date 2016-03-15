@@ -16,7 +16,7 @@ namespace cgu {
 
     class Volume;
     class GPUProgram;
-    class CameraView;
+    class ArcballCamera;
     class ApplicationBase;
 
     class SPHVolume

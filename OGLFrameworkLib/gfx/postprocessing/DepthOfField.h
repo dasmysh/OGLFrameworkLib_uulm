@@ -15,7 +15,7 @@ namespace cgu {
 
     class GPUProgram;
     class GLTexture;
-    class CameraView;
+    class ArcballCamera;
     class GLRenderTarget;
     class ScreenQuadRenderable;
 
@@ -32,16 +32,16 @@ namespace cgu {
         ~DepthOfField();
 
         void RenderParameterSliders();
-        void ApplyEffect(const CameraView& cam, const GLTexture* color, const GLTexture* depth, const GLTexture* targetRT);
+        void ApplyEffect(const ArcballCamera& cam, const GLTexture* color, const GLTexture* depth, const GLTexture* targetRT);
         void Resize(const glm::uvec2& screenSize);
 
     private:
         static const unsigned int RT_SIZE_FACTOR = 4;
         using FrontBackTargets = std::array<std::unique_ptr<GLTexture>, 2>;
 
-        float CalculateFocalLength(const CameraView& cam) const;
-        float CalculateCoCRadius(const CameraView& cam, float z) const;
-        float CalculateMaxCoCRadius(const CameraView& cam) const;
+        float CalculateFocalLength(const ArcballCamera& cam) const;
+        float CalculateCoCRadius(const ArcballCamera& cam, float z) const;
+        float CalculateMaxCoCRadius(const ArcballCamera& cam) const;
 
         /** Holds the render target for storing color information with circle of confusion. */
         std::unique_ptr<GLTexture> cocRT;

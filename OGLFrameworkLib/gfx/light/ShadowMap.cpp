@@ -28,7 +28,7 @@ namespace cgu {
         smProgram->BindUniformBlock(perspectiveProjectionUBBName, *app->GetUBOBindingPoints());
 
         FrameBufferDescriptor fbd;
-        fbd.texDesc.emplace_back(4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT);
+        fbd.texDesc.emplace_back(TextureDescriptor{ 32, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT });
         shadowMapRT.reset(new GLRenderTarget(size.x, size.y, fbd));
         shadowMapRT->GetTextures()[0]->ActivateShadowMapComparison();
         shadowMapRT->GetTextures()[0]->SampleWrapBorderColor(glm::vec4(1.0f));
@@ -36,13 +36,13 @@ namespace cgu {
 
     ShadowMap::~ShadowMap() = default;
 
-    void ShadowMap::RenderShadowGeometry(std::function<void(const CameraView&, GLBatchRenderTarget&) > batch)
+    void ShadowMap::RenderShadowGeometry(std::function<void(GLBatchRenderTarget&) > batch)
     {
         LOG(WARNING) << "SMRT: " << shadowMapRT->GetTextures()[0]->GetGLIdentifier().textureId;
         shadowMapRT->BatchDraw([&](cgu::GLBatchRenderTarget & brt) {
             brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), nullptr, 1.0, 0);
-
-            batch(spotLight.GetCamera(), brt);
+            spotLight.GetCamera().SetViewShadowMap();
+            batch(brt);
         });
     }
 
