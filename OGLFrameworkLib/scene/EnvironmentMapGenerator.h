@@ -29,7 +29,7 @@ namespace cgu {
 
         void Resize(unsigned int size);
         void DrawToCubeMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&) > batch);
-        std::unique_ptr<GLTexture> GenerateIrradianceMap();
+        std::unique_ptr<GLTexture> GenerateIrradianceMap(const glm::uvec2& sphericalRes, int irrMaterialId);
 
     private:
         /** Holds the frame-buffer for the cube map. */

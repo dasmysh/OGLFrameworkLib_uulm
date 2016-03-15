@@ -136,11 +136,11 @@ namespace cgu {
     /** Recompiles the program. */
     void GPUProgram::RecompileProgram()
     {
-        auto shaderIds = GetSubresourceIds();
+        // auto shaderIds = GetSubresourceIds();
         std::vector<GLuint> newOGLShaders;
-        for (auto& shaderId : shaderIds) {
+        /*for (auto& shaderId : shaderIds) {
             shaders.emplace_back(std::move(application->GetShaderManager()->GetResource(shaderId)));
-        }
+        }*/
         for (unsigned int i = 0; i < shaders.size(); ++i) {
             newOGLShaders.emplace_back(ShaderRAII(0));
             while (!newOGLShaders[i]) {
