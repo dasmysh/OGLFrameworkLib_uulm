@@ -74,7 +74,7 @@ namespace cgu {
         /** Holds the lights attenuation. */
         float attenuation;
         /** Holds the lights maximum range. */
-        float farPlane;
+        // float farPlane;
         /** Holds the shadow map bias. */
         float bias;
         /** Holds the shadow map. */

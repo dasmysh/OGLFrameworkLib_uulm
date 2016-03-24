@@ -1,5 +1,7 @@
 #version 430
 
+#include "../coordinates.glsl"
+
 uniform sampler2D colorTex;
 uniform sampler2D depthTex;
 layout(rgba32f) uniform image2D targetTex;
@@ -7,11 +9,6 @@ layout(rgba32f) uniform image2D targetTex;
 uniform float focusZ;
 uniform float scale;
 uniform vec3 clipInfo;
-
-float reconstructLinearZ(float d) {
-    float dN = (2.0f * d) - 1.0f;
-    return clipInfo[0] / (clipInfo[1] - (d * clipInfo[2]));
-}
 
 layout(local_size_x = 32, local_size_y = 16, local_size_z = 1) in;
 void main() {
@@ -21,7 +18,7 @@ void main() {
 
     vec4 result;
     result.rgb = texelFetch(colorTex, pos, 0).rgb;
-    float z = reconstructLinearZ(texelFetch(depthTex, pos, 0).r);
+    float z = reconstructLinearZ(texelFetch(depthTex, pos, 0).r, clipInfo);
     result.a = (focusZ - z) * scale;
     result.a = (result.a * 0.5f) + 0.5f;
 

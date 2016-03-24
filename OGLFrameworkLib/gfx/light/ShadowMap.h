@@ -40,8 +40,15 @@ namespace cgu {
         glm::uvec2 shadowMapSize;
         /** Holds the render target for the shadow map. */
         std::unique_ptr<GLRenderTarget> shadowMapRT;
-        /** Holds the shader used for rendering shadow map. */
+        /** Holds the blurred shadow map texture. */
+        std::unique_ptr<GLTexture> blurredShadowMap;
+
+        /** Holds the shader used for rendering the shadow map. */
         std::shared_ptr<GPUProgram> smProgram;
+        /** Holds the shader used for filtering the shadow map. */
+        std::shared_ptr<GPUProgram> filterProgram;
+        /** Holds the uniforms used for filtering the shadow map. */
+        std::vector<BindingLocation> filterUniformIds;
     };
 }
 

@@ -13,3 +13,8 @@ vec2 cartesianToSpherical(vec3 cart) {
     float theta = acos(cart.y);
     return vec2(phi, theta);
 }
+
+float reconstructLinearZ(float d, vec3 clipInfo) {
+    float dN = (2.0f * d) - 1.0f;
+    return clipInfo[0] / (clipInfo[1] - (d * clipInfo[2]));
+}

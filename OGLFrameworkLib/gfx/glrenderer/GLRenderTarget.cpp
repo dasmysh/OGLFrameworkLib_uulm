@@ -117,7 +117,7 @@ namespace cgu {
      * @param drawBufferIndices the indices in the draw buffer to be used.
      * @param batch the rendering calls as a functor to be executed while this render target is set
      */
-    void GLRenderTarget::BatchDraw(const std::vector<unsigned int> drawBufferIndices, std::function<void(GLBatchRenderTarget&) > batch)
+    void GLRenderTarget::BatchDraw(const std::vector<unsigned int>& drawBufferIndices, std::function<void(GLBatchRenderTarget&) > batch)
     {
         fbo.UseAsRenderTarget(drawBufferIndices);
 

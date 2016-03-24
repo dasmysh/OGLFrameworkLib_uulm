@@ -73,6 +73,7 @@ namespace cgu {
         GLWindow* GetWindow() const;
         std::shared_ptr<GPUProgram> GetFontProgram() const;
         ScreenQuadRenderable* GetScreenQuadRenderable() const;
+        ArcballCamera* GetCameraView() const;
 
     private:
         // application status

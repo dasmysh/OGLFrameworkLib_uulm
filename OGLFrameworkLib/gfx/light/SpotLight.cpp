@@ -26,7 +26,6 @@ namespace cgu {
         falloffWidth(0.05f),
         intensity(intensity),
         attenuation(1.0f / 128.0f),
-        farPlane(10.0f),
         bias(-0.01f),
         shadowMap(new ShadowMap(smSize, *this, app)),
         application(app)
@@ -55,7 +54,6 @@ namespace cgu {
         falloffWidth(rhs.falloffWidth),
         intensity(rhs.intensity),
         attenuation(rhs.attenuation),
-        farPlane(rhs.farPlane),
         bias(rhs.bias),
         shadowMap(std::move(rhs.shadowMap)),
         application(rhs.application)
@@ -71,7 +69,6 @@ namespace cgu {
             falloffWidth = rhs.falloffWidth;
             intensity = rhs.intensity;
             attenuation = rhs.attenuation;
-            farPlane = rhs.farPlane;
             bias = rhs.bias;
             shadowMap = std::move(rhs.shadowMap);
             application = rhs.application;
@@ -132,7 +129,7 @@ namespace cgu {
         params.angFalloffStart = glm::cos(0.5f * camera.GetFOV());
         params.angFalloffWidth = falloffWidth;
         params.distAttenuation = attenuation;
-        params.farZ = farPlane;
+        params.farZ = camera.GetFarZ();
         params.viewProjection = shadowMap->GetViewProjectionTextureMatrix(camera.GetViewMatrix(), camera.GetProjMatrix());
         shadowMap->GetShadowTexture()->ActivateTexture(GL_TEXTURE0 + nextTextureUnit);
         return nextTextureUnit + 1;

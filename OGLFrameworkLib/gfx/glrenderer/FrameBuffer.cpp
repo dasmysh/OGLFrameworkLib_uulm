@@ -204,6 +204,8 @@ namespace cgu {
         switch (internalFormat)
         {
         case GL_DEPTH_STENCIL:
+        case GL_DEPTH24_STENCIL8:
+        case GL_DEPTH32F_STENCIL8:
             attachment = GL_DEPTH_STENCIL_ATTACHMENT;
             break;
         case GL_DEPTH_COMPONENT:

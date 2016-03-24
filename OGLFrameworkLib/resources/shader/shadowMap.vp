@@ -4,10 +4,11 @@
 
 layout(location = 0) in vec3 position;
 
+out vec4 worldPos;
+
 void main()
 {
     mat4 mvp = mat_vp * modelMatrix;
-    vec4 pos = mvp * vec4(position, 1);
-    // position.z *= position.w;
-    gl_Position = pos;
+    worldPos = modelMatrix * vec4(position, 1);
+    gl_Position = mvp * vec4(position, 1);
 }

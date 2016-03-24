@@ -171,6 +171,11 @@ namespace cgu {
         return screenQuadRenderable.get();
     }
 
+    ArcballCamera* ApplicationBase::GetCameraView() const
+    {
+        return cameraView.get();
+    }
+
     /**
      * Handles all keyboard input.
      * @param vkCode the key pressed
