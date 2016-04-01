@@ -16,7 +16,7 @@ namespace cgu {
     class GLUniformBuffer;
     class GLTexture;
 
-    class EnvironmentMapGenerator final
+    class EnvironmentMapGenerator
     {
     public:
         EnvironmentMapGenerator(unsigned int size, float nearZ, float farZ,
@@ -25,15 +25,18 @@ namespace cgu {
         EnvironmentMapGenerator& operator=(const EnvironmentMapGenerator&);
         EnvironmentMapGenerator(EnvironmentMapGenerator&&);
         EnvironmentMapGenerator& operator=(EnvironmentMapGenerator&&);
-        ~EnvironmentMapGenerator();
+        virtual ~EnvironmentMapGenerator();
 
         void Resize(unsigned int size);
-        void DrawToCubeMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&) > batch);
-        std::unique_ptr<GLTexture> GenerateIrradianceMap(const glm::uvec2& sphericalRes, int irrMaterialId);
+        void DrawEnvMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&) > batch);
+        std::unique_ptr<GLTexture> GenerateIrradianceMap(unsigned int irrMipLevel = 3) const;
+        void UpdateIrradianceMap(const GPUProgram* irrProgram, const std::vector<BindingLocation>& irrUniformIds, const GLTexture* irrMap, unsigned int irrMipLevel = 3) const;
 
     private:
         /** Holds the frame-buffer for the cube map. */
         GLRenderTarget cubeMapRT_;
+        /** Holds the spherical environment map. */
+        std::unique_ptr<GLTexture> sphEnvMap_;
         /** The perspective matrix for the camera. */
         glm::mat4 perspective_;
         /** The view matrices directions. */
@@ -46,13 +49,9 @@ namespace cgu {
         std::unique_ptr<GLUniformBuffer> perspectiveUBO_;
 
         /** Holds the GPU program used to create a spherical map. */
-        std::shared_ptr<GPUProgram> sphProgram;
+        std::shared_ptr<GPUProgram> sphProgram_;
         /** Holds the spherical program uniform ids. */
-        std::vector<BindingLocation> sphUniformIds;
-        /** Holds the GPU program used to create an irradiance map. */
-        std::shared_ptr<GPUProgram> irrProgram;
-        /** Holds the irradiance program uniform ids. */
-        std::vector<BindingLocation> irrUniformIds;
+        std::vector<BindingLocation> sphUniformIds_;
     };
 }
 

@@ -33,7 +33,7 @@ void main() {
             vec3 light = sphericalToCartesian(sph);
             float cosTerm = clamp(dot(light, env), 0.0f, 1.0f);
             float weight = sin(sph.y);
-            vec3 radiance = brdf(light, env, env, materialIdx) * imageLoad(sphericalTex, ivec2(ix, iy)).rgb * cosTerm * weight;
+            vec3 radiance = brdfI(light, env, env, materialIdx) * imageLoad(sphericalTex, ivec2(ix, iy)).rgb * cosTerm * weight;
             value += vec4(radiance, 1.0f);
         }
     }

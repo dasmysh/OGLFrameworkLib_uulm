@@ -3,14 +3,20 @@ vec3 bumpMapNormal(in sampler2D bmtex, in vec2 tc, in vec3 normal, in vec3 tange
     const vec2 size = vec2(2.0, 0.0);
     const ivec3 off = ivec3(-1, 0, 1);
 
-    float s11 = bm * texture(bmtex, tc).x;
+    /*float s11 = bm * texture(bmtex, tc).x;
     float s01 = bm * textureOffset(bmtex, tc, off.xy).x;
     float s21 = bm * textureOffset(bmtex, tc, off.zy).x;
     float s10 = bm * textureOffset(bmtex, tc, off.yx).x;
-    float s12 = bm * textureOffset(bmtex, tc, off.yz).x;
+    float s12 = bm * textureOffset(bmtex, tc, off.yz).x;*/
+
+    float s11 = texture(bmtex, tc).x;
+    // float s01 = bm * textureOffset(bmtex, tc, off.xy).x;
+    float s21 = textureOffset(bmtex, tc, off.zy).x;
+    // float s10 = bm * textureOffset(bmtex, tc, off.yx).x;
+    float s12 = textureOffset(bmtex, tc, off.yz).x;
     vec3 va = normalize(vec3(size.xy, s21 - s11));
     vec3 vb = normalize(vec3(size.yx, s12 - s11));
-    vec3 bump = normalize(cross(va, vb));
+    vec3 bump = mix(vec3(0.0f, 0.0f, 1.0f), normalize(cross(va, vb)), bm);
 
     mat3 tbn = mat3(tangent, binormal, normal);
     return tbn * bump.xyz;

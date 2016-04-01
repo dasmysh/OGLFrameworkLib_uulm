@@ -20,12 +20,16 @@ namespace cgu {
         std::vector<RenderBufferDescriptor>{ { GL_DEPTH_COMPONENT32F } })),
     perspective_(glm::perspective(glm::half_pi<float>(), 1.0f, nearZ, farZ)),
     perspectiveUBO_(std::make_unique<GLUniformBuffer>(perspectiveProjectionUBBName, static_cast<unsigned int>(sizeof(glm::mat4)), app->GetUBOBindingPoints())),
-    sphProgram(app->GetGPUProgramManager()->GetResource("shader/envmap/cubetospherical.cp")),
-    sphUniformIds(sphProgram->GetUniformLocations({ "cubeMap", "sphericalTex" })),
-    irrProgram(app->GetGPUProgramManager()->GetResource("shader/envmap/sphericalirradiance.cp,NUM_MATS 2,BRDF_TYPE torranceSparrow")),
-    irrUniformIds(irrProgram->GetUniformLocations({ "sphericalTex", "irradianceMap", "sourceRectMin", "sourceRectMax", "materialIdx" }))
+    sphProgram_(app->GetGPUProgramManager()->GetResource("shader/envmap/cubetospherical.cp")),
+    sphUniformIds_(sphProgram_->GetUniformLocations({ "cubeMap", "sphericalTex" }))
     {
-        irrProgram->BindUniformBlock("materialsBuffer", *app->GetUBOBindingPoints());
+        auto sphEnvMapDesc = cubeMapRT_.GetTextures()[0]->GetDescriptor();
+        TextureRAII texID;
+        OGL_CALL(glBindTexture, GL_TEXTURE_2D, texID);
+        OGL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, sphEnvMapDesc.internalFormat, 2*size, size, 0, sphEnvMapDesc.format, sphEnvMapDesc.type, nullptr);
+        sphEnvMap_ = std::make_unique<GLTexture>(std::move(texID), GL_TEXTURE_2D, sphEnvMapDesc);
+        sphEnvMap_->GenerateMipMaps();
+
         dir_.emplace_back(-1.0f, 0.0f, 0.0f);
         up_.emplace_back(0.0f, 1.0f, 0.0f);
         right_.emplace_back(0.0f, 0.0f, 1.0f);
@@ -98,7 +102,7 @@ namespace cgu {
         cubeMapRT_.Resize(size, size);
     }
 
-    void EnvironmentMapGenerator::DrawToCubeMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&)> batch)
+    void EnvironmentMapGenerator::DrawEnvMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&)> batch)
     {
         std::vector<unsigned int> drawBufferIndices(1, 0);
         auto perspectiveUBO = perspectiveUBO_.get();
@@ -122,40 +126,41 @@ namespace cgu {
                 batch(brt);
             });
         }
-    }
-
-    std::unique_ptr<GLTexture> EnvironmentMapGenerator::GenerateIrradianceMap(const glm::uvec2& sphericalRes, int irrMaterialId)
-    {
-        const unsigned int irrMipLevel = 3;
 
         auto oldSeamless = glIsEnabled(GL_TEXTURE_CUBE_MAP_SEAMLESS);
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        auto sphericalRes = sphEnvMap_->GetDimensions();
 
-        auto sphEnvMapDesc = cubeMapRT_.GetTextures()[0]->GetDescriptor();
-        TextureRAII texID;
-        OGL_CALL(glBindTexture, GL_TEXTURE_2D, texID);
-        OGL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, sphEnvMapDesc.internalFormat, sphericalRes.x, sphericalRes.y, 0, sphEnvMapDesc.format, sphEnvMapDesc.type, nullptr);
-        auto sphEnvMap = std::make_unique<GLTexture>(std::move(texID), GL_TEXTURE_2D, sphEnvMapDesc);
-
-        sphProgram->UseProgram();
-        sphProgram->SetUniform(sphUniformIds[0], 0);
-        sphProgram->SetUniform(sphUniformIds[1], 0);
+        sphProgram_->UseProgram();
+        sphProgram_->SetUniform(sphUniformIds_[0], 0);
+        sphProgram_->SetUniform(sphUniformIds_[1], 0);
         cubeMapRT_.GetTextures()[0]->ActivateTexture(GL_TEXTURE0);
-        sphEnvMap->ActivateImage(0, 0, GL_WRITE_ONLY);
+        sphEnvMap_->ActivateImage(0, 0, GL_WRITE_ONLY);
         OGL_CALL(glDispatchCompute, sphericalRes.x / 32, sphericalRes.y / 16, 1);
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_SCALL(glFinish);
 
-        sphEnvMap->GenerateMipMaps();
-        auto dim = sphEnvMap->GetLevelDimensions(irrMipLevel);
+        sphEnvMap_->GenerateMipMaps();
 
+        if (!oldSeamless) glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
+
+    std::unique_ptr<GLTexture> EnvironmentMapGenerator::GenerateIrradianceMap(unsigned int irrMipLevel) const
+    {
+        auto dim = sphEnvMap_->GetLevelDimensions(irrMipLevel);
+        auto sphEnvMapDesc = cubeMapRT_.GetTextures()[0]->GetDescriptor();
         auto irrMap = std::make_unique<GLTexture>(dim.x, dim.y, sphEnvMapDesc, nullptr);
 
-        irrProgram->UseProgram();
+
+        return std::move(irrMap);
+    }
+
+    void EnvironmentMapGenerator::UpdateIrradianceMap(const GPUProgram* irrProgram, const std::vector<BindingLocation>& irrUniformIds, const GLTexture* irrMap, unsigned int irrMipLevel) const
+    {
+        auto dim = sphEnvMap_->GetLevelDimensions(irrMipLevel);
         irrProgram->SetUniform(irrUniformIds[0], 0);
         irrProgram->SetUniform(irrUniformIds[1], 1);
-        irrProgram->SetUniform(irrUniformIds[4], irrMaterialId);
-        sphEnvMap->ActivateImage(0, irrMipLevel, GL_READ_ONLY);
+        sphEnvMap_->ActivateImage(0, irrMipLevel, GL_READ_ONLY);
         irrMap->ActivateImage(1, 0, GL_READ_WRITE);
 
         const unsigned int chunkSize = 8;
@@ -169,9 +174,5 @@ namespace cgu {
                 OGL_SCALL(glFinish);
             }
         }
-
-        if (!oldSeamless) glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-        return std::move(irrMap);
-        // return std::move(sphEnvMap);
     }
 }

@@ -33,19 +33,18 @@ float fresnel(float HdotV, float n) {
     return f1 * f1 * (1.0f - (f2*f2));
 }
 
-vec3 lambertBRDF(vec3 light, vec3 normal, vec3 view, int matIdx) {
-    return materials[matIdx].diffuseAlbedo / M_PI;
+float lambertBRDFSpec(vec3 light, vec3 normal, vec3 view, Material mat) {
+    return 0.0f;
 }
 
-vec3 blinnPhongBRDF(vec3 light, vec3 normal, vec3 view, int matIdx) {
+float blinnPhongBRDFSpec(vec3 light, vec3 normal, vec3 view, Material mat) {
     vec3 halfV = normalize(view + light);
     float NdotH = dot(normal, halfV);
-    float cosTerm = pow(NdotH, materials[matIdx].specularExponent);
-    float spec = ((materials[matIdx].specularExponent + 2.0f) / (2.0f * M_PI)) * cosTerm;
-    return lambertBRDF(light, normal, view, matIdx) + materials[matIdx].specularScaling * spec;
+    float cosTerm = pow(NdotH, mat.specularExponent);
+    return ((mat.specularExponent + 2.0f) / (2.0f * M_PI)) * cosTerm;
 }
 
-vec3 torranceSparrowBRDF(vec3 light, vec3 normal, vec3 view, int matIdx) {
+float torranceSparrowBRDFSpec(vec3 light, vec3 normal, vec3 view, Material mat) {
     vec3 halfV = normalize(view + light);
     float NdotH = dot(normal, halfV);
     float NdotL = dot(normal, light);
@@ -59,19 +58,27 @@ vec3 torranceSparrowBRDF(vec3 light, vec3 normal, vec3 view, int matIdx) {
         float g2 = (2.0f * NdotH * NdotL) / HdotV;
         float g = min(1.0f, min(g1, g2));
         
-        float m = materials[matIdx].roughness;
+        float m = mat.roughness;
         // float dexp = tan(acos(NdotH)) / m;
         float NdotH2 = NdotH * NdotH;
         float NdotH4 = NdotH2 * NdotH2;
         float m2 = m * m;
         float d = (1.0f / (m2*NdotH4)) * exp((NdotH2 - 1.0f) / (m2 * NdotH2));
-        float f = fresnel(HdotV, materials[matIdx].refraction);
+        float f = fresnel(HdotV, mat.refraction);
         
         spec = (d * g * f) /(NdotL * NdotV * M_PI);
     }
-    return lambertBRDF(light, normal, view, matIdx) + materials[matIdx].specularScaling * spec;
+    return spec;
 }
 
-#define BRDF_PASTE(type, fname, light, normal, view, matIdx) type ## fname ## (light, normal, view, matIdx)
-#define BRDF_PASTE2(type, fname, light, normal, view, matIdx) BRDF_PASTE(type, fname, light, normal, view, matIdx)
-#define brdf(light, normal, view, matIdx)  BRDF_PASTE2(BRDF_TYPE, BRDF, light, normal, view, matIdx)
+#define BRDF_SPEC_PASTE(type, fname, light, normal, view, mat) type ## fname ## (light, normal, view, mat)
+#define BRDF_SPEC_PASTE2(type, fname, light, normal, view, mat) BRDF_SPEC_PASTE(type, fname, light, normal, view, mat)
+#define brdfSpec(light, normal, view, mat)  BRDF_SPEC_PASTE2(BRDF_TYPE, BRDFSpec, light, normal, view, mat)
+
+vec3 brdf(vec3 light, vec3 normal, vec3 view, Material mat) {
+    return (mat.diffuseAlbedo / M_PI) + mat.specularScaling * brdfSpec(light, normal, view, mat);
+}
+
+vec3 brdfI(vec3 light, vec3 normal, vec3 view, int matIdx) {
+    return brdf(light, normal, view, materials[matIdx]);
+}

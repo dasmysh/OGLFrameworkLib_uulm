@@ -1,3 +1,4 @@
+// shadertype=glsl
 #version 430
 
 uniform sampler2D sourceTex;

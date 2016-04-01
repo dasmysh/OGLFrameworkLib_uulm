@@ -15,8 +15,6 @@
 
 namespace cgu {
 
-    class AssimpSceneNode;
-
     /**
      * @brief  Resource implementation for .obj files.
      * This is used to generate renderable meshes from .obj files.
