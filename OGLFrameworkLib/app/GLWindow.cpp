@@ -237,23 +237,22 @@ namespace cgu {
             throw std::runtime_error("Can't activate the (dummy) GL rendering context.");
         }
 
-        glewExperimental = GL_TRUE;
-        LOG(INFO) << L"Initializing GLEW...";
-        if (GLEW_OK != glewInit()) {
+        LOG(INFO) << L"Initializing glad...";
+		if (!gladLoadGL()) {
             this->ReleaseOpenGL();
-            LOG(ERROR) << L"Could not initialize GLEW!";
-            throw std::runtime_error("Could not initialize GLEW!");
+            LOG(ERROR) << L"Could not initialize glad!";
+            throw std::runtime_error("Could not initialize glad!");
         }
 
         // TODO: higher opengl version?
-        LOG(INFO) << L"Checking OpenGL version 3.3 ...";
-        if (!GLEW_VERSION_3_3) {
+        LOG(INFO) << L"Checking OpenGL version 4.0 ...";
+        if (!GLAD_GL_VERSION_4_0) {
             this->ReleaseOpenGL();
             LOG(ERROR) << L"OpenGL version not supported.";
             throw std::runtime_error("OpenGL version not supported.");
         }
 
-        if (!(WGLEW_ARB_pixel_format && WGLEW_ARB_create_context)) {
+        if (!(GLAD_WGL_ARB_pixel_format && GLAD_WGL_ARB_create_context)) {
             // no need to get the better context.
             return;
         }
@@ -366,7 +365,7 @@ namespace cgu {
 
         fbo.Resize(config.windowWidth, config.windowHeight);
 
-        if (!GLEW_ARB_vertex_array_object) {
+        if (!GLAD_GL_ARB_vertex_array_object) {
             LOG(WARNING) << L"VAOs not supported ...";
         }
 
