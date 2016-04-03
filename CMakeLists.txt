@@ -5,6 +5,8 @@ set(FWLIB_LIBNAME ${FWLIB_LIBNAME} PARENT_SCOPE)
 project(${FWLIB_LIBNAME})
 
 find_package(CUDA QUIET REQUIRED)
+find_package(Boost 1.58.0 REQUIRED)
+link_directories(${Boost_LIBRARY_DIRS})
 
 option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 option(ASSIMP_BUILD_SAMPLES OFF)
@@ -16,6 +18,9 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /WX /EHsc")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-function -Wno-unused-parameter -Wextra -Wpedantic -std=c++14")
+    if(NOT WIN32)
+        set(GLAD_LIBRARIES dl)
+    endif()
 endif()
 
 set(FWLIB_RESOURCE_BASE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME}/resources)
@@ -68,15 +73,15 @@ foreach(f ${LIB_RES_OBJ_FILES})
 	set_source_files_properties(${f} PROPERTIES HEADER_FILE_ONLY TRUE)
 endforeach()
 
-file(GLOB EXTERN_SOURCES extern/imgui/imgui.cpp extern/imgui/imgui_draw.cpp)
+file(GLOB EXTERN_SOURCES extern/glad/src/glad.c extern/glad/src/glad_wgl.c extern/imgui/imgui.cpp extern/imgui/imgui_draw.cpp)
 source_group("Extern" FILES ${EXTERN_SOURCES})
 
 
 file(GLOB LIB_CONFIGS CMakeLists.txt Readme.md .gitattributes .gitignore .gitmodules)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/ extern/glm/ extern/assimp/include/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/ extern/glm/ extern/assimp/include/ extern/glad/include/ extern/stb/ ${Boost_INCLUDE_DIRS})
 cuda_add_library(${FWLIB_LIBNAME} ${LIB_TMP_FILES} ${LIB_TOP_FILES} ${LIB_RES_FILES} ${LIB_CONFIGS} ${EXTERN_SOURCES} SHARED)
-target_include_directories(${FWLIB_LIBNAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/ extern/glm/ extern/assimp/include/)
+target_include_directories(${FWLIB_LIBNAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/ extern/glm/ extern/assimp/include/ extern/glad/include/ extern/stb/ ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(${FWLIB_LIBNAME} assimp FreeImage glew32 opengl32)
+target_link_libraries(${FWLIB_LIBNAME} assimp ${GLAD_LIBRARIES} opengl32)
 set_property(TARGET ${FWLIB_LIBNAME} APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:DebugOpenGLCalls>:_OGL_DEBUG_MSGS> _CRT_SECURE_NO_WARNINGS _SCL_SECURE_NO_WARNINGS)

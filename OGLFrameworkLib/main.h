@@ -35,7 +35,6 @@
 #pragma warning(disable : 4201)
 #include <glm/glm.hpp>
 #pragma warning(default : 4201)
-#include <GL/glew.h>
 
 #include "core/regex_helper.h"
 
@@ -44,9 +43,10 @@ class ApplicationBase;
 #define WIN32_LEAN_AND_MEAN
 #define WIN32_EXTRA_LEAN
 
+#include <glad/glad.h>
 #pragma warning(push, 3)
 #include <Windows.h>
-#include <GL/wglew.h>
+#include <glad/glad_wgl.h>
 #pragma warning(pop)
 
 #include "core/g2logWrapper.h"

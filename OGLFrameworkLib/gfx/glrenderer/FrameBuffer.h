@@ -10,7 +10,7 @@
 #define FRAMEBUFFER_H
 
 #include <vector>
-#include <GL/glew.h>
+#include "main.h"
 #include "GLTexture.h"
 
 namespace cgu {

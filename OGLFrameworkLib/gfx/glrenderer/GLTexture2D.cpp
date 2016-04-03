@@ -9,7 +9,7 @@
 #include "GLTexture2D.h"
 #include "GLTexture.h"
 #include <GL/gl.h>
-#include <FreeImage.h>
+#include <stb_image.h>
 #include <boost/filesystem.hpp>
 #include "app/ApplicationBase.h"
 #include "app/Configuration.h"
@@ -28,41 +28,40 @@ namespace cgu {
         if (!boost::filesystem::exists(filename)) {
             LOG(ERROR) << "File \"" << filename.c_str() << L"\" cannot be opened.";
             throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(getId())
-                << errdesc_info("Cannot open include file.");
+                << errdesc_info("Cannot open texture file.");
         }
 
-        auto format = FreeImage_GetFileType(filename.c_str());
-        auto flags = 0;
-
-        if (format == FIF_JPEG) {
-            flags = JPEG_ACCURATE;
+        stbi_set_flip_vertically_on_load(1);
+        auto imgWidth = 0, imgHeight = 0, imgChannels = 0;
+        auto image = stbi_load(filename.c_str(), &imgWidth, &imgHeight, &imgChannels, 0);
+        if (!image) {
+            LOG(ERROR) << L"Could not load texture \"" << filename.c_str() << L"\".";
+            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(getId())
+                << errdesc_info("Cannot load texture data.");
         }
-        else if (format == FIF_TARGA) {
-            flags = TARGA_LOAD_RGB888;
-        }
 
-        auto bitmap = FreeImage_Load(format, filename.c_str(), flags);
-        auto bitmap32 = FreeImage_ConvertTo32Bits(bitmap);
-        auto width = FreeImage_GetWidth(bitmap32);
-        auto height = FreeImage_GetHeight(bitmap32);
-        auto redMask = FreeImage_GetRedMask(bitmap32);
-        auto greenMask = FreeImage_GetGreenMask(bitmap32);
-        auto blueMask = FreeImage_GetBlueMask(bitmap32);
-        void* data = FreeImage_GetBits(bitmap32);
-        GLenum fmt = GL_RGBA;
-        if (redMask > greenMask && greenMask > blueMask) fmt = GL_BGRA;
+        auto useSRGB = (CheckNamedParameterFlag("sRGB") && application->GetConfig().useSRGB);
         auto internalFmt = GL_RGBA8;
-        if (CheckNamedParameterFlag("sRGB") && application->GetConfig().useSRGB) internalFmt = GL_SRGB8_ALPHA8;
+        auto fmt = GL_RGBA;
+        switch (imgChannels) {
+        case 1: internalFmt = GL_R8; fmt = GL_RED; break;
+        case 2: internalFmt = GL_RG8; fmt = GL_RG; break;
+        case 3: internalFmt = useSRGB ? GL_SRGB8 : GL_RGB8; fmt = GL_RGB; break;
+        case 4: internalFmt = useSRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8; fmt = GL_RGBA; break;
+        default:
+            LOG(ERROR) << L"Invalid number of texture channels (" << imgChannels << ").";
+            throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(getId())
+                << errdesc_info("Invalid number of texture channels.");
+        }
+
         TextureDescriptor texDesc(4, internalFmt, fmt, GL_UNSIGNED_BYTE);
-        texture = std::make_unique<GLTexture>(width, height, texDesc, data);
+        texture = std::make_unique<GLTexture>(imgWidth, imgHeight, texDesc, image);
         if (CheckNamedParameterFlag("mirror")) texture->SampleWrapMirror();
         if (CheckNamedParameterFlag("repeat")) texture->SampleWrapRepeat();
         if (CheckNamedParameterFlag("clamp")) texture->SampleWrapClamp();
         if (CheckNamedParameterFlag("mirror-clamp")) texture->SampleWrapMirrorClamp();
 
-        
-        FreeImage_Unload(bitmap32);
-        FreeImage_Unload(bitmap);
+        stbi_image_free(image);
     }
 
     /** Copy constructor. */

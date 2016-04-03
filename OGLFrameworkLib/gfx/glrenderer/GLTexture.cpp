@@ -7,7 +7,7 @@
  */
 
 #include "GLTexture.h"
-#include <FreeImage.h>
+#include <stb_image.h>
 #include <glm/gtc/type_ptr.hpp>
 
 #undef min
@@ -177,25 +177,37 @@ namespace cgu {
      */
     void GLTexture::AddTextureToArray(const std::string& file, unsigned int slice) const
     {
-        auto bitmap = FreeImage_Load(FIF_PNG, file.c_str());
-        auto bitmap32 = FreeImage_ConvertTo32Bits(bitmap);
-        auto texWidth = FreeImage_GetWidth(bitmap32);
-        auto texHeight = FreeImage_GetHeight(bitmap32);
-        if (width != texWidth || height != texHeight) {
+        stbi_set_flip_vertically_on_load(1);
+        auto channelsNeeded = 0;
+        switch (descriptor.format) {
+        case GL_RED: channelsNeeded = 1; break;
+        case GL_RG: channelsNeeded = 2; break;
+        case GL_RGB: channelsNeeded = 3; break;
+        case GL_RGBA: channelsNeeded = 4; break;
+        default:
+            LOG(ERROR) << L"Unknown texture format (" << descriptor.format << ").";
+            throw std::runtime_error("Unknown texture format.");
+        }
+
+        auto imgWidth = 0, imgHeight = 0, imgChannels = 0;
+        auto image = stbi_load(file.c_str(), &imgWidth, &imgHeight, &imgChannels, channelsNeeded);
+        if (!image) {
+            LOG(ERROR) << L"Could not load texture \"" << file.c_str() << L"\".";
+            throw std::runtime_error("Could not load texture \"" + file + "\".");
+        }
+
+        if (width != imgWidth || height != imgHeight) {
             LOG(ERROR) << L"Texture \"" << file.c_str() << L"\" has the wrong format!";
-            FreeImage_Unload(bitmap32);
-            FreeImage_Unload(bitmap);
+            stbi_image_free(image);
             throw std::runtime_error("Texture \"" + file + "\" has the wrong format.");
         }
-        void* data = FreeImage_GetBits(bitmap32);
 
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glTexSubImage3D, id.textureType, 0, 0, 0, slice, width, height, 1,
-            descriptor.format, descriptor.type, data);
+            descriptor.format, descriptor.type, image);
         OGL_CALL(glBindTexture, id.textureType, 0);
 
-        FreeImage_Unload(bitmap32);
-        FreeImage_Unload(bitmap);
+        stbi_image_free(image);
     }
 
     /**

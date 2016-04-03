@@ -5,12 +5,13 @@ Dependencies:
 - CUDA 7.0
 - OpenGL 4.4
 - Boost (http://www.boost.org/)
-- GLEW (http://glew.sourceforge.net/)
-- FreeImage (http://freeimage.sourceforge.net/)
 
 Dependencies included as submodules:
+- assimp (https://github.com/assimp/assimp)
+- glad (https://github.com/Dav1dde/glad/tree/c)
 - GLM (http://glm.g-truc.net/)
 - ImGUI (https://github.com/ocornut/imgui)
+- stb (https://github.com/nothings/stb)
 
 To pull all submodules from remote do
 
@@ -19,6 +20,6 @@ To pull all submodules from remote do
 
 or use the `--recursive` when cloning the repository.
 
-The dependencies not included are expected to be in the Visual Studio include / library directories.
+Boost and CUDA are detected by the cmake file. Set BOOST_ROOT to make sure Boost is found correctly. Boost libraries are assumed to be in BOOST_ROOT/stage/lib.
 
 Other fonts can be used by generating Bitmap fonts using BMFont by AngelCode (http://www.angelcode.com/products/bmfont/) and converting them to a distance field be using the Distance Field AngelCode Font Converter by bitsquid (http://bitsquid.blogspot.de/2010/04/distance-field-based-rendering-of.html).
