@@ -1,7 +1,8 @@
-# OGLFramework_uulm
-OpenGL framework for the VISCOM group at ulm university
+# OGLFrameworkLib
+OpenGL framework library for the VISCOM group at ulm university
 
 Dependencies:
+- CMake 3.4 (will not work with older versions, as CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS is supported only since 3.4)
 - CUDA 7.0
 - OpenGL 4.4
 - Boost (http://www.boost.org/)
