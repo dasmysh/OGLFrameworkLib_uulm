@@ -10,6 +10,7 @@
 
 #include "ArcballCamera.h"
 #include <glm/gtc/quaternion.hpp>
+#include <GLFW/glfw3.h>
 
 namespace cgu {
 
@@ -22,11 +23,11 @@ namespace cgu {
      *  @param theCamPos the cameras position.
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
-    ArcballCamera::ArcballCamera(unsigned int theButtonDownFlag, unsigned int theButtonFlag, float theFovY,
-        const glm::uvec2& theScreenSize, float theNearZ, float theFarZ, const glm::vec3& theCamPos,
+    ArcballCamera::ArcballCamera(int button, float theFovY, const glm::uvec2& theScreenSize, float theNearZ,
+        float theFarZ, const glm::vec3& theCamPos,
         ShaderBufferBindingPoints* uniformBindingPoints) :
         PerspectiveCamera(theFovY, theScreenSize, theNearZ, theFarZ, theCamPos, uniformBindingPoints),
-        camArcball_(theButtonDownFlag, theButtonFlag)
+        camArcball_(button)
     {
     }
 
@@ -41,7 +42,7 @@ namespace cgu {
      */
     ArcballCamera::ArcballCamera(float theFovY, const glm::uvec2& theScreenSize, float theNearZ, float theFarZ,
         const glm::vec3& theCamPos, ShaderBufferBindingPoints* uniformBindingPoints) :
-        ArcballCamera(RI_MOUSE_LEFT_BUTTON_DOWN, MB_LEFT, theFovY, theScreenSize, theNearZ, theFarZ, theCamPos, uniformBindingPoints)
+        ArcballCamera(GLFW_MOUSE_BUTTON_LEFT, theFovY, theScreenSize, theNearZ, theFarZ, theCamPos, uniformBindingPoints)
     {
     }
 
@@ -107,36 +108,28 @@ namespace cgu {
      *  @param vKeyDown whether the key is down or not.
      *  @param sender the window the event came from.
      */
-    bool ArcballCamera::HandleKeyboard(unsigned int vkCode, bool, BaseGLWindow*)
+    bool ArcballCamera::HandleKeyboard(int key, int, int action, int, GLWindow*)
     {
+        if (action == GLFW_RELEASE) return false;
         glm::vec3 translation(0.0f);
         auto handled = false;
-        switch (vkCode) {
-        case 'W':
+        switch (key) {
+        case GLFW_KEY_W:
             translation -= glm::vec3(0.0f, 0.0f, 0.5f);
             handled = true;
             break;
-        case 'A':
+        case GLFW_KEY_A:
             translation -= glm::vec3(0.5f, 0.0f, 0.0f);
             handled = true;
             break;
-        case 'S':
+        case GLFW_KEY_S:
             translation += glm::vec3(0.0f, 0.0f, 0.5f);
             handled = true;
             break;
-        case 'D':
+        case GLFW_KEY_D:
             translation += glm::vec3(0.5f, 0.0f, 0.0f);
             handled = true;
             break;
-        /*case VK_SPACE:
-            camPos += glm::vec3(0.0f, 0.5f, 0.0f);
-            handled = true;
-            break;
-        case VK_CONTROL:
-        case VK_LCONTROL:
-            camPos -= glm::vec3(0.0f, 0.5f, 0.0f);
-            handled = true;
-            break;*/
         }
 
         MoveCamera(translation);
@@ -149,9 +142,9 @@ namespace cgu {
      *  @param mouseWheelDelta the mouse wheel movement.
      *  @param sender the window the event came from.
      */
-    bool ArcballCamera::HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender)
+    bool ArcballCamera::HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender)
     {
-        auto handled = camArcball_.HandleMouse(buttonAction, sender);
+        auto handled = camArcball_.HandleMouse(button, action, mods, sender);
 
         if (mouseWheelDelta != 0) {
             auto fov = GetFOV() - mouseWheelDelta * 0.03f;

@@ -26,9 +26,8 @@ namespace cgu {
     class ArcballCamera : public PerspectiveCamera
     {
     public:
-        ArcballCamera(unsigned int theButtonDownFlag, unsigned int theButtonFlag, float fovY,
-            const glm::uvec2& theScreenSize, float nearZ, float farZ, const glm::vec3& camPos,
-            ShaderBufferBindingPoints* uniformBindingPoints);
+        ArcballCamera(int button, float fovY, const glm::uvec2& theScreenSize, float nearZ, float farZ,
+            const glm::vec3& camPos, ShaderBufferBindingPoints* uniformBindingPoints);
         ArcballCamera(float fovY, const glm::uvec2& theScreenSize, float nearZ, float farZ, const glm::vec3& camPos,
             ShaderBufferBindingPoints* uniformBindingPoints);
         ArcballCamera(const ArcballCamera&);
@@ -37,8 +36,8 @@ namespace cgu {
         ArcballCamera& operator=(ArcballCamera&&);
         virtual ~ArcballCamera();
 
-        bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
-        bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
+        bool HandleKeyboard(int key, int scancode, int action, int mods, GLWindow* sender);
+        bool HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender);
         void UpdateCamera();
 
     private:

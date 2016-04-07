@@ -14,3 +14,7 @@
 	path = extern/stb
 	url = https://github.com/nothings/stb.git
 	branch = master
+[submodule "extern/glfw"]
+	path = extern/glfw
+	url = https://github.com/glfw/glfw.git
+	branch = master

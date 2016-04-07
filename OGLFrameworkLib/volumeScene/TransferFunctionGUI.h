@@ -16,7 +16,7 @@
 
 namespace cgu {
 
-    class BaseGLWindow;
+    class GLWindow;
     class ScreenQuadRenderable;
     class GLTexture;
     class GPUProgram;
@@ -33,7 +33,7 @@ namespace cgu {
         const std::string& SaveTransferFunction() const;
 
         void Resize(const glm::uvec2& screenSize);
-        bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
+        bool HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender);
         void LoadTransferFunctionFromFile(const std::string& filename);
         void InitTF(float freq);
         const GLTexture* GetTexture() const { return tfTex.get(); };

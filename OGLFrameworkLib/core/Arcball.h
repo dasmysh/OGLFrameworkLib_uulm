@@ -12,7 +12,7 @@
 #include <glm/glm.hpp>
 namespace cgu {
 
-    class BaseGLWindow;
+    class GLWindow;
 
     /**
     * @brief  Helper class for generic arcballs.
@@ -23,22 +23,22 @@ namespace cgu {
     class Arcball
     {
     public:
-        Arcball(unsigned int buttonDownFlag, unsigned int buttonFlag);
+        explicit Arcball(int button);
 
-        bool HandleMouse(unsigned int buttonAction, BaseGLWindow* sender);
+        bool HandleMouse(int button, int action, int mods, GLWindow* sender);
         glm::quat GetWorldRotation(const glm::mat4& view);
 
     private:
+        static glm::vec3 GetArcballPosition(const glm::vec2 screenPos, const glm::vec2 clientSize);
+
         /** Holds the action button flag to use. */
-        unsigned int buttonDownFlag;
-        /** Holds the button flag to use. */
-        unsigned int buttonFlag;
+        unsigned int button_;
         /** Holds whether the arcball is currently rotated. */
-        bool arcballOn;
-        /** holds the current arcball position in normalized device coordinates. */
-        glm::vec3 currentScreenNDC;
-        /** holds the last arcball position in normalized device coordinates. */
-        glm::vec3 lastScreenNDC;
+        bool arcballOn_;
+        /** holds the current arcball position. */
+        glm::vec3 currentArcballPos_;
+        /** holds the last arcball position. */
+        glm::vec3 lastArcballPos_;
     };
 }
 

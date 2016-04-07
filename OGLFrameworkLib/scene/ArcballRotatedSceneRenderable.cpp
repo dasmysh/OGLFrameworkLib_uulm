@@ -8,19 +8,20 @@
 
 #include "ArcballRotatedSceneRenderable.h"
 #include "gfx/ArcballCamera.h"
+#include <GLFW/glfw3.h>
 
 namespace cgu {
 
     ArcballRotatedSceneRenderable::ArcballRotatedSceneRenderable(MeshRenderable* renderable, const glm::vec3& pos) :
         SceneRenderable(renderable, pos, glm::quat(1.0f, 0.0f, 0.0f, 0.0f)),
-        rotArcball(RI_MOUSE_RIGHT_BUTTON_DOWN, MB_RGHT)
+        rotArcball(GLFW_MOUSE_BUTTON_RIGHT)
     {
 
     }
 
     ArcballRotatedSceneRenderable::ArcballRotatedSceneRenderable(const glm::vec3& pos) :
         SceneRenderable(pos, glm::quat(1.0f, 0.0f, 0.0f, 0.0f)),
-        rotArcball(RI_MOUSE_RIGHT_BUTTON_DOWN, MB_RGHT)
+        rotArcball(GLFW_MOUSE_BUTTON_RIGHT)
     {
 
     }
@@ -29,9 +30,9 @@ namespace cgu {
     {
     }
 
-    bool ArcballRotatedSceneRenderable::HandleMouse(unsigned int buttonAction, float, BaseGLWindow* sender)
+    bool ArcballRotatedSceneRenderable::HandleMouse(int button, int action, int mods, float, GLWindow* sender)
     {
-        return rotArcball.HandleMouse(buttonAction, sender);
+        return rotArcball.HandleMouse(button, action, mods, sender);
     }
 
     void ArcballRotatedSceneRenderable::Update(const ArcballCamera& camera, float, float)
