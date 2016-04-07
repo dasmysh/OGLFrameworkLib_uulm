@@ -296,7 +296,7 @@ namespace cgu {
         GLuint cProg;
         OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
-        OGL_CALL(glUniform3fv, name->iBinding, elements, reinterpret_cast<const GLfloat*> (&data));
+        OGL_CALL(glUniform3fv, name->iBinding, elements, reinterpret_cast<const GLfloat*>(data));
     }
 
     /**

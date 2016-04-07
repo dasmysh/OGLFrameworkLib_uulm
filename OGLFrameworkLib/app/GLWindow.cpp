@@ -429,7 +429,7 @@ namespace cgu {
     void GLWindow::ScrollCallback(double, double yoffset)
     {
         if (mouseInWindow_ && app != nullptr) {
-            app->HandleMouse(-1, 0, 0, static_cast<float>(yoffset), this);
+            app->HandleMouse(-1, 0, 0, 50.0f * static_cast<float>(yoffset), this);
         }
     }
 
