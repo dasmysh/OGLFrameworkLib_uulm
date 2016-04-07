@@ -10,6 +10,10 @@
 	path = extern/assimp
 	url = https://github.com/assimp/assimp.git
 	branch = master
+[submodule "extern/glad"]
+	path = extern/glad
+	url = https://github.com/Dav1dde/glad.git
+	branch = c
 [submodule "extern/stb"]
 	path = extern/stb
 	url = https://github.com/nothings/stb.git
