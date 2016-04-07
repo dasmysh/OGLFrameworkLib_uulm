@@ -10,6 +10,7 @@
 #include "gfx/glrenderer/GLUniformBuffer.h"
 #include "ShadowMap.h"
 #include "app/ApplicationBase.h"
+#include <GLFW/glfw3.h>
 
 namespace cgu {
 
@@ -22,7 +23,7 @@ namespace cgu {
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
     SpotLight::SpotLight(const glm::vec3&  intensity, float theFov, const glm::vec3& pos, const glm::uvec2& smSize, ApplicationBase* app) :
-        camera(RI_MOUSE_RIGHT_BUTTON_DOWN, MB_RGHT, theFov, smSize, 0.1f, 100.0f, pos, app->GetUBOBindingPoints()),
+        camera(GLFW_MOUSE_BUTTON_RIGHT, theFov, smSize, 0.1f, 100.0f, pos, app->GetUBOBindingPoints()),
         falloffWidth(0.05f),
         intensity(intensity),
         attenuation(1.0f / 128.0f),
@@ -91,9 +92,9 @@ namespace cgu {
      *  @param vKeyDown whether the key is down or not.
      *  @param sender the window the event came from.
      */
-    bool SpotLight::HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender)
+    bool SpotLight::HandleKeyboard(int key, int scancode, int action, int mods, GLWindow* sender)
     {
-        return camera.HandleKeyboard(vkCode, bKeyDown, sender);
+        return camera.HandleKeyboard(key, scancode, action, mods, sender);
     }
 
     /**
@@ -102,9 +103,9 @@ namespace cgu {
      *  @param mouseWheelDelta the mouse wheel movement.
      *  @param sender the window the event came from.
      */
-    bool SpotLight::HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender)
+    bool SpotLight::HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender)
     {
-        return camera.HandleMouse(buttonAction, mouseWheelDelta, sender);
+        return camera.HandleMouse(button, action, mods, mouseWheelDelta, sender);
     }
 
     /**

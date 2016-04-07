@@ -9,13 +9,13 @@
 #include "TransferFunctionGUI.h"
 #include "app/ApplicationBase.h"
 #include "gfx/glrenderer/GLTexture.h"
-#include "app/BaseGLWindow.h"
 #include "gfx/glrenderer/GLUniformBuffer.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "app/GLWindow.h"
 #include "gfx/glrenderer/ScreenQuadRenderable.h"
 #include <imgui.h>
 #include <boost/algorithm/string/predicate.hpp>
+#include <GLFW/glfw3.h>
 
 namespace cgu {
 
@@ -152,7 +152,7 @@ namespace cgu {
         return saveTFFilename;
     }
 
-    bool TransferFunctionGUI::HandleMouse(unsigned int buttonAction, float, BaseGLWindow* sender)
+    bool TransferFunctionGUI::HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender)
     {
         auto handled = false;
 
@@ -161,7 +161,7 @@ namespace cgu {
 
         glm::vec2 screenSize(static_cast<float>(sender->GetWidth()), static_cast<float>(sender->GetHeight()));
         auto pickSize = glm::vec2(pickRadius) / screenSize;
-        auto mouseCoords = sender->GetMouseAbsolute();
+        auto mouseCoords = sender->GetMousePosition();
 
         // calculate relative points
         auto relCoords = (mouseCoords - rectMin) / (rectMax - rectMin);
@@ -176,7 +176,7 @@ namespace cgu {
             UpdateTF();
 
             // check for drop
-            if (buttonAction & RI_MOUSE_LEFT_BUTTON_UP) draggingSelection = false;
+            if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) draggingSelection = false;
             return true;
         }
 
@@ -184,18 +184,18 @@ namespace cgu {
         if (relCoords.x >= -SEL_RAD2 && relCoords.y >= -SEL_RAD2 && relCoords.x <= 1.0f + SEL_RAD2 && relCoords.y <= 1.0f + SEL_RAD2)
         {
             // left click: select point or start dragging
-            if (buttonAction & RI_MOUSE_LEFT_BUTTON_DOWN) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
                 auto oldSelection = selection;
                 if (SelectPoint(relCoords, pickSize) && selection != -1 && selection == oldSelection) draggingSelection = true;
             }
 
             // right click: delete old point
-            if (buttonAction & RI_MOUSE_RIGHT_BUTTON_DOWN && RemovePoint(relCoords, pickSize)) {
+            if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && RemovePoint(relCoords, pickSize)) {
                 UpdateTF();
             }
 
             // middle click: new point
-            if (buttonAction & RI_MOUSE_MIDDLE_BUTTON_DOWN && AddPoint(relCoords, pickSize)) {
+            if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS && AddPoint(relCoords, pickSize)) {
                 UpdateTF();
             }
 
