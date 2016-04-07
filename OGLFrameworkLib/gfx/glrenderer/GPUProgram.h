@@ -43,10 +43,12 @@ namespace cgu {
         void SetUniform(BindingLocation name, float data) const;
         void SetUniform(BindingLocation name, const glm::vec2& data) const;
         void SetUniform(BindingLocation name, const glm::vec3& data) const;
+        void SetUniform(BindingLocation name, glm::vec3* data, unsigned int elements) const;
         void SetUniform(BindingLocation name, const glm::mat3& data) const;
         void SetUniform(BindingLocation name, const glm::vec4& data) const;
         void SetUniform(BindingLocation name, const glm::mat4& data) const;
         void SetUniform(BindingLocation name, const std::vector<float>& data) const;
+        void SetUniform(BindingLocation name, float* data, unsigned int elements) const;
         void SetUniform(BindingLocation name, int data) const;
         void SetUniform(BindingLocation name, const glm::ivec2& data) const;
         void SetUniform(BindingLocation name, const std::vector<int>& data) const;

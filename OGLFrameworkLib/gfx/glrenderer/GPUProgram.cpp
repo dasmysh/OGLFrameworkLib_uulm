@@ -287,6 +287,19 @@ namespace cgu {
     }
 
     /**
+     * Sets a uniform with given OpenGL name/location (vec3[] version)
+     * @param name the location of the uniform
+     * @param data the vec3[] to set the uniform to
+     */
+    void GPUProgram::SetUniform(BindingLocation name, glm::vec3* data, unsigned elements) const
+    {
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
+        assert(program == cProg);
+        OGL_CALL(glUniform3fv, name->iBinding, elements, reinterpret_cast<const GLfloat*> (&data));
+    }
+
+    /**
      * Sets a uniform with given OpenGL name/location (mat4 version)
      * @param name the location of the uniform
      * @param data the mat4 to set the uniform to
@@ -336,6 +349,19 @@ namespace cgu {
         OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
         assert(program == cProg);
         OGL_CALL(glUniform1fv, name->iBinding, static_cast<GLsizei>(data.size()), data.data());
+    }
+
+    /**
+     * Sets a uniform with given OpenGL name/location (float[] version)
+     * @param name the location of the uniform
+     * @param data the float[] to set the uniform to
+     */
+    void GPUProgram::SetUniform(BindingLocation name, float* data, unsigned elements) const
+    {
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
+        assert(program == cProg);
+        OGL_CALL(glUniform1fv, name->iBinding, static_cast<GLsizei>(elements), data);
     }
 
     /**
