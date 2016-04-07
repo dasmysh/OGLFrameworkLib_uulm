@@ -20,7 +20,7 @@ namespace cgu {
         ArcballRotatedSceneRenderable(MeshRenderable* renderable, const glm::vec3& pos);
         virtual ~ArcballRotatedSceneRenderable();
 
-        virtual bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
+        virtual bool HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender);
         virtual void Update(const ArcballCamera& camera, float time, float elapsed);
         virtual void Resize(const glm::uvec2& screenSize) = 0;
 

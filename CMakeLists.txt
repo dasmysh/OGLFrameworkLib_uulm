@@ -8,6 +8,11 @@ find_package(CUDA QUIET REQUIRED)
 find_package(Boost 1.58.0 REQUIRED)
 link_directories(${Boost_LIBRARY_DIRS})
 
+option(GLFW_BUILD_DOCS OFF)
+option(GLFW_BUILD_EXAMPLES OFF)
+option(GLFW_BUILD_TESTS OFF)
+add_subdirectory(extern/glfw)
+
 option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 option(ASSIMP_BUILD_SAMPLES OFF)
 option(ASSIMP_BUILD_TESTS OFF)
@@ -79,9 +84,9 @@ source_group("Extern" FILES ${EXTERN_SOURCES})
 
 file(GLOB LIB_CONFIGS CMakeLists.txt Readme.md .gitattributes .gitignore .gitmodules)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/ extern/glm/ extern/assimp/include/ extern/glad/include/ extern/stb/ ${Boost_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/glfw/include/ extern/imgui/ extern/glm/ extern/assimp/include/ extern/glad/include/ extern/stb/ ${Boost_INCLUDE_DIRS}  extern/imgui/examples/opengl3_example/)
 cuda_add_library(${FWLIB_LIBNAME} ${LIB_TMP_FILES} ${LIB_TOP_FILES} ${LIB_RES_FILES} ${LIB_CONFIGS} ${EXTERN_SOURCES} SHARED)
-target_include_directories(${FWLIB_LIBNAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/imgui/ extern/glm/ extern/assimp/include/ extern/glad/include/ extern/stb/ ${Boost_INCLUDE_DIRS})
+target_include_directories(${FWLIB_LIBNAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${FWLIB_LIBNAME} extern/glfw/include/ extern/imgui/ extern/glm/ extern/assimp/include/ extern/glad/include/ extern/stb/ ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(${FWLIB_LIBNAME} assimp ${GLAD_LIBRARIES} opengl32)
+target_link_libraries(${FWLIB_LIBNAME} assimp glfw ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} opengl32)
 set_property(TARGET ${FWLIB_LIBNAME} APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:DebugOpenGLCalls>:_OGL_DEBUG_MSGS> _CRT_SECURE_NO_WARNINGS _SCL_SECURE_NO_WARNINGS)

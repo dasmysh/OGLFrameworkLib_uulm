@@ -47,8 +47,8 @@ namespace cgu {
         ~SpotLight();
 
         void Resize(const glm::uvec2& shadowMapSize);
-        bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
-        bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
+        bool HandleKeyboard(int key, int scancode, int action, int mods, GLWindow* sender);
+        bool HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender);
         void UpdateLight();
         int UpdateLightParameters(SpotLightParams& params, int nextTextureUnit) const;
         /** Returns the view matrix of the light. */

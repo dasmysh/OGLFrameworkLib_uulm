@@ -20,12 +20,9 @@
 #include "main.h"
 #include "core/VolumeManager.h"
 #include "gfx/glrenderer/ScreenQuadRenderable.h"
+#include "GLWindow.h"
 
 namespace cgu {
-
-    class GLWindow;
-    class Configuration;
-    class BaseGLWindow;
 
     /**
      * @brief Application base.
@@ -37,7 +34,7 @@ namespace cgu {
     class ApplicationBase
     {
     public:
-        ApplicationBase(GLWindow& window, const glm::vec3& camPos);
+        ApplicationBase(const std::string& mainWindowTitle, Configuration& config, const glm::vec3& camPos);
         ApplicationBase(const ApplicationBase&) = delete;
         ApplicationBase& operator=(const ApplicationBase&) = delete;
         virtual ~ApplicationBase();
@@ -51,13 +48,12 @@ namespace cgu {
         /** Called if the application is to end running. */
         void EndRun();
 
-        bool IsPaused() const { return m_pause; }
-        void SetPause(bool pause) { m_pause = pause; }
+        bool IsPaused() const { return pause_; }
+        void SetPause(bool pause) { pause_ = pause; }
 
-        virtual bool HandleKeyboard(unsigned int vkCode, bool bKeyDown, BaseGLWindow* sender);
-        virtual bool HandleKeyboardCharacters(unsigned int key, BaseGLWindow* sender);
-        bool HandleMouse(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender);
-        virtual bool HandleMouseApp(unsigned int buttonAction, float mouseWheelDelta, BaseGLWindow* sender) = 0;
+        virtual bool HandleKeyboard(int key, int scancode, int action, int mods, GLWindow* sender);
+        bool HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender);
+        virtual bool HandleMouseApp(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender) = 0;
         void OnResize(unsigned int width, unsigned int height);
         virtual void Resize(const glm::uvec2& screenSize);
 
@@ -70,30 +66,33 @@ namespace cgu {
         ShaderBufferBindingPoints* GetUBOBindingPoints();
         ShaderBufferBindingPoints* GetSSBOBindingPoints();
         Configuration& GetConfig() const;
-        GLWindow* GetWindow() const;
+        GLWindow* GetWindow();
         std::shared_ptr<GPUProgram> GetFontProgram() const;
         ScreenQuadRenderable* GetScreenQuadRenderable() const;
         ArcballCamera* GetCameraView() const;
+        OrthogonalView* GetOrthoginalView() const { return orthoView_.get(); }
 
     private:
-        // application status
-        /// <summary>   true if application is paused. </summary>
-        bool m_pause;
-        /// @brief  <c>true</c> true if the application has stopped (i.e. the last scene has finished).
-        bool m_stopped;
+        class GLFWInitObject
+        {
+        public:
+            GLFWInitObject();
+            ~GLFWInitObject();
+        };
 
-        /// <summary>   The (global) time of the application. </summary>
-        double m_time;
-        /// <summary>   Time elapsed in the frame. </summary>
-        double m_elapsedTime;
-        /// <summary>   The ticks per second of the query performance counter (QPF). </summary>
-        long long m_QPFTicksPerSec;
-        /// <summary>   The (QPF) time elapsed in the last frame.. </summary>
-        long long m_lastElapsedTime;
-        /// <summary>   The (QPF) time the application started. </summary>
-        long long m_baseTime;
-        /// @brief  The current scene.
-        unsigned int m_currentScene;
+        GLFWInitObject forceGLFWInit;
+
+        // application status
+        /** <c>true</c> if application is paused. */
+        bool pause_;
+        /**  <c>true</c> if the application has stopped (i.e. the last scene has finished). */
+        bool stopped_;
+        /** The (global) time of the application. */
+        double currentTime_;
+        /** Time elapsed in the frame. */
+        double elapsedTime_;
+        /** The current scene. */
+        unsigned int currentScene_;
 
     protected:
         /**
@@ -102,38 +101,39 @@ namespace cgu {
          * @param elapsed the time elapsed since the last frame
          */
         virtual void FrameMove(float time, float elapsed) = 0;
-        /** Renders the scene. */
+        /** Render the scene. */
         virtual void RenderScene() = 0;
-        /** Renders the scenes GUI. */
+        /** Render the scenes GUI. */
         virtual void RenderGUI() = 0;
 
+    private:
         /** Holds the applications main window. */
-        GLWindow& win;
+        GLWindow mainWin;
         /** Holds the texture manager. */
-        std::unique_ptr<TextureManager> texManager;
+        std::unique_ptr<TextureManager> texManager_;
         /** Holds the volume manager. */
-        std::unique_ptr<VolumeManager> volManager;
+        std::unique_ptr<VolumeManager> volManager_;
         /** Holds the material lib manager. */
-        std::unique_ptr<MaterialLibManager> matManager;
+        std::unique_ptr<MaterialLibManager> matManager_;
         /** Holds the shader manager. */
-        std::unique_ptr<ShaderManager> shaderManager;
+        std::unique_ptr<ShaderManager> shaderManager_;
         /** Holds the GPU program manager. */
-        std::unique_ptr<GPUProgramManager> programManager;
+        std::unique_ptr<GPUProgramManager> programManager_;
         /** Holds the font manager. */
-        std::unique_ptr<FontManager> fontManager;
+        std::unique_ptr<FontManager> fontManager_;
 
         /** Holds the uniform binding points. */
-        ShaderBufferBindingPoints uniformBindingPoints;
+        ShaderBufferBindingPoints uniformBindingPoints_;
         /** Holds the shader storage buffer object binding points. */
-        ShaderBufferBindingPoints shaderStorageBindingPoints;
+        ShaderBufferBindingPoints shaderStorageBindingPoints_;
         /** Holds the orthographic view. */
-        std::unique_ptr<OrthogonalView> orthoView;
+        std::unique_ptr<OrthogonalView> orthoView_;
         /** Holds the perspective camera view. */
-        std::unique_ptr<ArcballCamera> cameraView;
+        std::unique_ptr<ArcballCamera> cameraView_;
         /** Holds the GPUProgram for font rendering. */
-        std::shared_ptr<GPUProgram> fontProgram;
+        std::shared_ptr<GPUProgram> fontProgram_;
         /** Holds the screen quad renderable. */
-        std::unique_ptr<ScreenQuadRenderable> screenQuadRenderable;
+        std::unique_ptr<ScreenQuadRenderable> screenQuadRenderable_;
     };
 }
 #endif /* APPLICATIONBASE_H */
