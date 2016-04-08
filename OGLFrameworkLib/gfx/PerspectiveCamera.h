@@ -55,6 +55,7 @@ namespace cgu {
         const glm::vec3& GetPosition() const { return camPos_; }
         const glm::quat& GetOrientation() const { return camOrient_; }
         float GetFOV() const { return fovY_; }
+        float GetAspectRatio() const { return aspectRatio_; }
         void SetFOV(float fov);
         float GetNearZ() const { return nearZ_; }
         float GetFarZ() const { return farZ_; }
