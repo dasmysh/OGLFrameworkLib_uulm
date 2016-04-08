@@ -326,6 +326,19 @@ namespace cgu {
     }
 
     /**
+     * Sets a uniform with given OpenGL name/location (vec4[] version)
+     * @param name the location of the uniform
+     * @param data the vec4[] to set the uniform to
+     */
+    void GPUProgram::SetUniform(BindingLocation name, glm::vec4* data, unsigned elements) const
+    {
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
+        assert(program == cProg);
+        OGL_CALL(glUniform4fv, name->iBinding, elements, reinterpret_cast<const GLfloat*>(data));
+    }
+
+    /**
      * Sets a uniform with given OpenGL name/location (mat4 version)
      * @param name the location of the uniform
      * @param data the mat4 to set the uniform to
