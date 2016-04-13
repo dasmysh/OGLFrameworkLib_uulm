@@ -24,31 +24,35 @@ namespace cgu {
     class ShadowMap
     {
     public:
+        ShadowMap(const glm::uvec2& size, unsigned int components, const SpotLight& light, const std::shared_ptr<GPUProgram>& smProgram, const std::shared_ptr<GPUProgram>& filterProgram, ApplicationBase* app);
         ShadowMap(const glm::uvec2& size, const SpotLight& light, ApplicationBase* app);
         ~ShadowMap();
 
         void RenderShadowGeometry(std::function<void(GLBatchRenderTarget&) > batch);
+        void BlurShadowMap();
         void Resize(const glm::uvec2& smSize);
-        const glm::uvec2& GetSize() const { return shadowMapSize; }
+        const glm::uvec2& GetSize() const { return shadowMapSize_; }
         static glm::mat4 GetViewProjectionTextureMatrix(const glm::mat4& view, const glm::mat4& projection);
         const GLTexture* GetShadowTexture() const;
+        std::shared_ptr<GPUProgram> GetShadowMappingProgram() const { return smProgram_; }
+        std::shared_ptr<GPUProgram> GetFilteringProgram() const { return filterProgram_; }
 
     private:
         /** Holds the spot light using this shadow map. */
-        const SpotLight& spotLight;
+        const SpotLight& spotLight_;
         /** Holds the size of the shadow map. */
-        glm::uvec2 shadowMapSize;
+        glm::uvec2 shadowMapSize_;
         /** Holds the render target for the shadow map. */
-        std::unique_ptr<GLRenderTarget> shadowMapRT;
+        std::unique_ptr<GLRenderTarget> shadowMapRT_;
         /** Holds the blurred shadow map texture. */
-        std::unique_ptr<GLTexture> blurredShadowMap;
+        std::unique_ptr<GLTexture> blurredShadowMap_;
 
         /** Holds the shader used for rendering the shadow map. */
-        std::shared_ptr<GPUProgram> smProgram;
+        std::shared_ptr<GPUProgram> smProgram_;
         /** Holds the shader used for filtering the shadow map. */
-        std::shared_ptr<GPUProgram> filterProgram;
+        std::shared_ptr<GPUProgram> filterProgram_;
         /** Holds the uniforms used for filtering the shadow map. */
-        std::vector<BindingLocation> filterUniformIds;
+        std::vector<BindingLocation> filterUniformIds_;
     };
 }
 

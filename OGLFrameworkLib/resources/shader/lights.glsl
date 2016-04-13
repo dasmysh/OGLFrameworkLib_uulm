@@ -29,7 +29,7 @@ vec2 shadow(vec3 worldPos, float NdotL, int lightIdx) {
     vec2 shadowTex = texture(shadowTextures[lightIdx], shadowPos.xy / shadowPos.w).xy;
 
     float bias = 0.002*tan(acos(NdotL));
-    bias = clamp(bias, 0.0f, 0.02f);
+    bias = clamp(bias, 0.0f, 0.005f);
 
     float t = distance(lights[lightIdx].position.xyz, worldPos) - bias;
 
@@ -124,10 +124,14 @@ vec4 lightSingleBRDFI(vec3 position, vec3 normal, vec3 view, int matIdx, int lig
 #define lightIntensitySingle(position, normal, view, matIdx, lightIdx, smDepth)  LIGHT_PASTE2(LIGHT_TYPE, LightIntensitySingle, position, normal, view, matIdx, lightIdx, smDepth)*/
 
 
-vec3 lightIntensity(vec3 position, vec3 normal, vec3 view, int matIdx) {
+vec3 lightIntensity(vec3 position, vec3 normal, vec3 view, Material mat) {
     vec3 intensity = vec3(0.0f);
     for (int i = 0; i < NUM_LIGHTS; ++i) {
-        intensity += vec3(lightSingleBRDFI(position, normal, view, matIdx, i));
+        intensity += vec3(lightSingleBRDF(position, normal, view, mat, i));
     }
     return intensity;
+}
+
+vec3 lightIntensityI(vec3 position, vec3 normal, vec3 view, int matIdx) {
+    return lightIntensity(position, normal, view, materials[matIdx]);
 }

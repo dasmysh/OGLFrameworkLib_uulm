@@ -14,6 +14,7 @@
 
 namespace cgu {
 
+    class GPUProgram;
     class ShadowMap;
 
     struct SpotLightParams
@@ -39,6 +40,8 @@ namespace cgu {
     class SpotLight
     {
     public:
+        SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, const glm::uvec2& smSize,
+            unsigned int smComponents, const std::shared_ptr<GPUProgram>& smProgram, const std::shared_ptr<GPUProgram>& filterProgram, ApplicationBase* app);
         SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, const glm::uvec2& smSize, ApplicationBase* app);
         SpotLight(const SpotLight&);
         SpotLight& operator=(const SpotLight&);
@@ -52,35 +55,36 @@ namespace cgu {
         void UpdateLight();
         int UpdateLightParameters(SpotLightParams& params, int nextTextureUnit) const;
         /** Returns the view matrix of the light. */
-        const glm::mat4& GetViewMatrix() const { return camera.GetViewMatrix(); }
+        const glm::mat4& GetViewMatrix() const { return camera_.GetViewMatrix(); }
         /** Returns the lights position. */
-        const glm::vec3& GetPosition() const { return camera.GetPosition(); }
+        const glm::vec3& GetPosition() const { return camera_.GetPosition(); }
         /** Returns the lights intensity (const). */
-        const glm::vec3& GetIntensity() const { return intensity; }
+        const glm::vec3& GetIntensity() const { return intensity_; }
         /** Returns the lights intensity. */
-        glm::vec3& GetIntensity() { return intensity; }
+        glm::vec3& GetIntensity() { return intensity_; }
         /** Returns the camera view. */
-        const ArcballCamera& GetCamera() const { return camera; }
+        const ArcballCamera& GetCamera() const { return camera_; }
         /** Returns the shadow map. */
-        ShadowMap* GetShadowMap() const { return shadowMap.get(); }
+        ShadowMap* GetShadowMap() const { return shadowMap_.get(); }
 
     private:
+
+        SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, std::unique_ptr<ShadowMap> shadowMap, ApplicationBase* app);
+
         /** Holds the lights camera object. */
-        ArcballCamera camera;
+        ArcballCamera camera_;
         /** Holds the falloff. */
-        float falloffWidth;
+        float falloffWidth_;
         /** Holds the lights intensity (power per solid angle). */
-        glm::vec3 intensity;
+        glm::vec3 intensity_;
         /** Holds the lights attenuation. */
-        float attenuation;
-        /** Holds the lights maximum range. */
-        // float farPlane;
+        float attenuation_;
         /** Holds the shadow map bias. */
-        float bias;
+        float bias_;
         /** Holds the shadow map. */
-        std::unique_ptr<ShadowMap> shadowMap;
+        std::unique_ptr<ShadowMap> shadowMap_;
         /** Holds the application base object. */
-        ApplicationBase* application;
+        ApplicationBase* application_;
     };
 
     class SpotLightArray
@@ -92,17 +96,17 @@ namespace cgu {
         int SetLightParameters(int firstTextureUnit, std::vector<int>& shadowMapTextureUnits);
 
         /** Returns the managed lights array (const). */
-        const std::vector<SpotLight>& GetLights() const { return lights; }
+        const std::vector<SpotLight>& GetLights() const { return lights_; }
         /** Returns the managed lights array. */
-        std::vector<SpotLight>& GetLights() { return lights; }
+        std::vector<SpotLight>& GetLights() { return lights_; }
 
     private:
         /** Holds the lights. */
-        std::vector<SpotLight> lights;
+        std::vector<SpotLight> lights_;
         /** Holds the lights parameters. */
-        std::vector<SpotLightParams> lightParams;
+        std::vector<SpotLightParams> lightParams_;
         /** Holds the lights uniform buffer. */
-        std::unique_ptr<GLUniformBuffer> lightsUBO;
+        std::unique_ptr<GLUniformBuffer> lightsUBO_;
     };
 }
 

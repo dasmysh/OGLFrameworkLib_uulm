@@ -14,6 +14,24 @@
 
 namespace cgu {
 
+
+    SpotLight::SpotLight(const glm::vec3& intensity, float fov, const glm::vec3& pos, std::unique_ptr<ShadowMap> shadowMap, ApplicationBase* app) :
+        camera_(GLFW_MOUSE_BUTTON_RIGHT, fov, shadowMap->GetSize(), 0.1f, 100.0f, pos, app->GetUBOBindingPoints()),
+        falloffWidth_(0.05f),
+        intensity_(intensity),
+        attenuation_(1.0f / 128.0f),
+        bias_(-0.01f),
+        shadowMap_(std::move(shadowMap)),
+        application_(app)
+    {
+    }
+
+    SpotLight::SpotLight(const glm::vec3& intensity, float fov, const glm::vec3& pos, const glm::uvec2& smSize,
+        unsigned smComponents, const std::shared_ptr<GPUProgram>& smProgram, const std::shared_ptr<GPUProgram>& filterProgram, ApplicationBase* app) :
+        SpotLight(intensity, fov, pos, std::make_unique<ShadowMap>(smSize, smComponents, *this, smProgram, filterProgram, app), app)
+    {
+    }
+
     /**
      *  Constructor.
      *  @param intensity the lights power.
@@ -23,19 +41,15 @@ namespace cgu {
      *  @param uniformBindingPoints uniform buffer binding points for the camera used for shadow map rendering.
      */
     SpotLight::SpotLight(const glm::vec3&  intensity, float theFov, const glm::vec3& pos, const glm::uvec2& smSize, ApplicationBase* app) :
-        camera(GLFW_MOUSE_BUTTON_RIGHT, theFov, smSize, 0.1f, 100.0f, pos, app->GetUBOBindingPoints()),
-        falloffWidth(0.05f),
-        intensity(intensity),
-        attenuation(1.0f / 128.0f),
-        bias(-0.01f),
-        shadowMap(new ShadowMap(smSize, *this, app)),
-        application(app)
+        SpotLight(intensity, theFov, pos, std::make_unique<ShadowMap>(smSize, *this, app), app)
     {
     }
 
     /** Copy constructor. */
     SpotLight::SpotLight(const SpotLight& rhs) :
-        SpotLight(rhs.intensity, rhs.GetCamera().GetFOV(), rhs.GetCamera().GetPosition(), rhs.GetShadowMap()->GetSize(), rhs.application)
+        SpotLight(rhs.intensity_, rhs.GetCamera().GetFOV(), rhs.GetCamera().GetPosition(), rhs.GetShadowMap()->GetSize(),
+        rhs.GetShadowMap()->GetShadowTexture()->GetDescriptor().bytesPP / 32, rhs.GetShadowMap()->GetShadowMappingProgram(),
+        rhs.GetShadowMap()->GetFilteringProgram(), rhs.application_)
     {
     }
 
@@ -51,13 +65,13 @@ namespace cgu {
 
     /** Move constructor. */
     SpotLight::SpotLight(SpotLight&& rhs) :
-        camera(std::move(rhs.camera)),
-        falloffWidth(rhs.falloffWidth),
-        intensity(rhs.intensity),
-        attenuation(rhs.attenuation),
-        bias(rhs.bias),
-        shadowMap(std::move(rhs.shadowMap)),
-        application(rhs.application)
+        camera_(std::move(rhs.camera_)),
+        falloffWidth_(rhs.falloffWidth_),
+        intensity_(rhs.intensity_),
+        attenuation_(rhs.attenuation_),
+        bias_(rhs.bias_),
+        shadowMap_(std::move(rhs.shadowMap_)),
+        application_(rhs.application_)
     {
 
     }
@@ -66,13 +80,13 @@ namespace cgu {
     SpotLight& SpotLight::operator=(SpotLight&& rhs)
     {
         if (this != &rhs) {
-            camera = std::move(rhs.camera);
-            falloffWidth = rhs.falloffWidth;
-            intensity = rhs.intensity;
-            attenuation = rhs.attenuation;
-            bias = rhs.bias;
-            shadowMap = std::move(rhs.shadowMap);
-            application = rhs.application;
+            camera_ = std::move(rhs.camera_);
+            falloffWidth_ = rhs.falloffWidth_;
+            intensity_ = rhs.intensity_;
+            attenuation_ = rhs.attenuation_;
+            bias_ = rhs.bias_;
+            shadowMap_ = std::move(rhs.shadowMap_);
+            application_ = rhs.application_;
         }
         return *this;
     }
@@ -82,8 +96,8 @@ namespace cgu {
 
     void SpotLight::Resize(const glm::uvec2& screenSize)
     {
-        camera.Resize(screenSize);
-        shadowMap->Resize(screenSize);
+        camera_.Resize(screenSize);
+        shadowMap_->Resize(screenSize);
     }
 
     /**
@@ -94,7 +108,7 @@ namespace cgu {
      */
     bool SpotLight::HandleKeyboard(int key, int scancode, int action, int mods, GLWindow* sender)
     {
-        return camera.HandleKeyboard(key, scancode, action, mods, sender);
+        return camera_.HandleKeyboard(key, scancode, action, mods, sender);
     }
 
     /**
@@ -105,7 +119,7 @@ namespace cgu {
      */
     bool SpotLight::HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender)
     {
-        return camera.HandleMouse(button, action, mods, mouseWheelDelta, sender);
+        return camera_.HandleMouse(button, action, mods, mouseWheelDelta, sender);
     }
 
     /**
@@ -113,7 +127,7 @@ namespace cgu {
      */
     void SpotLight::UpdateLight()
     {
-        camera.UpdateCamera();
+        camera_.UpdateCamera();
     }
 
     /**
@@ -124,15 +138,15 @@ namespace cgu {
      */
     int SpotLight::UpdateLightParameters(SpotLightParams& params, int nextTextureUnit) const
     {
-        params.position = glm::vec4(camera.GetPosition(), 1.0f);
-        params.direction = glm::vec4(glm::normalize(glm::vec3(0.0f) - camera.GetPosition()), 1.0f);
-        params.intensity = glm::vec4(intensity, 1.0f);
-        params.angFalloffStart = glm::cos(0.5f * camera.GetFOV());
-        params.angFalloffWidth = falloffWidth;
-        params.distAttenuation = attenuation;
-        params.farZ = camera.GetFarZ();
-        params.viewProjection = shadowMap->GetViewProjectionTextureMatrix(camera.GetViewMatrix(), camera.GetProjMatrix());
-        shadowMap->GetShadowTexture()->ActivateTexture(GL_TEXTURE0 + nextTextureUnit);
+        params.position = glm::vec4(camera_.GetPosition(), 1.0f);
+        params.direction = glm::vec4(glm::normalize(glm::vec3(0.0f) - camera_.GetPosition()), 1.0f);
+        params.intensity = glm::vec4(intensity_, 1.0f);
+        params.angFalloffStart = glm::cos(0.5f * camera_.GetFOV());
+        params.angFalloffWidth = falloffWidth_;
+        params.distAttenuation = attenuation_;
+        params.farZ = camera_.GetFarZ();
+        params.viewProjection = shadowMap_->GetViewProjectionTextureMatrix(camera_.GetViewMatrix(), camera_.GetProjMatrix());
+        shadowMap_->GetShadowTexture()->ActivateTexture(GL_TEXTURE0 + nextTextureUnit);
         return nextTextureUnit + 1;
     }
 
@@ -140,7 +154,7 @@ namespace cgu {
      *  Constructor.
      */
     SpotLightArray::SpotLightArray(const std::string& lightArrayName, ShaderBufferBindingPoints* uniformBindingPoints) :
-        lightsUBO(new GLUniformBuffer(lightArrayName, sizeof(SpotLightParams), uniformBindingPoints))
+        lightsUBO_(new GLUniformBuffer(lightArrayName, sizeof(SpotLightParams), uniformBindingPoints))
     {
     }
 
@@ -154,23 +168,23 @@ namespace cgu {
      */
     int SpotLightArray::SetLightParameters(int firstTextureUnit, std::vector<int>& shadowMapTextureUnits)
     {
-        assert(shadowMapTextureUnits.size() == lights.size());
+        assert(shadowMapTextureUnits.size() == lights_.size());
 
-        if (lights.size() != lightParams.size()) {
-            auto uniformBindingPoints = lightsUBO->GetBindingPoints();
-            auto lightArrayName = lightsUBO->GetUBOName();
-            lightParams.resize(lights.size());
-            lightsUBO.reset(new GLUniformBuffer(lightArrayName, sizeof(SpotLightParams) * static_cast<unsigned int>(lightParams.size()), uniformBindingPoints));
+        if (lights_.size() != lightParams_.size()) {
+            auto uniformBindingPoints = lightsUBO_->GetBindingPoints();
+            auto lightArrayName = lightsUBO_->GetUBOName();
+            lightParams_.resize(lights_.size());
+            lightsUBO_.reset(new GLUniformBuffer(lightArrayName, sizeof(SpotLightParams) * static_cast<unsigned int>(lightParams_.size()), uniformBindingPoints));
         }
 
         auto nextTexture = firstTextureUnit;
-        for (unsigned int i = 0; i < lights.size(); ++i) {
+        for (unsigned int i = 0; i < lights_.size(); ++i) {
             shadowMapTextureUnits[i] = nextTexture;
-            nextTexture = lights[i].UpdateLightParameters(lightParams[i], nextTexture);
+            nextTexture = lights_[i].UpdateLightParameters(lightParams_[i], nextTexture);
         }
 
-        lightsUBO->UploadData(0, sizeof(SpotLightParams) * static_cast<unsigned int>(lightParams.size()), lightParams.data());
-        lightsUBO->BindBuffer();
+        lightsUBO_->UploadData(0, sizeof(SpotLightParams) * static_cast<unsigned int>(lightParams_.size()), lightParams_.data());
+        lightsUBO_->BindBuffer();
         return nextTexture;
     }
 }

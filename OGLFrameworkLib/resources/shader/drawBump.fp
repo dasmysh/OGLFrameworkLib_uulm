@@ -30,7 +30,7 @@ void main()
 
     // normal = bump.xyz;
 
-    vec3 intensity = lightIntensity(vPos, normal, view, materialIdx);
+    vec3 intensity = lightIntensityI(vPos, normal, view, materialIdx);
     // outputColor = vec4(vec3(float(materialIdx + 1) / 3.0f), 1.0f);
     outputColor = vec4(texColor * intensity, 1.0f);
     // outputColor = vec4(vec3(shadow(vPos, 0)), 1.0f);
