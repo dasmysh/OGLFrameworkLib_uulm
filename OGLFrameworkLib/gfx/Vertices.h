@@ -310,6 +310,7 @@ namespace cgu {
 
     using FaceVertex = UberMeshVertex<3, true, 2, 1, false, 0, 0>;
     using FaceTangentVertex = UberMeshVertex<3, true, 2, 1, true, 0, 0>;
+    using TranslucencyVertex = UberMeshVertex<3, true, 2, 2, true, 0, 3>;
     using LineVertex = UberMeshVertex<3, false, 2, 1, false, 0, 0>;
     using FontVertex = UberMeshVertex<3, false, 2, 0, false, 0, 1>;
     using GUIVertex = UberMeshVertex<3, false, 2, 1, false, 0, 0>;

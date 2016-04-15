@@ -34,6 +34,7 @@ namespace cgu {
         ~ConnectivityMesh();
 
         unsigned int FindContainingTriangle(const glm::vec3 point);
+        const std::vector<std::unique_ptr<ConnectivitySubMesh>>& GetSubMeshes() const { return subMeshConnectivity_; }
 
     private:
         /** The mesh to create connectivity from. */

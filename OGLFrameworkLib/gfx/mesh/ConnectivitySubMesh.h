@@ -78,6 +78,9 @@ namespace cgu {
         ~ConnectivitySubMesh();
 
         unsigned int FindContainingTriangle(const glm::vec3 point);
+        const std::vector<MeshConnectVertex>& GetVertices() const { return verticesConnect_; }
+        const MeshConnectTriangle& GetTriangle(unsigned int idx) const { return triangleConnect_[idx]; }
+        const SubMesh& GetSubMeshObject() const { return *mesh_->GetSubMesh(subMeshId_); }
 
     private:
         void CreateAABB();
