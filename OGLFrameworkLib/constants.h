@@ -29,6 +29,6 @@ static const char* perspectiveProjectionUBBName = "perspectiveTransform";
 /** Holds the number of buffers used for dynamic buffering. */
 static const unsigned int NUM_DYN_BUFFERS = 5;
 /** Holds the timeout to wait for asynchronous buffers. */
-static const GLuint64 ASYNC_TIMEOUT = 3000000;
+static const gl::GLuint64 ASYNC_TIMEOUT = 3000000;
 
 #endif /* CONSTANTS_H */

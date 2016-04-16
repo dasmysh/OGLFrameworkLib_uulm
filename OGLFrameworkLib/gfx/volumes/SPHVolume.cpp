@@ -14,12 +14,6 @@
 
 namespace cgu {
 
-    static unsigned int calcMipLevelSize(unsigned int baseSz, unsigned int level)
-    {
-        return static_cast<unsigned int>(glm::max(1.0f, glm::floor(static_cast<float>(baseSz)
-            / static_cast<float>(glm::pow(2, level)))));
-    }
-
     static unsigned int calcTextureMaxSize(const glm::uvec3& volumeSize)
     {
         return std::max(std::max(volumeSize.x, volumeSize.y), volumeSize.z);
@@ -48,18 +42,18 @@ namespace cgu {
         std::string shaderDefines;
         auto sphDesc = volumeTexture->GetDescriptor();
         sphDesc.bytesPP *= 4;
-        sphDesc.format = GL_RGBA;
+        sphDesc.format = gl::GL_RGBA;
         switch (sphDesc.internalFormat) {
-        case GL_R8:
-            sphDesc.internalFormat = GL_RGBA8;
+        case gl::GL_R8:
+            sphDesc.internalFormat = gl::GL_RGBA8;
             shaderDefines = "TEX r8,SPHTEX rgba8";
             break;
-        case GL_R16F:
-            sphDesc.internalFormat = GL_RGBA16F;
+        case gl::GL_R16F:
+            sphDesc.internalFormat = gl::GL_RGBA16F;
             shaderDefines = "TEX r16f,SPHTEX rgba16f";
             break;
-        case GL_R32F:
-            sphDesc.internalFormat = GL_RGBA32F;
+        case gl::GL_R32F:
+            sphDesc.internalFormat = gl::GL_RGBA32F;
             shaderDefines = "TEX r32f,SPHTEX rgba32f";
             break;
         default:
@@ -105,18 +99,18 @@ namespace cgu {
         sphProgram->SetUniform(sphUniformNames[3], sphCoeffs);
 
         auto numGroups = glm::ivec3(glm::ceil(glm::vec3(sphSize) / 8.0f));
-        volumeTexture->ActivateImage(0, 0, GL_READ_ONLY);
+        volumeTexture->ActivateImage(0, 0, gl::GL_READ_ONLY);
         for (unsigned int lvl = 0; lvl < sphLevels; ++lvl) {
-            OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-            OGL_SCALL(glFinish);
+            OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+            OGL_SCALL(gl::glFinish);
 
-            sphTextures[0]->ActivateImage(1, lvl, GL_WRITE_ONLY);
-            sphTextures[1]->ActivateImage(2, lvl, GL_WRITE_ONLY);
-            OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
+            sphTextures[0]->ActivateImage(1, lvl, gl::GL_WRITE_ONLY);
+            sphTextures[1]->ActivateImage(2, lvl, gl::GL_WRITE_ONLY);
+            OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
             numGroups = glm::ivec3(glm::ceil(glm::vec3(numGroups) * 0.5f));
         }
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
 
 
         /*volumeTexture->ActivateImage(0, 0, GL_READ_ONLY);

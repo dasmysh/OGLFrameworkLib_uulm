@@ -29,6 +29,8 @@ namespace cgu {
     {
     public:
         GLWindow(const std::string& title, Configuration& conf);
+        GLWindow(const GLWindow&) = delete;
+        GLWindow& operator=(const GLWindow&) = delete;
         virtual ~GLWindow();
 
         bool IsClosing() const;

@@ -44,7 +44,7 @@ namespace cgu {
         /** holds the uniform buffer binding points. */
         ShaderBufferBindingPoints* bindingPoints;
         /** holds the buffer binding point. */
-        GLuint bindingPoint;
+        gl::GLuint bindingPoint;
         /** Holds the uniform buffers name. */
         std::string uboName;
 

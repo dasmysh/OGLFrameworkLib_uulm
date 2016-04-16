@@ -79,7 +79,7 @@ namespace cgu {
         /** Holds the VBO chain for the text. */
         BuffersRAII<NUM_DYN_BUFFERS> textVBOs;
         /** Holds the font VBO fences. */
-        std::vector<GLsync> textVBOFences;
+        std::vector<gl::GLsync> textVBOFences;
         /** Holds the current sizes of the buffers. */
         std::vector<unsigned int> textVBOSizes;
         /** Holds the currently used buffer. */

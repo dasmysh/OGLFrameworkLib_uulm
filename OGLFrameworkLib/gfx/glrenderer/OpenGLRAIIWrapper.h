@@ -60,86 +60,86 @@ namespace cgu {
 
     struct ProgramObjectTraits
     {
-        using value_type = GLuint;
+        using value_type = gl::GLuint;
         static const value_type null_obj = 0;
-        static value_type Create() { return OGL_SCALL(glCreateProgram); }
-        static value_type Destroy(value_type prog) { OGL_CALL(glDeleteProgram, prog); return null_obj; }
+        static value_type Create() { return OGL_SCALL(gl::glCreateProgram); }
+        static value_type Destroy(value_type prog) { OGL_CALL(gl::glDeleteProgram, prog); return null_obj; }
     };
 
     struct ShaderObjectTraits
     {
-        using value_type = GLuint;
+        using value_type = gl::GLuint;
         static const value_type null_obj = 0;
         static value_type Create() { return null_obj; }
-        static value_type Destroy(value_type shader) { OGL_CALL(glDeleteShader, shader); return null_obj; }
+        static value_type Destroy(value_type shader) { OGL_CALL(gl::glDeleteShader, shader); return null_obj; }
     };
 
     struct BufferObjectTraits
     {
-        using value_type = GLuint;
+        using value_type = gl::GLuint;
         static const value_type null_obj = 0;
-        static value_type Create() { value_type buffer; OGL_CALL(glGenBuffers, 1, &buffer); return buffer; }
-        template<int N> static void Create(std::array<value_type, N>& buffers) { OGL_CALL(glGenBuffers, static_cast<GLsizei>(N), buffers.data()); }
-        static value_type Destroy(value_type buffer) { OGL_CALL(glDeleteBuffers, 1, &buffer); return null_obj; }
+        static value_type Create() { value_type buffer; OGL_CALL(gl::glGenBuffers, 1, &buffer); return buffer; }
+        template<int N> static void Create(std::array<value_type, N>& buffers) { OGL_CALL(gl::glGenBuffers, static_cast<gl::GLsizei>(N), buffers.data()); }
+        static value_type Destroy(value_type buffer) { OGL_CALL(gl::glDeleteBuffers, 1, &buffer); return null_obj; }
         template<int N> static void Destroy(std::array<value_type, N>& buffers)
         {
-            OGL_CALL(glDeleteBuffers, static_cast<GLsizei>(N), buffers.data());
+            OGL_CALL(gl::glDeleteBuffers, static_cast<gl::GLsizei>(N), buffers.data());
             for (auto& buffer : buffers) buffer = null_obj;
         }
     };
 
     struct TextureObjectTraits
     {
-        using value_type = GLuint;
+        using value_type = gl::GLuint;
         static const value_type null_obj = 0;
-        static value_type Create() { value_type texture; OGL_CALL(glGenTextures, 1, &texture); return texture; }
-        template<int N> static void Create(std::array<value_type, N>& textures) { OGL_CALL(glGenTextures, static_cast<GLsizei>(N), textures.data()); }
-        static value_type Destroy(value_type texture) { OGL_CALL(glDeleteTextures, 1, &texture); return null_obj; }
+        static value_type Create() { value_type texture; OGL_CALL(gl::glGenTextures, 1, &texture); return texture; }
+        template<int N> static void Create(std::array<value_type, N>& textures) { OGL_CALL(gl::glGenTextures, static_cast<gl::GLsizei>(N), textures.data()); }
+        static value_type Destroy(value_type texture) { OGL_CALL(gl::glDeleteTextures, 1, &texture); return null_obj; }
         template<int N> static void Destroy(std::array<value_type, N>& textures)
         {
-            OGL_CALL(glDeleteTextures, static_cast<GLsizei>(N), textures.data());
+            OGL_CALL(gl::glDeleteTextures, static_cast<gl::GLsizei>(N), textures.data());
             for (auto& texture : textures) texture = null_obj;
         }
     };
 
     struct FramebufferObjectTraits
     {
-        using value_type = GLuint;
+        using value_type = gl::GLuint;
         static const value_type null_obj = 0;
-        static value_type Create() { value_type fbo; OGL_CALL(glGenFramebuffers, 1, &fbo); return fbo; }
-        template<int N> static void Create(std::array<value_type, N>& fbos) { OGL_CALL(glGenFramebuffers, static_cast<GLsizei>(N), fbos.data()); }
-        static value_type Destroy(value_type fbo) { OGL_CALL(glDeleteFramebuffers, 1, &fbo); return null_obj; }
+        static value_type Create() { value_type fbo; OGL_CALL(gl::glGenFramebuffers, 1, &fbo); return fbo; }
+        template<int N> static void Create(std::array<value_type, N>& fbos) { OGL_CALL(gl::glGenFramebuffers, static_cast<gl::GLsizei>(N), fbos.data()); }
+        static value_type Destroy(value_type fbo) { OGL_CALL(gl::glDeleteFramebuffers, 1, &fbo); return null_obj; }
         template<int N> static void Destroy(std::array<value_type, N>& fbos)
         {
-            OGL_CALL(glDeleteFramebuffers, static_cast<GLsizei>(N), fbos.data());
+            OGL_CALL(gl::glDeleteFramebuffers, static_cast<gl::GLsizei>(N), fbos.data());
             for (auto& fbo : fbos) fbo = null_obj;
         }
     };
 
     struct RenderbufferObjectTraits
     {
-        using value_type = GLuint;
+        using value_type = gl::GLuint;
         static const value_type null_obj = 0;
-        static value_type Create() { value_type rbo; OGL_CALL(glGenRenderbuffers, 1, &rbo); return rbo; }
-        template<int N> static void Create(std::array<value_type, N>& rbos) { OGL_CALL(glGenRenderbuffers, static_cast<GLsizei>(N), rbos.data()); }
-        static value_type Destroy(value_type rbo) { OGL_CALL(glDeleteRenderbuffers, 1, &rbo); return null_obj; }
+        static value_type Create() { value_type rbo; OGL_CALL(gl::glGenRenderbuffers, 1, &rbo); return rbo; }
+        template<int N> static void Create(std::array<value_type, N>& rbos) { OGL_CALL(gl::glGenRenderbuffers, static_cast<gl::GLsizei>(N), rbos.data()); }
+        static value_type Destroy(value_type rbo) { OGL_CALL(gl::glDeleteRenderbuffers, 1, &rbo); return null_obj; }
         template<int N> static void Destroy(std::array<value_type, N>& rbos)
         {
-            OGL_CALL(glDeleteRenderbuffers, static_cast<GLsizei>(N), rbos.data());
+            OGL_CALL(gl::glDeleteRenderbuffers, static_cast<gl::GLsizei>(N), rbos.data());
             for (auto& rbo : rbos) rbo = null_obj;
         }
     };
 
     struct VertexArrayObjectTraits
     {
-        using value_type = GLuint;
+        using value_type = gl::GLuint;
         static const value_type null_obj = 0;
-        static value_type Create() { value_type vao; OGL_CALL(glGenVertexArrays, 1, &vao); return vao; }
-        template<int N> static void Create(std::array<value_type, N>& vaos) { OGL_CALL(glGenVertexArrays, static_cast<GLsizei>(N), vaos.data()); }
-        static value_type Destroy(value_type vao) { OGL_CALL(glDeleteVertexArrays, 1, &vao); return null_obj; }
+        static value_type Create() { value_type vao; OGL_CALL(gl::glGenVertexArrays, 1, &vao); return vao; }
+        template<int N> static void Create(std::array<value_type, N>& vaos) { OGL_CALL(gl::glGenVertexArrays, static_cast<gl::GLsizei>(N), vaos.data()); }
+        static value_type Destroy(value_type vao) { OGL_CALL(gl::glDeleteVertexArrays, 1, &vao); return null_obj; }
         template<int N> static void Destroy(std::array<value_type, N>& vaos)
         {
-            OGL_CALL(glDeleteVertexArrays, static_cast<GLsizei>(N), vaos.data());
+            OGL_CALL(gl::glDeleteVertexArrays, static_cast<gl::GLsizei>(N), vaos.data());
             for (auto& vao : vaos) vao = null_obj;
         }
     };

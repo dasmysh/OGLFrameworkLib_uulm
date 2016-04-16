@@ -23,16 +23,16 @@ namespace cgu {
     /** Describes the format of a texture. */
     struct TextureDescriptor
     {
-        TextureDescriptor(unsigned int btsPP, GLint intFmt, GLenum fmt, GLenum tp) : bytesPP(btsPP), internalFormat(intFmt), format(fmt), type(tp) {};
+        TextureDescriptor(unsigned int btsPP, gl::GLenum intFmt, gl::GLenum fmt, gl::GLenum tp) : bytesPP(btsPP), internalFormat(intFmt), format(fmt), type(tp) {};
 
         /** Holds the bytes per pixel of the format. */
         unsigned int bytesPP;
         /** Holds the internal format. */
-        GLint internalFormat;
+        gl::GLenum internalFormat;
         /** Holds the format. */
-        GLenum format;
+        gl::GLenum format;
         /** Holds the type. */
-        GLenum type;
+        gl::GLenum type;
     };
 
     class TextureGLIdentifierAccessor
@@ -42,10 +42,10 @@ namespace cgu {
         friend class FrameBuffer;
         friend class ShadowMap;
 
-        TextureGLIdentifierAccessor(TextureRAII id, GLenum type) : textureId(std::move(id)), textureType(type) {};
-        explicit TextureGLIdentifierAccessor(GLenum type) : textureType(type) {};
+        TextureGLIdentifierAccessor(TextureRAII id, gl::GLenum type) : textureId(std::move(id)), textureType(type) {};
+        explicit TextureGLIdentifierAccessor(gl::GLenum type) : textureType(type) {};
         TextureRAII textureId;
-        GLenum textureType;
+        gl::GLenum textureType;
     };
 
     /**
@@ -62,15 +62,15 @@ namespace cgu {
         GLTexture& operator=(const GLTexture&)  = delete;
 
     public:
-        GLTexture(TextureRAII texID, GLenum texType, const TextureDescriptor& desc);
+        GLTexture(TextureRAII texID, gl::GLenum texType, const TextureDescriptor& desc);
         GLTexture(unsigned int size, const TextureDescriptor& desc);
         GLTexture(unsigned int width, unsigned int height, unsigned int arraySize, const TextureDescriptor& desc);
         GLTexture(unsigned int width, unsigned int height, const TextureDescriptor& desc, const void* data);
         GLTexture(unsigned int width, unsigned int height, unsigned int depth, unsigned int numMipLevels, const TextureDescriptor& desc, const void* data);
         virtual ~GLTexture();
 
-        void ActivateTexture(GLenum textureUnit) const;
-        void ActivateImage(GLuint imageUnitIndex, GLint mipLevel, GLenum accessType) const;
+        void ActivateTexture(gl::GLenum textureUnit) const;
+        void ActivateImage(gl::GLuint imageUnitIndex, gl::GLint mipLevel, gl::GLenum accessType) const;
         void AddTextureToArray(const std::string& file, unsigned int slice) const;
         void SetData(const void* data) const;
         void DownloadData(std::vector<uint8_t>& data) const;
@@ -95,7 +95,7 @@ namespace cgu {
         const TextureGLIdentifierAccessor& GetGLIdentifier() const { return id; };
 
     private:
-        void SetSampleWrap(GLint param) const;
+        void SetSampleWrap(gl::GLenum param) const;
 
         /** Holds the OpenGL texture id. */
         TextureGLIdentifierAccessor id;

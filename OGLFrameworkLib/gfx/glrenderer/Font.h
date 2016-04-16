@@ -47,7 +47,7 @@ namespace cgu {
         /** Holds the font metrics uniform buffer. */
         std::unique_ptr<GLUniformBuffer> fontMetrics;
         /** Holds the binding point for the font metrics buffer. */
-        GLuint fontMetricsBindingPoint;
+        gl::GLuint fontMetricsBindingPoint;
     };
 }
 

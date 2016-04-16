@@ -62,7 +62,7 @@ namespace cgu {
             for (unsigned int ni = 0; ni < 3; ++ni) {
                 auto vi0 = tri.vertex[(ni + 1) % 3];
                 auto vi1 = tri.vertex[(ni + 2) % 3];
-                std::vector<unsigned int> isect;
+                std::vector<int> isect;
                 std::set_intersection(verticesConnect_[vi0].triangles.begin(), verticesConnect_[vi0].triangles.end(),
                     verticesConnect_[vi1].triangles.begin(), verticesConnect_[vi1].triangles.end(), std::back_inserter(isect));
                 // if the mesh is planar and has borders only ONE triangle may be found!!!
@@ -134,7 +134,7 @@ namespace cgu {
      *  Find index of triangle that contains the given point.
      *  @param pt the point to find the triangle for.
      */
-    unsigned int ConnectivitySubMesh::FindContainingTriangle(const glm::vec3 pt)
+    int ConnectivitySubMesh::FindContainingTriangle(const glm::vec3 pt) const
     {
         if (!cguMath::pointInAABB3Test(aabb_, pt)) return -1;
 

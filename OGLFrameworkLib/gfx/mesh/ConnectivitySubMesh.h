@@ -77,7 +77,7 @@ namespace cgu {
         ConnectivitySubMesh& operator=(ConnectivitySubMesh&&);
         ~ConnectivitySubMesh();
 
-        unsigned int FindContainingTriangle(const glm::vec3 point);
+        int FindContainingTriangle(const glm::vec3 point) const;
 
     private:
         void CreateAABB();

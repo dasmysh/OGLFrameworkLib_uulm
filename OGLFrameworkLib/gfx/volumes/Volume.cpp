@@ -14,7 +14,6 @@
 #include "gfx/glrenderer/GLTexture.h"
 #include <ios>
 #include <boost/filesystem.hpp>
-#include "app/Configuration.h"
 #include <limits>
 #include <boost/lexical_cast.hpp>
 
@@ -46,7 +45,7 @@ namespace cgu {
         cellSize(1.0f),
         scaleValue(1),
         dataDim(1),
-        texDesc(4, GL_R8, GL_RED, GL_UNSIGNED_BYTE)
+        texDesc(4, gl::GL_R8, gl::GL_RED, gl::GL_UNSIGNED_BYTE)
     {
         LoadDatFile();
     }
@@ -144,19 +143,19 @@ namespace cgu {
 
         unsigned int componentSize;
         if (format_str == "UCHAR") {
-            texDesc.type = GL_UNSIGNED_BYTE;
+            texDesc.type = gl::GL_UNSIGNED_BYTE;
             componentSize = 1;
         } else if (format_str == "USHORT") {
-            texDesc.type = GL_UNSIGNED_SHORT;
+            texDesc.type = gl::GL_UNSIGNED_SHORT;
             componentSize = 2;
         } else if (format_str == "USHORT_12") {
-            texDesc.type = GL_UNSIGNED_SHORT;
+            texDesc.type = gl::GL_UNSIGNED_SHORT;
             componentSize = 2;
         } else if (format_str == "UINT") {
-            texDesc.type = GL_UNSIGNED_INT;
+            texDesc.type = gl::GL_UNSIGNED_INT;
             componentSize = 4;
         } else if (format_str == "FLOAT") {
-            texDesc.type = GL_FLOAT;
+            texDesc.type = gl::GL_FLOAT;
             componentSize = 4;
         } else {
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
@@ -167,16 +166,16 @@ namespace cgu {
 
         if (obj_model == "I") {
             dataDim = 1;
-            texDesc.format = GL_RED;
+            texDesc.format = gl::GL_RED;
         } else if (obj_model == "RG" || obj_model == "XY") {
             dataDim = 2;
-            texDesc.format = GL_RG;
+            texDesc.format = gl::GL_RG;
         } else if (obj_model == "RGB" || obj_model == "XYZ") {
             dataDim = 3;
-            texDesc.format = GL_RGB;
+            texDesc.format = gl::GL_RGB;
         } else if (obj_model == "RGBA" || obj_model == "XYZW") {
             dataDim = 4;
-            texDesc.format = GL_RGBA;
+            texDesc.format = gl::GL_RGBA;
         } else {
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
             LOG(ERROR) << "ObjectModel '" << converter.from_bytes(obj_model) << "' is not supported.";
@@ -186,56 +185,56 @@ namespace cgu {
 
         if (forceBits == 0) {
             texDesc.bytesPP = dataDim * componentSize;
-            if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RED)
-            texDesc.internalFormat = GL_R8;
-            else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RG)
-            texDesc.internalFormat = GL_RG8;
-            else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RGB)
-            texDesc.internalFormat = GL_RGB8;
-            else if (texDesc.type == GL_UNSIGNED_BYTE && texDesc.format == GL_RGBA)
-            texDesc.internalFormat = GL_RGBA8;
-            else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RED)
-            texDesc.internalFormat = GL_R16F;
-            else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RG)
-            texDesc.internalFormat = GL_RG16F;
-            else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RGB)
-            texDesc.internalFormat = GL_RGB16F;
-            else if (texDesc.type == GL_UNSIGNED_SHORT && texDesc.format == GL_RGBA)
-            texDesc.internalFormat = GL_RGBA16F;
-            else if (componentSize == 4 && texDesc.format == GL_RED)
-            texDesc.internalFormat = GL_R32F;
-            else if (componentSize == 4 && texDesc.format == GL_RG)
-            texDesc.internalFormat = GL_RG32F;
-            else if (componentSize == 4 && texDesc.format == GL_RGB)
-            texDesc.internalFormat = GL_RGB32F;
-            else if (componentSize == 4 && texDesc.format == GL_RGBA)
-            texDesc.internalFormat = GL_RGBA32F;
+            if (texDesc.type == gl::GL_UNSIGNED_BYTE && texDesc.format == gl::GL_RED)
+            texDesc.internalFormat = gl::GL_R8;
+            else if (texDesc.type == gl::GL_UNSIGNED_BYTE && texDesc.format == gl::GL_RG)
+            texDesc.internalFormat = gl::GL_RG8;
+            else if (texDesc.type == gl::GL_UNSIGNED_BYTE && texDesc.format == gl::GL_RGB)
+            texDesc.internalFormat = gl::GL_RGB8;
+            else if (texDesc.type == gl::GL_UNSIGNED_BYTE && texDesc.format == gl::GL_RGBA)
+            texDesc.internalFormat = gl::GL_RGBA8;
+            else if (texDesc.type == gl::GL_UNSIGNED_SHORT && texDesc.format == gl::GL_RED)
+            texDesc.internalFormat = gl::GL_R16F;
+            else if (texDesc.type == gl::GL_UNSIGNED_SHORT && texDesc.format == gl::GL_RG)
+            texDesc.internalFormat = gl::GL_RG16F;
+            else if (texDesc.type == gl::GL_UNSIGNED_SHORT && texDesc.format == gl::GL_RGB)
+            texDesc.internalFormat = gl::GL_RGB16F;
+            else if (texDesc.type == gl::GL_UNSIGNED_SHORT && texDesc.format == gl::GL_RGBA)
+            texDesc.internalFormat = gl::GL_RGBA16F;
+            else if (componentSize == 4 && texDesc.format == gl::GL_RED)
+                texDesc.internalFormat = gl::GL_R32F;
+            else if (componentSize == 4 && texDesc.format == gl::GL_RG)
+                texDesc.internalFormat = gl::GL_RG32F;
+            else if (componentSize == 4 && texDesc.format == gl::GL_RGB)
+                texDesc.internalFormat = gl::GL_RGB32F;
+            else if (componentSize == 4 && texDesc.format == gl::GL_RGBA)
+                texDesc.internalFormat = gl::GL_RGBA32F;
         } else {
             texDesc.bytesPP = dataDim * (forceBits / 8);
-            if (forceBits == 8 && texDesc.format == GL_RED)
-            texDesc.internalFormat = GL_R8;
-            else if (forceBits == 8 && texDesc.format == GL_RG)
-            texDesc.internalFormat = GL_RG8;
-            else if (forceBits == 8 && texDesc.format == GL_RGB)
-            texDesc.internalFormat = GL_RGB8;
-            else if (forceBits == 8 && texDesc.format == GL_RGBA)
-            texDesc.internalFormat = GL_RGBA8;
-            else if (forceBits == 16 && texDesc.format == GL_RED)
-            texDesc.internalFormat = GL_R16F;
-            else if (forceBits == 16 && texDesc.format == GL_RG)
-            texDesc.internalFormat = GL_RG16F;
-            else if (forceBits == 16 && texDesc.format == GL_RGB)
-            texDesc.internalFormat = GL_RGB16F;
-            else if (forceBits == 16 && texDesc.format == GL_RGBA)
-            texDesc.internalFormat = GL_RGBA16F;
-            else if (forceBits == 32 && texDesc.format == GL_RED)
-            texDesc.internalFormat = GL_R32F;
-            else if (forceBits == 32 && texDesc.format == GL_RG)
-            texDesc.internalFormat = GL_RG32F;
-            else if (forceBits == 32 && texDesc.format == GL_RGB)
-            texDesc.internalFormat = GL_RGB32F;
-            else if (forceBits == 32 && texDesc.format == GL_RGBA)
-            texDesc.internalFormat = GL_RGBA32F;
+            if (forceBits == 8 && texDesc.format == gl::GL_RED)
+                texDesc.internalFormat = gl::GL_R8;
+            else if (forceBits == 8 && texDesc.format == gl::GL_RG)
+                texDesc.internalFormat = gl::GL_RG8;
+            else if (forceBits == 8 && texDesc.format == gl::GL_RGB)
+                texDesc.internalFormat = gl::GL_RGB8;
+            else if (forceBits == 8 && texDesc.format == gl::GL_RGBA)
+                texDesc.internalFormat = gl::GL_RGBA8;
+            else if (forceBits == 16 && texDesc.format == gl::GL_RED)
+                texDesc.internalFormat = gl::GL_R16F;
+            else if (forceBits == 16 && texDesc.format == gl::GL_RG)
+                texDesc.internalFormat = gl::GL_RG16F;
+            else if (forceBits == 16 && texDesc.format == gl::GL_RGB)
+                texDesc.internalFormat = gl::GL_RGB16F;
+            else if (forceBits == 16 && texDesc.format == gl::GL_RGBA)
+                texDesc.internalFormat = gl::GL_RGBA16F;
+            else if (forceBits == 32 && texDesc.format == gl::GL_RED)
+                texDesc.internalFormat = gl::GL_R32F;
+            else if (forceBits == 32 && texDesc.format == gl::GL_RG)
+                texDesc.internalFormat = gl::GL_RG32F;
+            else if (forceBits == 32 && texDesc.format == gl::GL_RGB)
+                texDesc.internalFormat = gl::GL_RGB32F;
+            else if (forceBits == 32 && texDesc.format == gl::GL_RGBA)
+                texDesc.internalFormat = gl::GL_RGBA32F;
         }
 
         scaleValue = (format_str == "USHORT_12") ? 16 : 1;
@@ -274,7 +273,7 @@ namespace cgu {
         // std::vector<int8_t> data;
         std::vector<float> data;
         auto maxValue = 0.0f;
-        if (texDesc.type == GL_UNSIGNED_BYTE) {
+        if (texDesc.type == gl::GL_UNSIGNED_BYTE) {
             // data = readModifyData<int8_t, uint8_t, uint8_t>(rawData, data_size, [](const uint8_t& val){ return val; });
             data = readModifyData<float, float, uint8_t, char>(rawData, data_size, [&maxValue](const uint8_t& val)
             {
@@ -282,7 +281,7 @@ namespace cgu {
                 maxValue = glm::max(maxValue, value);
                 return value;
             });
-        } else if (texDesc.type == GL_UNSIGNED_SHORT) {
+        } else if (texDesc.type == gl::GL_UNSIGNED_SHORT) {
             auto l_scaleValue = scaleValue;
             // data = readModifyData<int8_t, uint16_t, uint16_t>(rawData, data_size, [l_scaleValue](const uint16_t& val){ return val * l_scaleValue; });
             data = readModifyData<float, float, uint16_t, char>(rawData, data_size, [l_scaleValue, &maxValue](const uint16_t& val)
@@ -291,7 +290,7 @@ namespace cgu {
                 maxValue = glm::max(maxValue, value);
                 return value;
             });
-        } else if (texDesc.type == GL_UNSIGNED_INT) {
+        } else if (texDesc.type == gl::GL_UNSIGNED_INT) {
             // data = readModifyData<int8_t, uint32_t, uint32_t>(rawData, data_size, [](const uint32_t& val){ return val; });
             data = readModifyData<float, float, uint32_t, char>(rawData, data_size, [&maxValue](const uint32_t& val)
             {
@@ -299,7 +298,7 @@ namespace cgu {
                 maxValue = glm::max(maxValue, value);
                 return value;
             });
-        } else if (texDesc.type == GL_FLOAT) {
+        } else if (texDesc.type == gl::GL_FLOAT) {
             // data = readModifyData<int8_t, float, float>(rawData, data_size, [](const float& val){ return val; });
             data = readModifyData<float, float, float, char>(rawData, data_size, [&maxValue](const float& val)
             {
@@ -312,14 +311,14 @@ namespace cgu {
         data = readModifyData<float, float, float, float>(data, data.size() * sizeof(float), [maxValue](const float& val) { return val / maxValue; });
 
         auto tempDesc = texDesc;
-        tempDesc.type = GL_FLOAT;
+        tempDesc.type = gl::GL_FLOAT;
         auto volTex = std::make_unique<GLTexture>(volumeSize.x, volumeSize.y, volumeSize.z, mipLevels, tempDesc, data.data());
         return std::move(volTex);
     }
 
     std::shared_ptr<Volume> Volume::GetSpeedVolume() const
     {
-        assert(texDesc.format == GL_RGBA);
+        assert(texDesc.format == gl::GL_RGBA);
 
         boost::filesystem::path volumeRelativeFilename(GetParameters()[0]);
         boost::filesystem::path volumeFilename(FindResourceLocation(GetParameters()[0]));
@@ -339,8 +338,8 @@ namespace cgu {
             }
 
             std::string newFormat = "UCHAR";
-            if (texDesc.type == GL_UNSIGNED_SHORT) newFormat = "USHORT";
-            else if (texDesc.type == GL_UNSIGNED_INT) newFormat = "UINT";
+            if (texDesc.type == gl::GL_UNSIGNED_SHORT) newFormat = "USHORT";
+            else if (texDesc.type == gl::GL_UNSIGNED_INT) newFormat = "UINT";
 
             datOut << "ObjectFileName:\t" << newRawFilename << ".raw" << std::endl;
             datOut << "Resolution:\t" << volumeSize.x << " " << volumeSize.y << " " << volumeSize.z << std::endl;
@@ -366,26 +365,26 @@ namespace cgu {
             auto volumeNumBytes = volumeSize.x * volumeSize.y * volumeSize.z * texDesc.bytesPP;
 
             int size = std::min(data_size, volumeNumBytes);
-            if (texDesc.type == GL_UNSIGNED_BYTE) {
+            if (texDesc.type == gl::GL_UNSIGNED_BYTE) {
                 data = readModifyData<int8_t, uint8_t, glm::u8vec4, char>(rawData, size, [](const glm::u8vec4& val)
                 {
                     auto sval = glm::vec3(val.xyz()) / glm::vec3(std::numeric_limits<uint8_t>::max());
                     return static_cast<uint8_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint8_t>::max()));
                 });
-            } else if (texDesc.type == GL_UNSIGNED_SHORT) {
+            } else if (texDesc.type == gl::GL_UNSIGNED_SHORT) {
                 auto l_scaleValue = scaleValue;
                 data = readModifyData<int8_t, uint16_t, glm::u16vec4, char>(rawData, size, [l_scaleValue](const glm::u16vec4& val)
                 {
-                    auto sval = glm::vec3(val.xyz() * glm::u16vec3(l_scaleValue)) / glm::vec3(std::numeric_limits<uint16_t>::max());
+                    auto sval = glm::vec3(val.xyz() * glm::u16vec3(static_cast<uint16_t>(l_scaleValue))) / glm::vec3(std::numeric_limits<uint16_t>::max());
                     return static_cast<uint16_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint16_t>::max()));
                 });
-            } else if (texDesc.type == GL_UNSIGNED_INT) {
+            } else if (texDesc.type == gl::GL_UNSIGNED_INT) {
                 data = readModifyData<int8_t, uint32_t, glm::u32vec4, char>(rawData, size, [](const glm::u32vec4& val)
                 {
                     auto sval = glm::vec3(val.xyz()) / glm::vec3(static_cast<float>(std::numeric_limits<uint32_t>::max()));
                     return static_cast<uint32_t>(glm::length((sval - glm::vec3(0.5f)) * 2.0f) * static_cast<float>(std::numeric_limits<uint32_t>::max()));
                 });
-            } else if (texDesc.type == GL_FLOAT) {
+            } else if (texDesc.type == gl::GL_FLOAT) {
                 data = readModifyData<int8_t, float, glm::vec4, char>(rawData, size, [](const glm::vec4& val)
                 {
                     return glm::length((val.xyz() - glm::vec3(0.5f)) * 2.0f);

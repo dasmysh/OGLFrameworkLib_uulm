@@ -6,6 +6,8 @@
  * @brief  Windows implementation for the GLWindow.
  */
 
+#include <glbinding/Binding.h>
+#include <glbinding/ContextInfo.h>
 #ifdef _WIN32
 
 #include "GLWindow.h"
@@ -15,13 +17,18 @@
 #include <cuda_runtime_api.h>
 #include <cuda_gl_interop.h>
 #include <codecvt>
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <imgui.h>
-#include <imgui_impl_glfw_gl3.h>
+#include "gui/imgui_impl_glfw_gl3.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
 #include <GLFW/glfw3native.h>
+#include <glbinding/Meta.h>
+#include <glbinding/Version.h>
+#undef GL_DONT_CARE
+#undef GL_TRUE
 
 namespace cgu {
 
@@ -32,30 +39,30 @@ namespace cgu {
      * @param severity the severity of the debug message
      * @param message the debug message
      */
-    void WINAPI DebugOutputCallback(GLenum source, GLenum type, GLuint, GLenum severity, GLsizei, const GLchar* message, const void*)
+    void WINAPI DebugOutputCallback(gl::GLenum source, gl::GLenum type, gl::GLuint, gl::GLenum severity, gl::GLsizei, const gl::GLchar* message, const void*)
     {
         std::stringstream str;
         str << "OpenGL Debug Output message : ";
 
-        if (source == GL_DEBUG_SOURCE_API_ARB) str << "Source : API; ";
-        else if (source == GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB) str << "Source : WINDOW_SYSTEM; ";
-        else if (source == GL_DEBUG_SOURCE_SHADER_COMPILER_ARB) str << "Source : SHADER_COMPILER; ";
-        else if (source == GL_DEBUG_SOURCE_THIRD_PARTY_ARB) str << "Source : THIRD_PARTY; ";
-        else if (source == GL_DEBUG_SOURCE_APPLICATION_ARB) str << "Source : APPLICATION; ";
-        else if (source == GL_DEBUG_SOURCE_OTHER_ARB) str << "Source : OTHER; ";
+        if (source == gl::GL_DEBUG_SOURCE_API_ARB) str << "Source : API; ";
+        else if (source == gl::GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB) str << "Source : WINDOW_SYSTEM; ";
+        else if (source == gl::GL_DEBUG_SOURCE_SHADER_COMPILER_ARB) str << "Source : SHADER_COMPILER; ";
+        else if (source == gl::GL_DEBUG_SOURCE_THIRD_PARTY_ARB) str << "Source : THIRD_PARTY; ";
+        else if (source == gl::GL_DEBUG_SOURCE_APPLICATION_ARB) str << "Source : APPLICATION; ";
+        else if (source == gl::GL_DEBUG_SOURCE_OTHER_ARB) str << "Source : OTHER; ";
 
-        if (type == GL_DEBUG_TYPE_ERROR_ARB) {
+        if (type == gl::GL_DEBUG_TYPE_ERROR_ARB) {
             str << "Type : ERROR; ";
         }
-        else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB) str << "Type : DEPRECATED_BEHAVIOR; ";
-        else if (type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB) str << "Type : UNDEFINED_BEHAVIOR; ";
-        else if (type == GL_DEBUG_TYPE_PORTABILITY_ARB) str << "Type : PORTABILITY; ";
-        else if (type == GL_DEBUG_TYPE_PERFORMANCE_ARB) str << "Type : PERFORMANCE; ";
-        else if (type == GL_DEBUG_TYPE_OTHER_ARB) str << "Type : OTHER; ";
+        else if (type == gl::GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB) str << "Type : DEPRECATED_BEHAVIOR; ";
+        else if (type == gl::GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB) str << "Type : UNDEFINED_BEHAVIOR; ";
+        else if (type == gl::GL_DEBUG_TYPE_PORTABILITY_ARB) str << "Type : PORTABILITY; ";
+        else if (type == gl::GL_DEBUG_TYPE_PERFORMANCE_ARB) str << "Type : PERFORMANCE; ";
+        else if (type == gl::GL_DEBUG_TYPE_OTHER_ARB) str << "Type : OTHER; ";
 
-        if (severity == GL_DEBUG_SEVERITY_HIGH_ARB) str << "Severity : HIGH; ";
-        else if (severity == GL_DEBUG_SEVERITY_MEDIUM_ARB) str << "Severity : MEDIUM; ";
-        else if (severity == GL_DEBUG_SEVERITY_LOW_ARB) str << "Severity : LOW; ";
+        if (severity == gl::GL_DEBUG_SEVERITY_HIGH_ARB) str << "Severity : HIGH; ";
+        else if (severity == gl::GL_DEBUG_SEVERITY_MEDIUM_ARB) str << "Severity : MEDIUM; ";
+        else if (severity == gl::GL_DEBUG_SEVERITY_LOW_ARB) str << "Severity : LOW; ";
 
         // You can set a breakpoint here ! Your debugger will stop the program,
         // and the call stack will immediately show you the offending call.
@@ -189,30 +196,31 @@ namespace cgu {
         glfwMakeContextCurrent(window_);
 
         LOG(INFO) << L"Initializing glad...";
-        if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
+        glbinding::Binding::initialize();
+        /*if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
             this->ReleaseOpenGL();
             LOG(ERROR) << L"Could not initialize glad!";
             throw std::runtime_error("Could not initialize glad!");
-        }
+        }*/
 
         // TODO: higher OpenGL version?
         LOG(INFO) << L"Checking OpenGL version 4.0 ...";
-        if (!GLAD_GL_VERSION_4_0) {
+        if (!(glbinding::ContextInfo::version() >= glbinding::Version(4, 0))) {
             this->ReleaseOpenGL();
             LOG(ERROR) << L"OpenGL version not supported.";
             throw std::runtime_error("OpenGL version not supported.");
         }
 
-
+        std::set<gl::GLextension> extensions = glbinding::ContextInfo::extensions();
 #ifdef _DEBUG
-        if (GLAD_GL_ARB_debug_output) {
+        if (extensions.count(gl::GLextension::GL_ARB_debug_output) == 1) {
             LOG(DEBUG) << L"The OpenGL implementation provides debug output.";
-            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-            glDebugMessageCallback(&DebugOutputCallback, nullptr);
+            gl::glEnable(gl::GL_DEBUG_OUTPUT_SYNCHRONOUS);
+            gl::glDebugMessageCallback(&DebugOutputCallback, nullptr);
             GLuint unusedIds = 0;
-            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIds, true);
-            glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION_ARB, GL_DEBUG_TYPE_OTHER_ARB,
-                1, GL_DEBUG_SEVERITY_HIGH, -1, "OpenGL Debug Log here ...");
+            gl::glDebugMessageControl(gl::GL_DONT_CARE, gl::GL_DONT_CARE, gl::GL_DONT_CARE, 0, &unusedIds, gl::GL_TRUE);
+            gl::glDebugMessageInsert(gl::GL_DEBUG_SOURCE_APPLICATION_ARB, gl::GL_DEBUG_TYPE_OTHER_ARB,
+                1, gl::GL_DEBUG_SEVERITY_HIGH, -1, "OpenGL Debug Log here ...");
         } else {
             LOG(DEBUG) << L"The OpenGL implementation does not provide debug output.";
         }
@@ -220,12 +228,12 @@ namespace cgu {
 
         fbo.Resize(config.windowWidth, config.windowHeight);
 
-        if (!GLAD_GL_ARB_vertex_array_object) {
+        if (extensions.count(gl::GLextension::GL_ARB_vertex_array_object) != 1) {
             LOG(WARNING) << L"VAOs not supported ...";
         }
 
         if (config.useSRGB) {
-            glEnable(GL_FRAMEBUFFER_SRGB);
+            gl::glEnable(gl::GL_FRAMEBUFFER_SRGB);
         }
 
         LOG(INFO) << L"OpenGL context initialized.";

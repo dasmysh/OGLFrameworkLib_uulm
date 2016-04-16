@@ -109,8 +109,8 @@ namespace cgu {
         vertices.push_back(VolumeCubeVertex{ glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 1.0f) });
         vertices.push_back(VolumeCubeVertex{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f) });
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        OGL_CALL(glBufferData, GL_ARRAY_BUFFER, 8 * sizeof(VolumeCubeVertex), vertices.data(), GL_STATIC_DRAW);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, vBuffer);
+        OGL_CALL(gl::glBufferData, gl::GL_ARRAY_BUFFER, 8 * sizeof(VolumeCubeVertex), vertices.data(), gl::GL_STATIC_DRAW);
 
         unsigned int indexData[36] = {
             1, 0, 3, 3, 0, 2,
@@ -120,8 +120,8 @@ namespace cgu {
             1, 3, 5, 5, 3, 7,
             0, 4, 2, 2, 4, 6
         };
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer);
-        OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned int), indexData, GL_STATIC_DRAW);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ELEMENT_ARRAY_BUFFER, iBuffer);
+        OGL_CALL(gl::glBufferData, gl::GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned int), indexData, gl::GL_STATIC_DRAW);
 
         FillVertexAttributeBindings(backProgram.get(), backAttribBinds);
         FillVertexAttributeBindings(drawProgram.get(), drawAttribBinds);
@@ -132,7 +132,7 @@ namespace cgu {
      */
     void VolumeCubeRenderable::DrawBack() const
     {
-        glCullFace(GL_FRONT);
+        gl::glCullFace(gl::GL_FRONT);
         backProgram->UseProgram();
         Draw(backProgram.get(), backAttribBinds);
     }
@@ -142,7 +142,7 @@ namespace cgu {
      */
     void VolumeCubeRenderable::Draw(float stepSize, float mipLevel) const
     {
-        glCullFace(GL_BACK);
+        gl::glCullFace(gl::GL_BACK);
         drawProgram->UseProgram();
         drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[3], stepSize);
         drawProgram->SetUniform(drawAttribBinds.GetUniformIds()[4], mipLevel);
@@ -155,10 +155,10 @@ namespace cgu {
      *  @param attribBinding the vertex attribute bindings to use.
      */
     // ReSharper disable once CppMemberFunctionMayBeStatic
-    void VolumeCubeRenderable::Draw(GPUProgram* program, const ShaderMeshAttributes& attribBinds) const
+    void VolumeCubeRenderable::Draw(GPUProgram*, const ShaderMeshAttributes& attribBinds) const
     {
         attribBinds.GetVertexAttributes()[0]->EnableVertexAttributeArray();
-        OGL_CALL(glDrawElements, GL_TRIANGLES, 36, GL_UNSIGNED_INT, static_cast<char*> (nullptr));
+        OGL_CALL(gl::glDrawElements, gl::GL_TRIANGLES, 36, gl::GL_UNSIGNED_INT, static_cast<char*> (nullptr));
         attribBinds.GetVertexAttributes()[0]->DisableVertexAttributeArray();
     }
 
@@ -172,12 +172,12 @@ namespace cgu {
         assert(attribBinds.GetVertexAttributes().size() == 0);
 
         auto loc = program->GetAttributeLocations({ "position", "texPosition" });
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, vBuffer);
         attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer, iBuffer));
         attribBinds.GetVertexAttributes()[0]->StartAttributeSetup();
-        attribBinds.GetVertexAttributes()[0]->AddVertexAttribute(loc[0], 4, GL_FLOAT, GL_FALSE, sizeof(VolumeCubeVertex), offsetof(VolumeCubeVertex, pos));
-        attribBinds.GetVertexAttributes()[0]->AddVertexAttribute(loc[1], 3, GL_FLOAT, GL_FALSE, sizeof(VolumeCubeVertex), offsetof(VolumeCubeVertex, posTex));
+        attribBinds.GetVertexAttributes()[0]->AddVertexAttribute(loc[0], 4, gl::GL_FLOAT, gl::GL_FALSE, sizeof(VolumeCubeVertex), offsetof(VolumeCubeVertex, pos));
+        attribBinds.GetVertexAttributes()[0]->AddVertexAttribute(loc[1], 3, gl::GL_FLOAT, gl::GL_FALSE, sizeof(VolumeCubeVertex), offsetof(VolumeCubeVertex, posTex));
         attribBinds.GetVertexAttributes()[0]->EndAttributeSetup();
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, 0);
     }
 }

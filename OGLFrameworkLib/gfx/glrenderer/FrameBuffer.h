@@ -19,19 +19,19 @@ namespace cgu {
     struct RenderBufferDescriptor
     {
         /** Holds the internal format of the render buffer. */
-        GLenum internalFormat;
+        gl::GLenum internalFormat;
     };
 
     /** Describes a texture render target for frame buffers. */
     struct FrameBufferTextureDescriptor
     {
         // ReSharper disable once CppNonExplicitConvertingConstructor
-        FrameBufferTextureDescriptor(TextureDescriptor texDesc, GLenum texType = GL_TEXTURE_2D) : texDesc_{texDesc}, texType_{ texType } {}
+        FrameBufferTextureDescriptor(TextureDescriptor texDesc, gl::GLenum texType = gl::GL_TEXTURE_2D) : texDesc_{ texDesc }, texType_{ texType } {}
 
         /** The texture descriptor. */
         TextureDescriptor texDesc_;
         /** The texture type. */
-        GLenum texType_;
+        gl::GLenum texType_;
     };
 
     /** Describes a frame buffer. */
@@ -72,7 +72,7 @@ namespace cgu {
         unsigned int GetHeight() const { return height; };
 
     private:
-        static unsigned int findAttachment(GLenum internalFormat, unsigned int& colorAtt, std::vector<GLenum> &drawBuffers);
+        static gl::GLenum findAttachment(gl::GLenum internalFormat, unsigned int& colorAtt, std::vector<gl::GLenum> &drawBuffers);
 
         /** holds the frame buffers OpenGL name. */
         FramebufferRAII fbo;
@@ -83,7 +83,7 @@ namespace cgu {
         /** holds the frame buffers textures to render to. */
         std::vector<std::unique_ptr<GLTexture>> textures;
         /** Holds the a list of color attachments for the textures. */
-        std::vector<GLenum> drawBuffers;
+        std::vector<gl::GLenum> drawBuffers;
         /** holds the frame buffers render buffers to render to. */
         std::vector<RenderbufferRAII> renderBuffers;
         /** holds the frame buffers width. */

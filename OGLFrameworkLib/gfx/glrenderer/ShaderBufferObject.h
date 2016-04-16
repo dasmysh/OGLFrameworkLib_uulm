@@ -40,7 +40,7 @@ namespace cgu {
         /** holds the shader buffer objects binding points. */
         ShaderBufferBindingPoints& bindingPoints;
         /** holds the buffer binding point. */
-        GLuint bindingPoint;
+        gl::GLuint bindingPoint;
     };
 }
 

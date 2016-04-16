@@ -32,9 +32,9 @@
 #include <vector>
 #pragma warning(pop)
 
-#pragma warning(disable : 4201)
+// #pragma warning(disable : 4201)
 #include <glm/glm.hpp>
-#pragma warning(default : 4201)
+// #pragma warning(default : 4201)
 
 #include "core/regex_helper.h"
 
@@ -43,10 +43,10 @@ class ApplicationBase;
 #define WIN32_LEAN_AND_MEAN
 #define WIN32_EXTRA_LEAN
 
-#include <glad/glad.h>
+#include <glbinding/gl/gl.h>
+#include <glbinding/gl/functions-patches.h>
 #pragma warning(push, 3)
 #include <Windows.h>
-#include <glad/glad_wgl.h>
 #pragma warning(pop)
 
 #include "core/g2logWrapper.h"

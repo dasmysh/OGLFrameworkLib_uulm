@@ -15,7 +15,7 @@ namespace cgu {
      * @param vertexBuffer the vertex buffer used to create the attributes.
      * @param indexBuffer the index buffer to bind
      */
-    GLVertexAttributeArray::GLVertexAttributeArray(GLuint vertexBuffer, GLuint indexBuffer) :
+    GLVertexAttributeArray::GLVertexAttributeArray(gl::GLuint vertexBuffer, gl::GLuint indexBuffer) :
         i_buffer(indexBuffer),
         v_buffer(vertexBuffer),
         v_desc()
@@ -53,44 +53,44 @@ namespace cgu {
     /** Disables all vertex attributes in the array. */
     void GLVertexAttributeArray::DisableAttributes()
     {
-        OGL_CALL(glBindVertexArray, vao);
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glBindVertexArray, vao);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ELEMENT_ARRAY_BUFFER, 0);
 
         for (const auto& desc : v_desc) {
             if (desc.location->iBinding > 0) {
-                OGL_CALL(glDisableVertexAttribArray, desc.location->iBinding);
+                OGL_CALL(gl::glDisableVertexAttribArray, desc.location->iBinding);
             }
         }
 
-        OGL_CALL(glBindVertexArray, 0);
+        OGL_CALL(gl::glBindVertexArray, 0);
     }
 
     /** Initializes the vertex attribute setup. */
     void GLVertexAttributeArray::StartAttributeSetup() const
     {
-        OGL_CALL(glBindVertexArray, vao);
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glBindVertexArray, vao);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     /** Ends the vertex attribute setup. */
     void GLVertexAttributeArray::EndAttributeSetup() const
     {
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, i_buffer);
-        OGL_CALL(glBindVertexArray, 0);
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ELEMENT_ARRAY_BUFFER, i_buffer);
+        OGL_CALL(gl::glBindVertexArray, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     /** Enables the vertex attribute array. */
     void GLVertexAttributeArray::EnableVertexAttributeArray() const
     {
-        OGL_CALL(glBindVertexArray, vao);
+        OGL_CALL(gl::glBindVertexArray, vao);
     }
 
     // ReSharper disable once CppMemberFunctionMayBeStatic
     /** Disables the vertex attribute array. */
     void GLVertexAttributeArray::DisableVertexAttributeArray() const
     {
-        OGL_CALL(glBindVertexArray, 0);
+        OGL_CALL(gl::glBindVertexArray, 0);
     }
 
     /**
@@ -99,13 +99,13 @@ namespace cgu {
      */
     void GLVertexAttributeArray::UpdateVertexAttributes()
     {
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, v_buffer);
-        OGL_CALL(glBindVertexArray, vao);
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, i_buffer);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, v_buffer);
+        OGL_CALL(gl::glBindVertexArray, vao);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ELEMENT_ARRAY_BUFFER, i_buffer);
 
         for (const auto& desc : v_desc) {
             if (desc.location->iBinding > 0) {
-                OGL_CALL(glEnableVertexAttribArray, desc.location->iBinding);
+                OGL_CALL(gl::glEnableVertexAttribArray, desc.location->iBinding);
                 switch (desc.shaderType)
                 {
                 case VAShaderType::FLOAT:
@@ -125,8 +125,8 @@ namespace cgu {
             }
         }
 
-        OGL_CALL(glBindVertexArray, 0);
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glBindVertexArray, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, 0);
     }
 
     /**
@@ -138,8 +138,8 @@ namespace cgu {
      * @param stride the difference in bytes between of this attributes
      * @param offset the offset into the buffer to the first of this attributes
      */
-    void GLVertexAttributeArray::AddVertexAttribute(BindingLocation location, int size, GLenum type,
-        GLboolean normalized, GLsizei stride, size_t offset)
+    void GLVertexAttributeArray::AddVertexAttribute(BindingLocation location, int size, gl::GLenum type,
+                                                    gl::GLboolean normalized, gl::GLsizei stride, size_t offset)
     {
         vertex_attribute_desc desc;
         desc.shaderType = VAShaderType::FLOAT;
@@ -150,7 +150,7 @@ namespace cgu {
         desc.stride = stride;
         desc.offset = static_cast<unsigned int>(offset);
         v_desc.push_back(std::move(desc));
-        OGL_CALL(glEnableVertexAttribArray, location->iBinding);
+        OGL_CALL(gl::glEnableVertexAttribArray, location->iBinding);
         OGL_CALL(glVertexAttribPointer, location->iBinding, size, type, normalized, stride,
             (static_cast<char*> (nullptr)) + offset);
     }
@@ -163,8 +163,8 @@ namespace cgu {
      * @param stride the difference in bytes between of this attributes
      * @param offset the offset into the buffer to the first of this attributes
      */
-    void GLVertexAttributeArray::AddVertexAttributeI(BindingLocation location, int size, GLenum type,
-        GLsizei stride, size_t offset)
+    void GLVertexAttributeArray::AddVertexAttributeI(BindingLocation location, int size, gl::GLenum type,
+                                                     gl::GLsizei stride, size_t offset)
     {
         vertex_attribute_desc desc;
         desc.shaderType = VAShaderType::INTEGER;
@@ -174,7 +174,7 @@ namespace cgu {
         desc.stride = stride;
         desc.offset = static_cast<unsigned int>(offset);
         v_desc.push_back(std::move(desc));
-        OGL_CALL(glEnableVertexAttribArray, location->iBinding);
+        OGL_CALL(gl::glEnableVertexAttribArray, location->iBinding);
         OGL_CALL(glVertexAttribIPointer, location->iBinding, size, type, stride,
             (static_cast<char*> (nullptr)) + offset);
     }
@@ -187,8 +187,8 @@ namespace cgu {
      * @param stride the difference in bytes between of this attributes
      * @param offset the offset into the buffer to the first of this attributes
      */
-    void GLVertexAttributeArray::AddVertexAttributeL(BindingLocation location, int size, GLenum type,
-        GLsizei stride, size_t offset)
+    void GLVertexAttributeArray::AddVertexAttributeL(BindingLocation location, int size, gl::GLenum type,
+        gl::GLsizei stride, size_t offset)
     {
         vertex_attribute_desc desc;
         desc.shaderType = VAShaderType::DOUBLE;
@@ -198,7 +198,7 @@ namespace cgu {
         desc.stride = stride;
         desc.offset = static_cast<unsigned int>(offset);
         v_desc.push_back(std::move(desc));
-        OGL_CALL(glEnableVertexAttribArray, location->iBinding);
+        OGL_CALL(gl::glEnableVertexAttribArray, location->iBinding);
         OGL_CALL(glVertexAttribLPointer, location->iBinding, size, type, stride,
             (static_cast<char*> (nullptr)) + offset);
     }

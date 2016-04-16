@@ -28,8 +28,8 @@ namespace cgu {
         vertexData(vertices),
         program(prog)
     {
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
-        OGL_CALL(glBufferData, GL_ARRAY_BUFFER, 4 * sizeof(glm::vec2), vertices.data(), GL_STATIC_DRAW);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, vBuffer);
+        OGL_CALL(gl::glBufferData, gl::GL_ARRAY_BUFFER, 4 * sizeof(glm::vec2), vertices.data(), gl::GL_STATIC_DRAW);
 
         FillAttributeBindings();
     }
@@ -74,22 +74,22 @@ namespace cgu {
 
     void ScreenQuadRenderable::FillAttributeBindings()
     {
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, vBuffer);
         vertexAttribs.reset(new GLVertexAttributeArray(vBuffer, 0));
 
         vertexAttribs->StartAttributeSetup();
         if (program != nullptr) {
             auto shaderPositions = program->GetAttributeLocations({ "pos" });
-            vertexAttribs->AddVertexAttribute(shaderPositions[0], 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), 0);
+            vertexAttribs->AddVertexAttribute(shaderPositions[0], 2, gl::GL_FLOAT, gl::GL_FALSE, sizeof(glm::vec2), 0);
         }
         vertexAttribs->EndAttributeSetup();
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, 0);
     }
 
     void ScreenQuadRenderable::Draw() const
     {
         vertexAttribs->EnableVertexAttributeArray();
-        OGL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
+        OGL_CALL(gl::glDrawArrays, gl::GL_TRIANGLE_STRIP, 0, 4);
         vertexAttribs->DisableVertexAttributeArray();
     }
 }

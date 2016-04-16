@@ -40,6 +40,8 @@ namespace cgu {
     {
     public:
         explicit GLBatchRenderTarget(GLRenderTarget& renderTarget);
+        GLBatchRenderTarget(const GLBatchRenderTarget&) = delete;
+        GLBatchRenderTarget& operator=(const GLBatchRenderTarget&) = delete;
         virtual ~GLBatchRenderTarget();
 
         void Clear(unsigned int clflags, const float color[4],

@@ -19,7 +19,7 @@ namespace cgu {
      * @param name the name of the buffer.
      * @return the global binding point for this name
      */
-    GLuint ShaderBufferBindingPoints::GetBindingPoint(const std::string& name)
+    gl::GLuint ShaderBufferBindingPoints::GetBindingPoint(const std::string& name)
     {
         try {
             return bindingPoints.at(name);

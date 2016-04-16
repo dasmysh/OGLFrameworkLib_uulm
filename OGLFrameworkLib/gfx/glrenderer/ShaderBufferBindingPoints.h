@@ -29,11 +29,11 @@ namespace cgu {
         ShaderBufferBindingPoints() : bindingPoints(), nextBindingPoint(0) {};
         ~ShaderBufferBindingPoints();
 
-        GLuint GetBindingPoint(const std::string& name);
+        gl::GLuint GetBindingPoint(const std::string& name);
 
     private:
         /** holds map that maps uniform buffer names to binding points. */
-        std::unordered_map<std::string, GLuint> bindingPoints;
+        std::unordered_map<std::string, gl::GLuint> bindingPoints;
         /** holds the next free binding point. */
         unsigned int nextBindingPoint;
 

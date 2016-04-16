@@ -153,7 +153,7 @@ namespace cgu {
     ScreenText::~ScreenText()
     {
         for (auto sync : textVBOFences) {
-            OGL_CALL(glDeleteSync, sync);
+            OGL_CALL(gl::glDeleteSync, sync);
         }
     }
 
@@ -190,13 +190,13 @@ namespace cgu {
         }
 
         if (textVBOFences[currentBuffer] != nullptr) {
-            auto result = OGL_CALL(glClientWaitSync, textVBOFences[currentBuffer], 0, ASYNC_TIMEOUT);
-            if (result == GL_TIMEOUT_EXPIRED || result == GL_WAIT_FAILED) {
+            auto result = OGL_CALL(gl::glClientWaitSync, textVBOFences[currentBuffer], gl::GL_NONE_BIT, ASYNC_TIMEOUT);
+            if (result == gl::GL_TIMEOUT_EXPIRED || result == gl::GL_WAIT_FAILED) {
                 LOG(ERROR) << L"Waiting for buffer failed.";
                 throw std::runtime_error("Waiting for buffer failed.");
             }
 #ifdef _DEBUG
-            if (result == GL_CONDITION_SATISFIED) {
+            if (result == gl::GL_CONDITION_SATISFIED) {
                 LOG(DEBUG) << L"Waited for buffer ...";
             }
 #endif
@@ -204,35 +204,35 @@ namespace cgu {
             textVBOFences[currentBuffer] = nullptr;
         }
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, textVBOs[currentBuffer]);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, textVBOs[currentBuffer]);
         if (textVBOSizes[currentBuffer] < text.size()) {
-            OGL_CALL(glBufferData, GL_ARRAY_BUFFER, sizeof(FontVertex) * text.size(),
-                nullptr, GL_DYNAMIC_DRAW);
-            textVBOSizes[currentBuffer] = static_cast<GLuint>(text.size());
+            OGL_CALL(gl::glBufferData, gl::GL_ARRAY_BUFFER, sizeof(FontVertex) * text.size(),
+                nullptr, gl::GL_DYNAMIC_DRAW);
+            textVBOSizes[currentBuffer] = static_cast<gl::GLuint>(text.size());
 
             // TODO: Visual studio does now know EBCO. [2/23/2016 Sebastian Maisch]
             attribBind[currentBuffer]->StartAttributeSetup();
             if (vertexAttribPos[0]->iBinding >= 0) {
                 attribBind[currentBuffer]->AddVertexAttribute(vertexAttribPos[0], 3,
-                    GL_FLOAT, GL_FALSE, sizeof(FontVertex), offsetof(FontVertex, pos));
+                    gl::GL_FLOAT, gl::GL_FALSE, sizeof(FontVertex), offsetof(FontVertex, pos));
             }
             if (vertexAttribPos[1]->iBinding >= 0) {
                 attribBind[currentBuffer]->AddVertexAttributeI(vertexAttribPos[1], 1,
-                    GL_UNSIGNED_INT, sizeof(FontVertex), offsetof(FontVertex, idx[0]));
+                    gl::GL_UNSIGNED_INT, sizeof(FontVertex), offsetof(FontVertex, idx[0]));
             }
             attribBind[currentBuffer]->EndAttributeSetup();
         }
 
-        auto ptr = OGL_CALL(glMapBufferRange, GL_ARRAY_BUFFER, 0, sizeof(FontVertex) * text.size(),
-            GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+        auto ptr = OGL_CALL(gl::glMapBufferRange, gl::GL_ARRAY_BUFFER, 0, sizeof(FontVertex) * text.size(),
+            gl::GL_MAP_WRITE_BIT | gl::GL_MAP_UNSYNCHRONIZED_BIT);
         if (ptr == nullptr) {
             throw std::runtime_error("Could not map text vertex buffer.");
         }
 
         auto buffer = static_cast<FontVertex*> (ptr);
         std::copy(textVertices.begin(), textVertices.end(), buffer);
-        OGL_CALL(glUnmapBuffer, GL_ARRAY_BUFFER);
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glUnmapBuffer, gl::GL_ARRAY_BUFFER);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, 0);
     }
 
     /**
@@ -273,7 +273,7 @@ namespace cgu {
             OGL_CALL(glDeleteSync, textVBOFences[currentBuffer]);
         }
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, textVBOs[currentBuffer]);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, textVBOs[currentBuffer]);
         attribBind[currentBuffer]->EnableVertexAttributeArray();
 
         glm::vec4 fontStyle(fontWeight, fontShearing * fontSize.y * font->GetFontMetrics().sizeNormalization,
@@ -284,11 +284,11 @@ namespace cgu {
         fontProgram->SetUniform(uniformNames[1], fontPos);
         fontProgram->SetUniform(uniformNames[2], color);
         fontProgram->SetUniform(uniformNames[3], 0);
-        OGL_CALL(glDrawArrays, GL_POINTS, 0, static_cast<GLsizei>(text.size()));
+        OGL_CALL(gl::glDrawArrays, gl::GL_POINTS, 0, static_cast<gl::GLsizei>(text.size()));
 
         attribBind[currentBuffer]->DisableVertexAttributeArray();
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
-        textVBOFences[currentBuffer] = OGL_CALL(glFenceSync, GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, 0);
+        textVBOFences[currentBuffer] = OGL_CALL(gl::glFenceSync, gl::GL_SYNC_GPU_COMMANDS_COMPLETE, gl::GL_NONE_BIT);
     }
 
     /**

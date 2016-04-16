@@ -37,12 +37,12 @@ namespace cgu {
                 GLTexture resultTex(dataSize.x, dataSize.y, dataSize.z, 1, internalTexDesc, nullptr);
 
                                    auto numGroups = glm::ivec3(glm::ceil(glm::vec3(dataSize) / 8.0f));
-                resultTex.ActivateImage(0, 0, GL_WRITE_ONLY);
+                resultTex.ActivateImage(0, 0, gl::GL_WRITE_ONLY);
                 initProg->SetUniform(uniformNames[1], checkerSize);
                 initProg->SetUniform(uniformNames[2], chunkPos);
-                OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
-                OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-                OGL_SCALL(glFinish);
+                OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
+                OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+                OGL_SCALL(gl::glFinish);
 
                 std::vector<uint8_t> resultData;
                 resultTex.DownloadData(resultData);
@@ -134,13 +134,13 @@ namespace cgu {
 
                 GLTexture resultTex(dataSize.x, dataSize.y, dataSize.z, 1, internalTexDesc, nullptr);
 
-                                   auto numGroups = glm::ivec3(glm::ceil(glm::vec3(dataSize) / 8.0f));
-                resultTex.ActivateImage(0, 0, GL_WRITE_ONLY);
+                auto numGroups = glm::ivec3(glm::ceil(glm::vec3(dataSize) / 8.0f));
+                resultTex.ActivateImage(0, 0, gl::GL_WRITE_ONLY);
                 initProg->SetUniform(uniformNames[1], glm::uvec3(stripeSize));
                 initProg->SetUniform(uniformNames[2], chunkPos);
-                OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
-                OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-                OGL_SCALL(glFinish);
+                OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
+                OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+                OGL_SCALL(gl::glFinish);
 
                 std::vector<uint8_t> resultData;
                 resultTex.DownloadData(resultData);
@@ -161,13 +161,13 @@ namespace cgu {
                 GLTexture resultTex(dataSize.x, dataSize.y, dataSize.z, 1, internalTexDesc, nullptr);
 
                 auto numGroups = glm::ivec3(glm::ceil(glm::vec3(dataSize) / 8.0f));
-                resultTex.ActivateImage(0, 0, GL_WRITE_ONLY);
+                resultTex.ActivateImage(0, 0, gl::GL_WRITE_ONLY);
                 initProg->SetUniform(uniformNames[1], sphereCenter);
                 initProg->SetUniform(uniformNames[2], sphereScale);
                 initProg->SetUniform(uniformNames[3], chunkPos);
-                OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
-                OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-                OGL_SCALL(glFinish);
+                OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, numGroups.z);
+                OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+                OGL_SCALL(gl::glFinish);
 
                 std::vector<uint8_t> resultData;
                 resultTex.DownloadData(resultData);
@@ -181,7 +181,7 @@ namespace cgu {
             const std::vector<BindingLocation>& uniformNames, ApplicationBase* app,
             std::function<void(const glm::uvec3&, const glm::uvec3&, const TextureDescriptor&, std::fstream&)> chunkInitialize) const
         {
-            assert(texDesc.format == GL_RED);
+            assert(texDesc.format == gl::GL_RED);
 
             auto baseFileName = filename.substr(0, filename.find_last_of("."));
             auto newFilename = app->GetConfig().resourceBase + "/" + baseFileName + ".dat";
@@ -198,8 +198,8 @@ namespace cgu {
                 auto rawFileName = baseFileName + ".raw";
 
                 std::string newFormat = "UCHAR";
-                if (texDesc.type == GL_UNSIGNED_SHORT) newFormat = "USHORT";
-                else if (texDesc.type == GL_UNSIGNED_INT) newFormat = "UINT";
+                if (texDesc.type == gl::GL_UNSIGNED_SHORT) newFormat = "USHORT";
+                else if (texDesc.type == gl::GL_UNSIGNED_INT) newFormat = "UINT";
 
                 datOut << "ObjectFileName:\t" << rawFileName << std::endl;
                 datOut << "Resolution:\t" << volSize.x << " " << volSize.y << " " << volSize.z << std::endl;
@@ -218,7 +218,7 @@ namespace cgu {
                 }
 
                 auto internalTexDesc = texDesc;
-                internalTexDesc.internalFormat = GL_R32F;
+                internalTexDesc.internalFormat = gl::GL_R32F;
 
                 initProg->UseProgram();
                 initProg->SetUniform(uniformNames[0], 0);

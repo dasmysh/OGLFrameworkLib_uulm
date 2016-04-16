@@ -23,24 +23,24 @@ namespace cgu {
      */
     Shader::Shader(const std::string& shaderFilename, ApplicationBase* app) :
         Resource(shaderFilename, app),
-        type(GL_VERTEX_SHADER),
+        type(gl::GL_VERTEX_SHADER),
         strType("vertex")
     {
         auto shaderDefinition = GetParameters();
         if (boost::ends_with(shaderDefinition[0], ".fp")) {
-            type = GL_FRAGMENT_SHADER;
+            type = gl::GL_FRAGMENT_SHADER;
             strType = "fragment";
         } else if (boost::ends_with(shaderDefinition[0], ".gp")) {
-            type = GL_GEOMETRY_SHADER;
+            type = gl::GL_GEOMETRY_SHADER;
             strType = "geometry";
         } else if (boost::ends_with(shaderDefinition[0], ".tcp")) {
-            type = GL_TESS_CONTROL_SHADER;
+            type = gl::GL_TESS_CONTROL_SHADER;
             strType = "tesselation control";
         } else if (boost::ends_with(shaderDefinition[0], ".tep")) {
-            type = GL_TESS_EVALUATION_SHADER;
+            type = gl::GL_TESS_EVALUATION_SHADER;
             strType = "tesselation evaluation";
         } else if (boost::ends_with(shaderDefinition[0], ".cp")) {
-            type = GL_COMPUTE_SHADER;
+            type = gl::GL_COMPUTE_SHADER;
             strType = "compute";
         }
 
@@ -67,7 +67,7 @@ namespace cgu {
         type(rhs.type),
         strType(std::move(rhs.strType))
     {
-        rhs.type = GL_VERTEX_SHADER;
+        rhs.type = gl::GL_VERTEX_SHADER;
     }
 
     /** Move assignment operator. */
@@ -79,7 +79,7 @@ namespace cgu {
             shader = std::move(rhs.shader);
             type = rhs.type;
             strType = std::move(rhs.strType);
-            rhs.type = GL_VERTEX_SHADER;
+            rhs.type = gl::GL_VERTEX_SHADER;
         }
         return *this;
     }
@@ -177,29 +177,29 @@ namespace cgu {
      * @param strType the shaders type as string
      * @return the compiled shader if successful
      */
-    ShaderRAII Shader::CompileShader(const std::string& filename, const std::vector<std::string>& defines, GLenum type, const std::string& strType) const
+    ShaderRAII Shader::CompileShader(const std::string& filename, const std::vector<std::string>& defines, gl::GLenum type, const std::string& strType) const
     {
         unsigned int firstFileId = 0;
         auto shaderText = LoadShaderFile(filename, defines, firstFileId, 0);
 
-        ShaderRAII shader{ OGL_CALL(glCreateShader, type) };
+        ShaderRAII shader{ OGL_CALL(gl::glCreateShader, type) };
         if (!shader) {
             LOG(ERROR) << L"Could not create shader!";
             throw std::runtime_error("Could not create shader!");
         }
         auto shaderTextArray = shaderText.c_str();
         auto shaderLength = static_cast<int>(shaderText.length());
-        OGL_CALL(glShaderSource, shader, 1, &shaderTextArray, &shaderLength);
-        OGL_CALL(glCompileShader, shader);
+        OGL_CALL(gl::glShaderSource, shader, 1, &shaderTextArray, &shaderLength);
+        OGL_CALL(gl::glCompileShader, shader);
 
-        GLint status;
-        OGL_CALL(glGetShaderiv, shader, GL_COMPILE_STATUS, &status);
-        if (status == GL_FALSE) {
-            GLint infoLogLength;
-            OGL_CALL(glGetShaderiv, shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+        gl::GLboolean status;
+        OGL_CALL(gl::glGetShaderbv, shader, gl::GL_COMPILE_STATUS, &status);
+        if (status == gl::GL_FALSE) {
+            gl::GLint infoLogLength;
+            OGL_CALL(gl::glGetShaderiv, shader, gl::GL_INFO_LOG_LENGTH, &infoLogLength);
 
-            auto strInfoLog = new GLchar[infoLogLength + 1];
-            OGL_CALL(glGetShaderInfoLog, shader, infoLogLength, NULL, strInfoLog);
+            auto strInfoLog = new gl::GLchar[infoLogLength + 1];
+            OGL_CALL(gl::glGetShaderInfoLog, shader, infoLogLength, NULL, strInfoLog);
 
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
             LOG(ERROR) << L"Compile error in " << converter.from_bytes(strType) << L" shader ("

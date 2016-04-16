@@ -21,9 +21,7 @@ namespace cgu {
     {
     }
 
-    GLBatchRenderTarget::~GLBatchRenderTarget()
-    {
-    }
+    GLBatchRenderTarget::~GLBatchRenderTarget() = default;
 
     /**
      * Clears the backbuffer.
@@ -36,21 +34,21 @@ namespace cgu {
     // ReSharper disable once CppMemberFunctionMayBeConst
     void GLBatchRenderTarget::Clear(unsigned int clflags, const float color[], float depth, unsigned int stencil)
     {
-        GLbitfield clearFlags = 0;
+        gl::ClearBufferMask clearFlags = gl::GL_NONE_BIT;
         if (clflags & static_cast<unsigned int>(ClearFlags::CF_RenderTarget)) {
-            OGL_CALL(glClearColor, color[0], color[1], color[2], color[3]);
-            clearFlags |= GL_COLOR_BUFFER_BIT;
+            OGL_CALL(gl::glClearColor, color[0], color[1], color[2], color[3]);
+            clearFlags |= gl::GL_COLOR_BUFFER_BIT;
         }
         if (clflags & static_cast<unsigned int>(ClearFlags::CF_Depth)) {
-            OGL_CALL(glClearDepth, static_cast<double> (depth));
-            clearFlags |= GL_DEPTH_BUFFER_BIT;
+            OGL_CALL(gl::glClearDepth, static_cast<double> (depth));
+            clearFlags |= gl::GL_DEPTH_BUFFER_BIT;
         }
         if (clflags & static_cast<unsigned int>(ClearFlags::CF_Stencil)) {
-            OGL_CALL(glClearStencil, stencil);
-            clearFlags |= GL_STENCIL_BUFFER_BIT;
+            OGL_CALL(gl::glClearStencil, stencil);
+            clearFlags |= gl::GL_STENCIL_BUFFER_BIT;
         }
 
-        OGL_CALL(glClear, clearFlags);
+        OGL_CALL(gl::glClear, clearFlags);
     }
 
     // ReSharper disable once CppMemberFunctionMayBeStatic
@@ -72,8 +70,8 @@ namespace cgu {
     /** Enables alpha blending on this target. */
     void GLBatchRenderTarget::EnableAlphaBlending()
     {
-        OGL_CALL(glEnable, GL_BLEND);
-        OGL_CALL(glBlendFunc, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        OGL_CALL(gl::glEnable, gl::GL_BLEND);
+        OGL_CALL(gl::glBlendFunc, gl::GL_SRC_ALPHA, gl::GL_ONE_MINUS_SRC_ALPHA);
     }
 
     // ReSharper disable once CppMemberFunctionMayBeStatic
@@ -81,6 +79,6 @@ namespace cgu {
     /** Disables alpha blending on this target. */
     void GLBatchRenderTarget::DisableAlphaBlending()
     {
-        OGL_CALL(glDisable, GL_BLEND);
+        OGL_CALL(gl::glDisable, gl::GL_BLEND);
     }
 }

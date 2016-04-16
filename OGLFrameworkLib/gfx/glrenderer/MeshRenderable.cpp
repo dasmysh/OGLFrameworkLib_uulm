@@ -24,10 +24,10 @@ namespace cgu {
      */
     MeshRenderable::MeshRenderable(const Mesh* renderMesh, GPUProgram* program) : mesh_(renderMesh), drawProgram_(program)
     {
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer_);
-        OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, mesh_->GetIndices().size() * sizeof(unsigned int),
-            mesh_->GetIndices().data(), GL_STATIC_DRAW);
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ELEMENT_ARRAY_BUFFER, iBuffer_);
+        OGL_CALL(gl::glBufferData, gl::GL_ELEMENT_ARRAY_BUFFER, mesh_->GetIndices().size() * sizeof(unsigned int),
+            mesh_->GetIndices().data(), gl::GL_STATIC_DRAW);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     /**
@@ -45,21 +45,21 @@ namespace cgu {
         drawAttribBinds_(orig.drawAttribBinds_)
     {
         auto bufferSize = 0;
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, orig.vBuffer_);
-        OGL_CALL(glGetBufferParameteriv, GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bufferSize);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, orig.vBuffer_);
+        OGL_CALL(gl::glGetBufferParameteriv, gl::GL_ARRAY_BUFFER, gl::GL_BUFFER_SIZE, &bufferSize);
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
-        OGL_CALL(glBufferData, GL_ARRAY_BUFFER, bufferSize, 0, GL_STATIC_COPY);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, vBuffer_);
+        OGL_CALL(gl::glBufferData, gl::GL_ARRAY_BUFFER, bufferSize, 0, gl::GL_STATIC_COPY);
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, orig.vBuffer_);
-        OGL_CALL(glBindBuffer, GL_COPY_WRITE_BUFFER, vBuffer_);
-        OGL_CALL(glCopyBufferSubData, GL_ARRAY_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, bufferSize);
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
-        OGL_CALL(glBindBuffer, GL_COPY_WRITE_BUFFER, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, orig.vBuffer_);
+        OGL_CALL(gl::glBindBuffer, gl::GL_COPY_WRITE_BUFFER, vBuffer_);
+        OGL_CALL(gl::glCopyBufferSubData, gl::GL_ARRAY_BUFFER, gl::GL_COPY_WRITE_BUFFER, 0, 0, bufferSize);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_COPY_WRITE_BUFFER, 0);
 
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer_);
-        OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, mesh_->GetIndices().size() * sizeof(unsigned int),
-            mesh_->GetIndices().data(), GL_STATIC_DRAW);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ELEMENT_ARRAY_BUFFER, iBuffer_);
+        OGL_CALL(gl::glBufferData, gl::GL_ELEMENT_ARRAY_BUFFER, mesh_->GetIndices().size() * sizeof(unsigned int),
+            mesh_->GetIndices().data(), gl::GL_STATIC_DRAW);
     }
 
     /**
@@ -118,11 +118,11 @@ namespace cgu {
     void MeshRenderable::Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump) const
     {
         program->UseProgram();
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, vBuffer_);
         attribBinds.GetVertexAttributes()[0]->EnableVertexAttributeArray();
         DrawNode<useMaterials>(mesh_->GetRootTransform() * modelMatrix, mesh_->GetRootNode(), program, attribBinds, overrideBump);
         attribBinds.GetVertexAttributes()[0]->DisableVertexAttributeArray();
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, 0);
     }
 
     template <bool useMaterials>
@@ -139,7 +139,7 @@ namespace cgu {
         program->SetUniform(attribBinds.GetUniformIds()[0], modelMatrix);
         program->SetUniform(attribBinds.GetUniformIds()[1], glm::inverseTranspose(glm::mat3(modelMatrix)));
         UseMaterials<useMaterials>(program, attribBinds, subMesh, overrideBump);
-        OGL_CALL(glDrawElements, GL_TRIANGLES, subMesh->GetNumberOfIndices(), GL_UNSIGNED_INT,
+        OGL_CALL(gl::glDrawElements, gl::GL_TRIANGLES, subMesh->GetNumberOfIndices(), gl::GL_UNSIGNED_INT,
             (static_cast<char*> (nullptr)) + (subMesh->GetIndexOffset() * sizeof(unsigned int)));
     }
 
@@ -149,11 +149,11 @@ namespace cgu {
         const SubMesh* subMesh, bool overrideBump) const
     {
         if (subMesh->GetMaterial()->diffuseTex && attribBinds.GetUniformIds().size() != 0) {
-            subMesh->GetMaterial()->diffuseTex->GetTexture()->ActivateTexture(GL_TEXTURE0);
+            subMesh->GetMaterial()->diffuseTex->GetTexture()->ActivateTexture(gl::GL_TEXTURE0);
             program->SetUniform(attribBinds.GetUniformIds()[2], 0);
         }
         if (subMesh->GetMaterial()->bumpTex && attribBinds.GetUniformIds().size() >= 2) {
-            subMesh->GetMaterial()->bumpTex->GetTexture()->ActivateTexture(GL_TEXTURE1);
+            subMesh->GetMaterial()->bumpTex->GetTexture()->ActivateTexture(gl::GL_TEXTURE1);
             program->SetUniform(attribBinds.GetUniformIds()[3], 1);
             if (!overrideBump) program->SetUniform(attribBinds.GetUniformIds()[4], subMesh->GetMaterial()->bumpMultiplier);
         }

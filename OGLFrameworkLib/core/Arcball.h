@@ -32,7 +32,7 @@ namespace cgu {
         static glm::vec3 GetArcballPosition(const glm::vec2 screenPos, const glm::vec2 clientSize);
 
         /** Holds the action button flag to use. */
-        unsigned int button_;
+        int button_;
         /** Holds whether the arcball is currently rotated. */
         bool arcballOn_;
         /** holds the current arcball position. */

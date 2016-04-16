@@ -23,7 +23,7 @@ namespace cgu {
         DOUBLE
     };
 
-    /** Describes a general point for a gpu program. */
+    /** Describes a general point for a GPU program. */
     struct shader_binding_desc
     {
 
@@ -31,9 +31,9 @@ namespace cgu {
         union
         {
             /** Integer binding point. */
-            GLint iBinding;
+            gl::GLint iBinding;
             /** Unsigned int binding point. */
-            GLuint uBinding;
+            gl::GLuint uBinding;
         };
     };
 
@@ -50,9 +50,9 @@ namespace cgu {
         /** Holds the number of components in the attribute. */
         int size;
         /** Holds the attributes type in the vertex buffer. */
-        GLenum type;
+        gl::GLenum type;
         /** Holds whether the attribute should be normalized. */
-        GLboolean normalized;
+        gl::GLboolean normalized;
         /** The distance between 2 attributes of this type in bytes. */
         int stride;
         /** The offset into the vertex to the beginning of this attribute in bytes. */
@@ -68,7 +68,7 @@ namespace cgu {
     class GLVertexAttributeArray
     {
     public:
-        GLVertexAttributeArray(GLuint vertexBuffer, GLuint indexBuffer);
+        GLVertexAttributeArray(gl::GLuint vertexBuffer, gl::GLuint indexBuffer);
         GLVertexAttributeArray(const GLVertexAttributeArray&) = delete;
         GLVertexAttributeArray& operator=(const GLVertexAttributeArray&) = delete;
         GLVertexAttributeArray(GLVertexAttributeArray&& orig);
@@ -77,11 +77,11 @@ namespace cgu {
 
         void StartAttributeSetup() const;
         void EndAttributeSetup() const;
-        void AddVertexAttribute(BindingLocation location, int size, GLenum type, GLboolean normalized,
-            GLsizei stride, size_t offset);
-        void AddVertexAttributeI(BindingLocation location, int size, GLenum type, GLsizei stride,
+        void AddVertexAttribute(BindingLocation location, int size, gl::GLenum type, gl::GLboolean normalized,
+            gl::GLsizei stride, size_t offset);
+        void AddVertexAttributeI(BindingLocation location, int size, gl::GLenum type, gl::GLsizei stride,
             size_t offset);
-        void AddVertexAttributeL(BindingLocation location, int size, GLenum type, GLsizei stride,
+        void AddVertexAttributeL(BindingLocation location, int size, gl::GLenum type, gl::GLsizei stride,
             size_t offset);
         void UpdateVertexAttributes();
         void DisableAttributes();
@@ -90,8 +90,8 @@ namespace cgu {
 
     private:
         VertexArrayRAII vao;
-        GLuint i_buffer;
-        GLuint v_buffer;
+        gl::GLuint i_buffer;
+        gl::GLuint v_buffer;
         std::vector<vertex_attribute_desc> v_desc;
 
     };

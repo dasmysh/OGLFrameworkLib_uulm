@@ -33,8 +33,8 @@ namespace cgu {
         smProgram->BindUniformBlock(perspectiveProjectionUBBName, *app->GetUBOBindingPoints());
 
         FrameBufferDescriptor fbd;
-        fbd.texDesc.emplace_back(TextureDescriptor{ 64, GL_RG32F, GL_RG, GL_FLOAT });
-        fbd.rbDesc.emplace_back(RenderBufferDescriptor{ GL_DEPTH_COMPONENT32F });
+        fbd.texDesc.emplace_back(TextureDescriptor{ 64, gl::GL_RG32F, gl::GL_RG, gl::GL_FLOAT });
+        fbd.rbDesc.emplace_back(RenderBufferDescriptor{ gl::GL_DEPTH_COMPONENT32F });
         shadowMapRT.reset(new GLRenderTarget(size.x, size.y, fbd));
 
         blurredShadowMap = std::make_unique<GLTexture>(size.x, size.y, fbd.texDesc[0].texDesc_, nullptr);
@@ -60,25 +60,25 @@ namespace cgu {
         filterProgram->SetUniform(filterUniformIds[1], 0);
         filterProgram->SetUniform(filterUniformIds[2], glm::vec2(1.0f, 0.0f));
         filterProgram->SetUniform(filterUniformIds[3], 3.5f);
-        shadowMapRT->GetTextures()[0]->ActivateTexture(GL_TEXTURE0);
-        blurredShadowMap->ActivateImage(0, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        shadowMapRT->GetTextures()[0]->ActivateTexture(gl::GL_TEXTURE0);
+        blurredShadowMap->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+        OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, 1);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
 
         filterProgram->SetUniform(filterUniformIds[2], glm::vec2(0.0f, 1.0f));
-        blurredShadowMap->ActivateTexture(GL_TEXTURE0);
-        shadowMapRT->GetTextures()[0]->ActivateImage(0, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        blurredShadowMap->ActivateTexture(gl::GL_TEXTURE0);
+        shadowMapRT->GetTextures()[0]->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+        OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, 1);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
     }
 
     void ShadowMap::Resize(const glm::uvec2& smSize)
     {
         shadowMapSize = smSize;
         shadowMapRT->Resize(shadowMapSize.x, shadowMapSize.y);
-        TextureDescriptor texDesc{64, GL_RG32F, GL_RG, GL_FLOAT};
+        TextureDescriptor texDesc{ 64, gl::GL_RG32F, gl::GL_RG, gl::GL_FLOAT };
         blurredShadowMap = std::make_unique<GLTexture>(smSize.x, smSize.y, texDesc, nullptr);
     }
 

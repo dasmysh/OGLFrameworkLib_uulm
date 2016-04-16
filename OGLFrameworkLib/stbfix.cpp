@@ -6,5 +6,9 @@
 * @brief   Global location to add implementations of stb headers.
 */
 
+#pragma warning(push)
+#pragma warning(disable: 4244)
 #define STB_IMAGE_IMPLEMENTATION
+// ReSharper disable once CppUnusedIncludeDirective
 #include <stb_image.h>
+#pragma warning(pop)

@@ -34,8 +34,8 @@ namespace cgu {
         vBlurUniformIds = vBlurProgram->GetUniformLocations({ "sourceFrontTex", "sourceTex", "targetFrontTex", "targetBackTex", "maxCoCRadius", "frontBlurRadius", "invFrontBlurRadius" });
 
         FrameBufferDescriptor hdrFBODesc;
-        hdrFBODesc.texDesc.emplace_back(TextureDescriptor{ 16, GL_RGBA32F, GL_RGBA, GL_FLOAT });
-        hdrFBODesc.texDesc.emplace_back(TextureDescriptor{ 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT });
+        hdrFBODesc.texDesc.emplace_back(TextureDescriptor{ 16, gl::GL_RGBA32F, gl::GL_RGBA, gl::GL_FLOAT });
+        hdrFBODesc.texDesc.emplace_back(TextureDescriptor{ 4, gl::GL_DEPTH_COMPONENT32F, gl::GL_DEPTH_COMPONENT, gl::GL_FLOAT });
         debugRT.reset(new GLRenderTarget(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), hdrFBODesc));
         debugRenderable = app->GetScreenQuadRenderable();
 
@@ -77,19 +77,19 @@ namespace cgu {
         cocProgram->SetUniform(cocUniformIds[3], params.focusZ);
         cocProgram->SetUniform(cocUniformIds[4], scale);
         cocProgram->SetUniform(cocUniformIds[5], clipInfo);
-        color->ActivateTexture(GL_TEXTURE0);
-        depth->ActivateTexture(GL_TEXTURE1);
-        cocRT->ActivateImage(0, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        color->ActivateTexture(gl::GL_TEXTURE0);
+        depth->ActivateTexture(gl::GL_TEXTURE1);
+        cocRT->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+        OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, 1);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
 
         float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         debugRT->BatchDraw([this,&clearColor](GLBatchRenderTarget& brt)
         {
             brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_RenderTarget) | static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), clearColor, 1.0, 0);
             debugProgram->UseProgram();
-            cocRT->ActivateTexture(GL_TEXTURE0);
+            cocRT->ActivateTexture(gl::GL_TEXTURE0);
             debugProgram->SetUniform(debugUniformIds[0], 0);
             debugRenderable->Draw();
         });
@@ -101,18 +101,18 @@ namespace cgu {
         hBlurProgram->SetUniform(hBlurUniformIds[3], imaxCoCRadius);
         hBlurProgram->SetUniform(hBlurUniformIds[4], nearBlurRadius);
         hBlurProgram->SetUniform(hBlurUniformIds[5], invNearBlurRadius);
-        cocRT->ActivateTexture(GL_TEXTURE0);
-        blurRTs[0][0]->ActivateImage(0, 0, GL_WRITE_ONLY);;
-        blurRTs[0][1]->ActivateImage(1, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x / RT_SIZE_FACTOR, numGroups.y, 1);
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        cocRT->ActivateTexture(gl::GL_TEXTURE0);
+        blurRTs[0][0]->ActivateImage(0, 0, gl::GL_WRITE_ONLY);;
+        blurRTs[0][1]->ActivateImage(1, 0, gl::GL_WRITE_ONLY);
+        OGL_CALL(gl::glDispatchCompute, numGroups.x / RT_SIZE_FACTOR, numGroups.y, 1);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
 
         debugRT->BatchDraw([this, &clearColor](GLBatchRenderTarget& brt)
         {
             brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_RenderTarget) | static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), clearColor, 1.0, 0);
             debugProgram->UseProgram();
-            blurRTs[0][0]->ActivateTexture(GL_TEXTURE0);
+            blurRTs[0][0]->ActivateTexture(gl::GL_TEXTURE0);
             debugProgram->SetUniform(debugUniformIds[0], 0);
             debugRenderable->Draw();
         });
@@ -125,13 +125,13 @@ namespace cgu {
         vBlurProgram->SetUniform(vBlurUniformIds[4], imaxCoCRadius);
         vBlurProgram->SetUniform(vBlurUniformIds[5], nearBlurRadius);
         vBlurProgram->SetUniform(vBlurUniformIds[6], invNearBlurRadius);
-        blurRTs[0][0]->ActivateTexture(GL_TEXTURE0);
-        blurRTs[0][1]->ActivateTexture(GL_TEXTURE1);
-        blurRTs[1][0]->ActivateImage(0, 0, GL_WRITE_ONLY);
-        blurRTs[1][1]->ActivateImage(1, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x / RT_SIZE_FACTOR, numGroups.y / RT_SIZE_FACTOR, 1);
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        blurRTs[0][0]->ActivateTexture(gl::GL_TEXTURE0);
+        blurRTs[0][1]->ActivateTexture(gl::GL_TEXTURE1);
+        blurRTs[1][0]->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+        blurRTs[1][1]->ActivateImage(1, 0, gl::GL_WRITE_ONLY);
+        OGL_CALL(gl::glDispatchCompute, numGroups.x / RT_SIZE_FACTOR, numGroups.y / RT_SIZE_FACTOR, 1);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
 
         combineProgram->UseProgram();
         combineProgram->SetUniform(combineUniformIds[0], 0);
@@ -145,19 +145,19 @@ namespace cgu {
         for (unsigned int i = 0; i < NUM_PASSES; ++i) {
             blurRTs[i][1]->ActivateTexture(GL_TEXTURE1 + i);
         }*/
-        cocRT->ActivateTexture(GL_TEXTURE0);
-        blurRTs[1][0]->ActivateTexture(GL_TEXTURE1);
-        blurRTs[1][1]->ActivateTexture(GL_TEXTURE2);
-        targetRT->ActivateImage(0, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        cocRT->ActivateTexture(gl::GL_TEXTURE0);
+        blurRTs[1][0]->ActivateTexture(gl::GL_TEXTURE1);
+        blurRTs[1][1]->ActivateTexture(gl::GL_TEXTURE2);
+        targetRT->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+        OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, 1);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
     }
 
     void DepthOfField::Resize(const glm::uvec2& screenSize)
     {
         sourceRTSize = screenSize;
-        TextureDescriptor texDesc{ 16, GL_RGBA32F, GL_RGBA, GL_FLOAT };
+        TextureDescriptor texDesc{ 16, gl::GL_RGBA32F, gl::GL_RGBA, gl::GL_FLOAT };
         glm::uvec2 size(screenSize.x, screenSize.y);
         cocRT.reset(new GLTexture(size.x, size.y, texDesc, nullptr));
 

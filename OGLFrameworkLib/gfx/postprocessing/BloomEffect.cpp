@@ -8,7 +8,6 @@
 
 #include "BloomEffect.h"
 #include "app/ApplicationBase.h"
-#include "app/GLWindow.h"
 #include <imgui.h>
 
 namespace cgu {
@@ -61,11 +60,11 @@ namespace cgu {
         glareDetectProgram->SetUniform(glareUniformIds[1], 0);
         glareDetectProgram->SetUniform(glareUniformIds[2], params.exposure);
         glareDetectProgram->SetUniform(glareUniformIds[3], params.bloomThreshold);
-        sourceRT->ActivateTexture(GL_TEXTURE0);
-        glaresRT->ActivateImage(0, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        sourceRT->ActivateTexture(gl::GL_TEXTURE0);
+        glaresRT->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+        OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, 1);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
 
         auto base = 1.0f;
         auto current = glaresRT.get();
@@ -78,16 +77,16 @@ namespace cgu {
             blurProgram->SetUniform(blurUniformIds[1], 0);
             blurProgram->SetUniform(blurUniformIds[2], glm::vec2(1.0f, 0.0f));
             blurProgram->SetUniform(blurUniformIds[3], params.bloomWidth);
-            current->ActivateTexture(GL_TEXTURE0);
-            blurPassRTs[0]->ActivateImage(0, 0, GL_WRITE_ONLY);
-            OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
-            OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-            OGL_SCALL(glFinish);
+            current->ActivateTexture(gl::GL_TEXTURE0);
+            blurPassRTs[0]->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+            OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, 1);
+            OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+            OGL_SCALL(gl::glFinish);
 
             blurProgram->SetUniform(blurUniformIds[2], glm::vec2(0.0f, 1.0f));
-            blurPassRTs[0]->ActivateTexture(GL_TEXTURE0);
-            blurPassRTs[1]->ActivateImage(0, 0, GL_WRITE_ONLY);
-            OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
+            blurPassRTs[0]->ActivateTexture(gl::GL_TEXTURE0);
+            blurPassRTs[1]->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+            OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, 1);
 
             base *= 2.0f;
             current = blurPassRTs[1].get();
@@ -95,8 +94,8 @@ namespace cgu {
 
         numGroups = glm::ivec2(glm::ceil(glm::vec2(sourceRTSize) / groupSize));
 
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
 
         combineProgram->UseProgram();
         combineProgram->SetUniform(combineUniformIds[0], 0);
@@ -104,21 +103,21 @@ namespace cgu {
         combineProgram->SetUniform(combineUniformIds[2], blurTextureUnitIds);
         combineProgram->SetUniform(combineUniformIds[3], params.defocus);
         combineProgram->SetUniform(combineUniformIds[4], params.bloomIntensity);
-        sourceRT->ActivateTexture(GL_TEXTURE0);
+        sourceRT->ActivateTexture(gl::GL_TEXTURE0);
         for (unsigned int i = 0; i < NUM_PASSES; ++i) {
-            blurRTs[i][1]->ActivateTexture(GL_TEXTURE1 + i);
+            blurRTs[i][1]->ActivateTexture(gl::GL_TEXTURE1 + i);
         }
-        targetRT->ActivateImage(0, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, numGroups.x, numGroups.y, 1);
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        targetRT->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+        OGL_CALL(gl::glDispatchCompute, numGroups.x, numGroups.y, 1);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
     }
 
     void BloomEffect::Resize(const glm::uvec2& screenSize)
     {
         blurTextureUnitIds.clear();
         sourceRTSize = screenSize;
-        TextureDescriptor texDesc{ 16, GL_RGBA32F, GL_RGBA, GL_FLOAT };
+        TextureDescriptor texDesc{ 16, gl::GL_RGBA32F, gl::GL_RGBA, gl::GL_FLOAT };
         glm::uvec2 size(screenSize.x / 2, screenSize.y / 2);
         glaresRT.reset(new GLTexture(size.x, size.y, texDesc, nullptr));
 

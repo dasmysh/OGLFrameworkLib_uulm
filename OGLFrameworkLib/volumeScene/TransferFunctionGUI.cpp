@@ -15,6 +15,7 @@
 #include "gfx/glrenderer/ScreenQuadRenderable.h"
 #include <imgui.h>
 #include <boost/algorithm/string/predicate.hpp>
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 namespace cgu {
@@ -55,12 +56,12 @@ namespace cgu {
         tf_.InsertControlPoint(p1);
 
         // Create texture and update it
-        tfTex.reset(new GLTexture(TEX_RES, TextureDescriptor(32, GL_RGBA8, GL_RGBA, GL_FLOAT)));
+        tfTex.reset(new GLTexture(TEX_RES, TextureDescriptor(32, gl::GL_RGBA8, gl::GL_RGBA, gl::GL_FLOAT)));
         UpdateTexture();
 
         // Create BG texture
         std::vector<glm::vec4> texContent(TEX_RES * (TEX_RES / 2), glm::vec4(0.2f));
-        quadTex.reset(new GLTexture(TEX_RES, TEX_RES / 2, TextureDescriptor(32, GL_RGBA8, GL_RGBA, GL_FLOAT), texContent.data()));
+        quadTex.reset(new GLTexture(TEX_RES, TEX_RES / 2, TextureDescriptor(32, gl::GL_RGBA8, gl::GL_RGBA, gl::GL_FLOAT), texContent.data()));
 
         UpdateTF(true);
         Resize(glm::uvec2(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight()));
@@ -80,31 +81,31 @@ namespace cgu {
 
     void TransferFunctionGUI::Draw()
     {
-        glDisable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
+        gl::glDisable(gl::GL_DEPTH_TEST);
+        gl::glDepthMask(gl::GL_FALSE);
         orthoUBO->BindBuffer();
         screenAlignedProg->UseProgram();
-        quadTex->ActivateTexture(GL_TEXTURE0);
+        quadTex->ActivateTexture(gl::GL_TEXTURE0);
         screenAlignedProg->SetUniform(screenAlignedTextureUniform, 0);
         quad->Draw();// RenderGeometry();
 
         // draw
-        glPointSize(0.5f * pickRadius);
+        gl::glPointSize(0.5f * pickRadius);
         tfProgram->UseProgram();
         attribBind->EnableVertexAttributeArray();
         // draw function
-        glDrawArrays(GL_LINE_STRIP, 0, static_cast<GLsizei>((tf_.points().size() + 2)));
+        gl::glDrawArrays(gl::GL_LINE_STRIP, 0, static_cast<gl::GLsizei>((tf_.points().size() + 2)));
         // draw points
-        glDrawArrays(GL_POINTS, 1, static_cast<GLsizei>(tf_.points().size()));
+        gl::glDrawArrays(gl::GL_POINTS, 1, static_cast<gl::GLsizei>(tf_.points().size()));
         // draw selection
         if (selection != -1) {
-            glPointSize(0.8f * pickRadius);
-            glDrawArrays(GL_POINTS, selection + 1, static_cast<GLsizei>(1));
+            gl::glPointSize(0.8f * pickRadius);
+            gl::glDrawArrays(gl::GL_POINTS, selection + 1, static_cast<gl::GLsizei>(1));
         }
         attribBind->DisableVertexAttributeArray();
 
-        glDepthMask(GL_TRUE);
-        glEnable(GL_DEPTH_TEST);
+        gl::glDepthMask(gl::GL_TRUE);
+        gl::glEnable(gl::GL_DEPTH_TEST);
 
         ImGui::SetNextWindowSize(ImVec2(rectMax.x - rectMin.x, 115), ImGuiSetCond_FirstUseEver);
         ImGui::SetNextWindowPos(ImVec2(rectMin.x, rectMax.y + 10.0f), ImGuiSetCond_FirstUseEver);
@@ -152,7 +153,7 @@ namespace cgu {
         return saveTFFilename;
     }
 
-    bool TransferFunctionGUI::HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender)
+    bool TransferFunctionGUI::HandleMouse(int button, int action, int, float, GLWindow* sender)
     {
         auto handled = false;
 
@@ -260,9 +261,9 @@ namespace cgu {
     {
         if (createVAO) tfVBO = std::move(BufferRAII());
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, tfVBO);
-        OGL_CALL(glBufferData, GL_ARRAY_BUFFER, (tf_.points().size() + 2) * sizeof(tf::ControlPoint),
-            nullptr, GL_DYNAMIC_DRAW);
+        OGL_CALL(gl::glBindBuffer, gl::GL_ARRAY_BUFFER, tfVBO);
+        OGL_CALL(gl::glBufferData, gl::GL_ARRAY_BUFFER, (tf_.points().size() + 2) * sizeof(tf::ControlPoint),
+            nullptr, gl::GL_DYNAMIC_DRAW);
 
         auto tmpPoints = tf_.points();
         for (auto& pt : tmpPoints) {
@@ -277,16 +278,16 @@ namespace cgu {
         last = tmpPoints.back();
         last.SetValue(1.0f);
 
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(tf::ControlPoint), &first);
-        glBufferSubData(GL_ARRAY_BUFFER, sizeof(tf::ControlPoint), tmpPoints.size() * sizeof(tf::ControlPoint), tmpPoints.data());
-        glBufferSubData(GL_ARRAY_BUFFER, (tmpPoints.size() + 1) * sizeof(tf::ControlPoint), sizeof(tf::ControlPoint), &last);
+        gl::glBufferSubData(gl::GL_ARRAY_BUFFER, 0, sizeof(tf::ControlPoint), &first);
+        gl::glBufferSubData(gl::GL_ARRAY_BUFFER, sizeof(tf::ControlPoint), tmpPoints.size() * sizeof(tf::ControlPoint), tmpPoints.data());
+        gl::glBufferSubData(gl::GL_ARRAY_BUFFER, (tmpPoints.size() + 1) * sizeof(tf::ControlPoint), sizeof(tf::ControlPoint), &last);
 
         if (createVAO) {
             auto loc = tfProgram->GetAttributeLocations({ "value", "color" });
             attribBind = tfProgram->CreateVertexAttributeArray(tfVBO, 0);
             attribBind->StartAttributeSetup();
-            attribBind->AddVertexAttribute(loc[0], 1, GL_FLOAT, GL_FALSE, sizeof(tf::ControlPoint), 0);
-            attribBind->AddVertexAttribute(loc[1], 4, GL_FLOAT, GL_FALSE, sizeof(tf::ControlPoint), sizeof(float));
+            attribBind->AddVertexAttribute(loc[0], 1, gl::GL_FLOAT, gl::GL_FALSE, sizeof(tf::ControlPoint), 0);
+            attribBind->AddVertexAttribute(loc[1], 4, gl::GL_FLOAT, gl::GL_FALSE, sizeof(tf::ControlPoint), sizeof(float));
             attribBind->EndAttributeSetup();
         } else {
             attribBind->UpdateVertexAttributes();

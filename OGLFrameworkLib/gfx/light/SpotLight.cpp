@@ -132,7 +132,7 @@ namespace cgu {
         params.distAttenuation = attenuation;
         params.farZ = camera.GetFarZ();
         params.viewProjection = shadowMap->GetViewProjectionTextureMatrix(camera.GetViewMatrix(), camera.GetProjMatrix());
-        shadowMap->GetShadowTexture()->ActivateTexture(GL_TEXTURE0 + nextTextureUnit);
+        shadowMap->GetShadowTexture()->ActivateTexture(gl::GL_TEXTURE0 + nextTextureUnit);
         return nextTextureUnit + 1;
     }
 

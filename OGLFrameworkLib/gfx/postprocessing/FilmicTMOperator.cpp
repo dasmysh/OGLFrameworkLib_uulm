@@ -74,9 +74,9 @@ namespace cgu {
         filmicUBO->UploadData(0, sizeof(FilmicTMParameters), &params);
         filmicUBO->BindBuffer();
 
-        targetRT->BatchDraw([this, sourceRT](cgu::GLBatchRenderTarget & brt) {
+        targetRT->BatchDraw([this, sourceRT](cgu::GLBatchRenderTarget&) {
             tmProgram->UseProgram();
-            sourceRT->ActivateTexture(GL_TEXTURE0);
+            sourceRT->ActivateTexture(gl::GL_TEXTURE0);
             tmProgram->SetUniform(uniformIds[0], 0);
             renderable->Draw();
         });

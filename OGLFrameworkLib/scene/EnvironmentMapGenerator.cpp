@@ -16,8 +16,8 @@ namespace cgu {
     EnvironmentMapGenerator::EnvironmentMapGenerator(unsigned int size, float nearZ, float farZ,
         const TextureDescriptor& texDesc, ApplicationBase* app) :
     cubeMapRT_(size, size,
-        FrameBufferDescriptor(std::vector<FrameBufferTextureDescriptor>({ FrameBufferTextureDescriptor{ texDesc, GL_TEXTURE_CUBE_MAP } }),
-        std::vector<RenderBufferDescriptor>{ { GL_DEPTH_COMPONENT32F } })),
+        FrameBufferDescriptor(std::vector<FrameBufferTextureDescriptor>({ FrameBufferTextureDescriptor{ texDesc, gl::GL_TEXTURE_CUBE_MAP } }),
+        std::vector<RenderBufferDescriptor>{ { gl::GL_DEPTH_COMPONENT32F } })),
     perspective_(glm::perspective(glm::half_pi<float>(), 1.0f, nearZ, farZ)),
     perspectiveUBO_(std::make_unique<GLUniformBuffer>(perspectiveProjectionUBBName, static_cast<unsigned int>(sizeof(glm::mat4)), app->GetUBOBindingPoints())),
     sphProgram_(app->GetGPUProgramManager()->GetResource("shader/envmap/cubetospherical.cp")),
@@ -25,9 +25,9 @@ namespace cgu {
     {
         auto sphEnvMapDesc = cubeMapRT_.GetTextures()[0]->GetDescriptor();
         TextureRAII texID;
-        OGL_CALL(glBindTexture, GL_TEXTURE_2D, texID);
-        OGL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, sphEnvMapDesc.internalFormat, 2*size, size, 0, sphEnvMapDesc.format, sphEnvMapDesc.type, nullptr);
-        sphEnvMap_ = std::make_unique<GLTexture>(std::move(texID), GL_TEXTURE_2D, sphEnvMapDesc);
+        OGL_CALL(gl::glBindTexture, gl::GL_TEXTURE_2D, texID);
+        OGL_CALL(gl::glTexImage2D, gl::GL_TEXTURE_2D, 0, static_cast<gl::GLint>(sphEnvMapDesc.internalFormat), 2 * size, size, 0, sphEnvMapDesc.format, sphEnvMapDesc.type, nullptr);
+        sphEnvMap_ = std::make_unique<GLTexture>(std::move(texID), gl::GL_TEXTURE_2D, sphEnvMapDesc);
         sphEnvMap_->GenerateMipMaps();
 
         dir_.emplace_back(-1.0f, 0.0f, 0.0f);
@@ -127,22 +127,22 @@ namespace cgu {
             });
         }
 
-        auto oldSeamless = glIsEnabled(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        auto oldSeamless = gl::glIsEnabled(gl::GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        gl::glEnable(gl::GL_TEXTURE_CUBE_MAP_SEAMLESS);
         auto sphericalRes = sphEnvMap_->GetDimensions();
 
         sphProgram_->UseProgram();
         sphProgram_->SetUniform(sphUniformIds_[0], 0);
         sphProgram_->SetUniform(sphUniformIds_[1], 0);
-        cubeMapRT_.GetTextures()[0]->ActivateTexture(GL_TEXTURE0);
-        sphEnvMap_->ActivateImage(0, 0, GL_WRITE_ONLY);
-        OGL_CALL(glDispatchCompute, sphericalRes.x / 32, sphericalRes.y / 16, 1);
-        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-        OGL_SCALL(glFinish);
+        cubeMapRT_.GetTextures()[0]->ActivateTexture(gl::GL_TEXTURE0);
+        sphEnvMap_->ActivateImage(0, 0, gl::GL_WRITE_ONLY);
+        OGL_CALL(gl::glDispatchCompute, sphericalRes.x / 32, sphericalRes.y / 16, 1);
+        OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+        OGL_SCALL(gl::glFinish);
 
         sphEnvMap_->GenerateMipMaps();
 
-        if (!oldSeamless) glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        if (oldSeamless == gl::GL_FALSE) gl::glDisable(gl::GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
 
     std::unique_ptr<GLTexture> EnvironmentMapGenerator::GenerateIrradianceMap(unsigned int irrMipLevel) const
@@ -160,8 +160,8 @@ namespace cgu {
         auto dim = sphEnvMap_->GetLevelDimensions(irrMipLevel);
         irrProgram->SetUniform(irrUniformIds[0], 0);
         irrProgram->SetUniform(irrUniformIds[1], 1);
-        sphEnvMap_->ActivateImage(0, irrMipLevel, GL_READ_ONLY);
-        irrMap->ActivateImage(1, 0, GL_READ_WRITE);
+        sphEnvMap_->ActivateImage(0, irrMipLevel, gl::GL_READ_ONLY);
+        irrMap->ActivateImage(1, 0, gl::GL_READ_WRITE);
 
         const unsigned int chunkSize = 8;
         for (unsigned int ix = 0; ix < dim.x; ix += chunkSize) {
@@ -169,9 +169,9 @@ namespace cgu {
                 irrProgram->SetUniform(irrUniformIds[2], glm::ivec2(ix, iy));
                 irrProgram->SetUniform(irrUniformIds[3], glm::ivec2(ix + chunkSize, iy + chunkSize));
 
-                OGL_CALL(glDispatchCompute, dim.x / 32, dim.y / 16, 1);
-                OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
-                OGL_SCALL(glFinish);
+                OGL_CALL(gl::glDispatchCompute, dim.x / 32, dim.y / 16, 1);
+                OGL_CALL(gl::glMemoryBarrier, gl::GL_ALL_BARRIER_BITS);
+                OGL_SCALL(gl::glFinish);
             }
         }
     }

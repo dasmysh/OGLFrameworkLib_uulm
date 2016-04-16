@@ -98,7 +98,7 @@ namespace cgu {
             }
         }
 
-        TextureDescriptor texDesc(4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+        TextureDescriptor texDesc(32, gl::GL_RGBA8, gl::GL_RGBA, gl::GL_UNSIGNED_BYTE);
         fontPages.reset(new GLTexture(texWidth, texHeight, static_cast<unsigned int>(fm.pages.size()), texDesc));
 
         for (const auto& page : fm.pages) {
@@ -174,7 +174,7 @@ namespace cgu {
     {
         fontProgram->UseProgram();
         fontProgram->BindUniformBlock(fontMetricsLocation, fontMetricsBindingPoint);
-        fontPages->ActivateTexture(GL_TEXTURE0);
+        fontPages->ActivateTexture(gl::GL_TEXTURE0);
     }
 
     /**

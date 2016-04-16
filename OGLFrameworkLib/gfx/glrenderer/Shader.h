@@ -49,11 +49,11 @@ namespace cgu {
         /** Holds the compiled shader. */
         ShaderRAII shader;
         /** Holds the shaders type. */
-        GLenum type;
+        gl::GLenum type;
         /** Holds the shaders type as a string. */
         std::string strType;
 
-        ShaderRAII CompileShader(const std::string& filename, const std::vector<std::string>& defines, GLenum type, const std::string& strType) const;
+        ShaderRAII CompileShader(const std::string& filename, const std::vector<std::string>& defines, gl::GLenum type, const std::string& strType) const;
         std::string LoadShaderFile(const std::string& filename, const std::vector<std::string>& defines, unsigned int& fileId, unsigned int recursionDepth) const;
     };
 }

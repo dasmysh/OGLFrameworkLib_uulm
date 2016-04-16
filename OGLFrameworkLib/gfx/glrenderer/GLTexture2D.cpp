@@ -8,7 +8,6 @@
 
 #include "GLTexture2D.h"
 #include "GLTexture.h"
-#include <GL/gl.h>
 #include <stb_image.h>
 #include <boost/filesystem.hpp>
 #include "app/ApplicationBase.h"
@@ -41,20 +40,20 @@ namespace cgu {
         }
 
         auto useSRGB = (CheckNamedParameterFlag("sRGB") && application->GetConfig().useSRGB);
-        auto internalFmt = GL_RGBA8;
-        auto fmt = GL_RGBA;
+        auto internalFmt = gl::GL_RGBA8;
+        auto fmt = gl::GL_RGBA;
         switch (imgChannels) {
-        case 1: internalFmt = GL_R8; fmt = GL_RED; break;
-        case 2: internalFmt = GL_RG8; fmt = GL_RG; break;
-        case 3: internalFmt = useSRGB ? GL_SRGB8 : GL_RGB8; fmt = GL_RGB; break;
-        case 4: internalFmt = useSRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8; fmt = GL_RGBA; break;
+        case 1: internalFmt = gl::GL_R8; fmt = gl::GL_RED; break;
+        case 2: internalFmt = gl::GL_RG8; fmt = gl::GL_RG; break;
+        case 3: internalFmt = useSRGB ? gl::GL_SRGB8 : gl::GL_RGB8; fmt = gl::GL_RGB; break;
+        case 4: internalFmt = useSRGB ? gl::GL_SRGB8_ALPHA8 : gl::GL_RGBA8; fmt = gl::GL_RGBA; break;
         default:
             LOG(ERROR) << L"Invalid number of texture channels (" << imgChannels << ").";
             throw resource_loading_error() << ::boost::errinfo_file_name(filename) << resid_info(getId())
                 << errdesc_info("Invalid number of texture channels.");
         }
 
-        TextureDescriptor texDesc(4, internalFmt, fmt, GL_UNSIGNED_BYTE);
+        TextureDescriptor texDesc(4, internalFmt, fmt, gl::GL_UNSIGNED_BYTE);
         texture = std::make_unique<GLTexture>(imgWidth, imgHeight, texDesc, image);
         if (CheckNamedParameterFlag("mirror")) texture->SampleWrapMirror();
         if (CheckNamedParameterFlag("repeat")) texture->SampleWrapRepeat();

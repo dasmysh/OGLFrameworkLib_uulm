@@ -129,29 +129,29 @@ namespace cgu {
         if (isBackbuffer) return;
 
         fbo = std::move(FramebufferRAII());
-        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
+        OGL_CALL(gl::glBindFramebuffer, gl::GL_FRAMEBUFFER, fbo);
         unsigned int colorAtt = 0;
         drawBuffers.clear();
         for (const auto& texDesc : desc.texDesc) {
             TextureRAII tex;
-            OGL_CALL(glBindTexture, texDesc.texType_, tex);
-            if (texDesc.texType_ == GL_TEXTURE_CUBE_MAP) {
+            OGL_CALL(gl::glBindTexture, texDesc.texType_, tex);
+            if (texDesc.texType_ == gl::GL_TEXTURE_CUBE_MAP) {
                 for (auto i = 0; i < 6; ++i) {
-                    OGL_CALL(glTexImage2D, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
+                    OGL_CALL(gl::glTexImage2D, gl::GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
                 }
             } else {
-                OGL_CALL(glTexImage2D, texDesc.texType_, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
+                OGL_CALL(gl::glTexImage2D, texDesc.texType_, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
             }
             std::unique_ptr<GLTexture> texture{ new GLTexture{ std::move(tex), texDesc.texType_, texDesc.texDesc_ } };
 
-            if (texDesc.texType_ == GL_TEXTURE_CUBE_MAP) {
+            if (texDesc.texType_ == gl::GL_TEXTURE_CUBE_MAP) {
                 for (auto i = 0; i < 6; ++i) {
                     auto attachment = findAttachment(texDesc.texDesc_.internalFormat, colorAtt, drawBuffers);
-                    OGL_CALL(glFramebufferTexture2D, GL_FRAMEBUFFER, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, texture->GetGLIdentifier().textureId, 0);
+                    OGL_CALL(gl::glFramebufferTexture2D, gl::GL_FRAMEBUFFER, attachment, gl::GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, texture->GetGLIdentifier().textureId, 0);
                 }
             } else {
                 auto attachment = findAttachment(texDesc.texDesc_.internalFormat, colorAtt, drawBuffers);
-                OGL_CALL(glFramebufferTexture, GL_FRAMEBUFFER, attachment, texture->GetGLIdentifier().textureId, 0);
+                OGL_CALL(gl::glFramebufferTexture, gl::GL_FRAMEBUFFER, attachment, texture->GetGLIdentifier().textureId, 0);
             }
             textures.emplace_back(std::move(texture));
         }
@@ -159,17 +159,17 @@ namespace cgu {
 
         for (const auto& rbDesc : desc.rbDesc) {
             RenderbufferRAII rb;
-            OGL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, rb);
-            OGL_CALL(glRenderbufferStorage, GL_RENDERBUFFER, rbDesc.internalFormat, width, height);
+            OGL_CALL(gl::glBindRenderbuffer, gl::GL_RENDERBUFFER, rb);
+            OGL_CALL(gl::glRenderbufferStorage, gl::GL_RENDERBUFFER, rbDesc.internalFormat, width, height);
             auto attachment = findAttachment(rbDesc.internalFormat, colorAtt, drawBuffers);
-            OGL_CALL(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rb);
+            OGL_CALL(gl::glFramebufferRenderbuffer, gl::GL_FRAMEBUFFER, attachment, gl::GL_RENDERBUFFER, rb);
             renderBuffers.emplace_back(std::move(rb));
         }
 
-        OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
+        OGL_CALL(gl::glDrawBuffers, static_cast<gl::GLsizei>(drawBuffers.size()), drawBuffers.data());
 
-        auto fboStatus = OGL_CALL(glCheckFramebufferStatus, GL_FRAMEBUFFER);
-        if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+        auto fboStatus = OGL_CALL(gl::glCheckFramebufferStatus, gl::GL_FRAMEBUFFER);
+        if (fboStatus != gl::GL_FRAMEBUFFER_COMPLETE)
             throw std::runtime_error("Could not create frame buffer.");
     }
 
@@ -178,9 +178,9 @@ namespace cgu {
      */
     void FrameBuffer::UseAsRenderTarget()
     {
-        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
-        if (!isBackbuffer) OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
-        OGL_CALL(glViewport, 0, 0, width, height);
+        OGL_CALL(gl::glBindFramebuffer, gl::GL_FRAMEBUFFER, fbo);
+        if (!isBackbuffer) OGL_CALL(gl::glDrawBuffers, static_cast<gl::GLsizei>(drawBuffers.size()), drawBuffers.data());
+        OGL_CALL(gl::glViewport, 0, 0, width, height);
     }
 
     /**
@@ -190,40 +190,40 @@ namespace cgu {
     void FrameBuffer::UseAsRenderTarget(const std::vector<unsigned int> drawBufferIndices)
     {
         assert(!isBackbuffer);
-        std::vector<GLenum> drawBuffersReduced(drawBuffers.size());
+        std::vector<gl::GLenum> drawBuffersReduced(drawBuffers.size());
         for (unsigned int i = 0; i < drawBufferIndices.size(); ++i) drawBuffersReduced[i] = drawBuffers[drawBufferIndices[i]];
 
-        OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
-        OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffersReduced.size()), drawBuffersReduced.data());
-        OGL_CALL(glViewport, 0, 0, width, height);
+        OGL_CALL(gl::glBindFramebuffer, gl::GL_FRAMEBUFFER, fbo);
+        OGL_CALL(gl::glDrawBuffers, static_cast<gl::GLsizei>(drawBuffersReduced.size()), drawBuffersReduced.data());
+        OGL_CALL(gl::glViewport, 0, 0, width, height);
     }
 
-    unsigned int FrameBuffer::findAttachment(GLenum internalFormat, unsigned int& colorAtt, std::vector<GLenum> &drawBuffers)
+    gl::GLenum FrameBuffer::findAttachment(gl::GLenum internalFormat, unsigned int& colorAtt, std::vector<gl::GLenum> &drawBuffers)
     {
-        GLenum attachment;
+        gl::GLenum attachment;
         switch (internalFormat)
         {
-        case GL_DEPTH_STENCIL:
-        case GL_DEPTH24_STENCIL8:
-        case GL_DEPTH32F_STENCIL8:
-            attachment = GL_DEPTH_STENCIL_ATTACHMENT;
+        case gl::GL_DEPTH_STENCIL:
+        case gl::GL_DEPTH24_STENCIL8:
+        case gl::GL_DEPTH32F_STENCIL8:
+            attachment = gl::GL_DEPTH_STENCIL_ATTACHMENT;
             break;
-        case GL_DEPTH_COMPONENT:
-        case GL_DEPTH_COMPONENT16:
-        case GL_DEPTH_COMPONENT32:
-        case GL_DEPTH_COMPONENT24:
-        case GL_DEPTH_COMPONENT32F:
-            attachment = GL_DEPTH_ATTACHMENT;
+        case gl::GL_DEPTH_COMPONENT:
+        case gl::GL_DEPTH_COMPONENT16:
+        case gl::GL_DEPTH_COMPONENT32:
+        case gl::GL_DEPTH_COMPONENT24:
+        case gl::GL_DEPTH_COMPONENT32F:
+            attachment = gl::GL_DEPTH_ATTACHMENT;
             break;
-        case GL_STENCIL_INDEX:
-        case GL_STENCIL_INDEX1:
-        case GL_STENCIL_INDEX4:
-        case GL_STENCIL_INDEX8:
-        case GL_STENCIL_INDEX16:
-            attachment = GL_STENCIL_ATTACHMENT;
+        case gl::GL_STENCIL_INDEX:
+        case gl::GL_STENCIL_INDEX1:
+        case gl::GL_STENCIL_INDEX4:
+        case gl::GL_STENCIL_INDEX8:
+        case gl::GL_STENCIL_INDEX16:
+            attachment = gl::GL_STENCIL_ATTACHMENT;
             break;
         default:
-            attachment = GL_COLOR_ATTACHMENT0 + colorAtt++;
+            attachment = gl::GL_COLOR_ATTACHMENT0 + colorAtt++;
             drawBuffers.emplace_back(attachment);
             break;
         }
