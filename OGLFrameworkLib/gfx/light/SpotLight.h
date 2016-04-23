@@ -14,6 +14,7 @@
 
 namespace cgu {
 
+    class GLRenderTarget;
     class GPUProgram;
     class ShadowMap;
 
@@ -40,8 +41,8 @@ namespace cgu {
     class SpotLight
     {
     public:
-        SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, const glm::uvec2& smSize,
-            unsigned int smComponents, const std::shared_ptr<GPUProgram>& smProgram, const std::shared_ptr<GPUProgram>& filterProgram, ApplicationBase* app);
+        SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, std::unique_ptr<GLRenderTarget>&& shadowMapRT,
+            const std::shared_ptr<GPUProgram>& smProgram, const std::shared_ptr<GPUProgram>& filterProgram, ApplicationBase* app);
         SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, const glm::uvec2& smSize, ApplicationBase* app);
         SpotLight(const SpotLight&);
         SpotLight& operator=(const SpotLight&);

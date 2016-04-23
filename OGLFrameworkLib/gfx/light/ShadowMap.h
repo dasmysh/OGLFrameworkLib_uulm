@@ -24,7 +24,7 @@ namespace cgu {
     class ShadowMap
     {
     public:
-        ShadowMap(const glm::uvec2& size, unsigned int components, const SpotLight& light, const std::shared_ptr<GPUProgram>& smProgram, const std::shared_ptr<GPUProgram>& filterProgram, ApplicationBase* app);
+        ShadowMap(std::unique_ptr<GLRenderTarget>&& shadowMapRT, const SpotLight& light, const std::shared_ptr<GPUProgram>& smProgram, const std::shared_ptr<GPUProgram>& filterProgram, ApplicationBase* app);
         ShadowMap(const glm::uvec2& size, const SpotLight& light, ApplicationBase* app);
         ~ShadowMap();
 
@@ -34,10 +34,13 @@ namespace cgu {
         const glm::uvec2& GetSize() const { return shadowMapSize_; }
         static glm::mat4 GetViewProjectionTextureMatrix(const glm::mat4& view, const glm::mat4& projection);
         const GLTexture* GetShadowTexture() const;
+        const GLRenderTarget* GetShadowTarget() const { return shadowMapRT_.get(); }
         std::shared_ptr<GPUProgram> GetShadowMappingProgram() const { return smProgram_; }
         std::shared_ptr<GPUProgram> GetFilteringProgram() const { return filterProgram_; }
 
     private:
+        void CreateBlurredTargets();
+
         /** Holds the spot light using this shadow map. */
         const SpotLight& spotLight_;
         /** Holds the size of the shadow map. */
@@ -45,7 +48,7 @@ namespace cgu {
         /** Holds the render target for the shadow map. */
         std::unique_ptr<GLRenderTarget> shadowMapRT_;
         /** Holds the blurred shadow map texture. */
-        std::unique_ptr<GLTexture> blurredShadowMap_;
+        std::vector<std::unique_ptr<GLTexture>> blurredShadowMap_;
 
         /** Holds the shader used for rendering the shadow map. */
         std::shared_ptr<GPUProgram> smProgram_;
