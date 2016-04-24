@@ -28,12 +28,12 @@ namespace cgu {
         ShadowMap(const glm::uvec2& size, const SpotLight& light, ApplicationBase* app);
         ~ShadowMap();
 
-        void RenderShadowGeometry(std::function<void(GLBatchRenderTarget&) > batch);
+        void RenderShadowGeometry(const glm::vec4& clearColor, std::function<void(GLBatchRenderTarget&) > batch);
         void BlurShadowMap();
         void Resize(const glm::uvec2& smSize);
         const glm::uvec2& GetSize() const { return shadowMapSize_; }
         static glm::mat4 GetViewProjectionTextureMatrix(const glm::mat4& view, const glm::mat4& projection);
-        const GLTexture* GetShadowTexture() const;
+        // const GLTexture* GetShadowTexture() const;
         const GLRenderTarget* GetShadowTarget() const { return shadowMapRT_.get(); }
         std::shared_ptr<GPUProgram> GetShadowMappingProgram() const { return smProgram_; }
         std::shared_ptr<GPUProgram> GetFilteringProgram() const { return filterProgram_; }

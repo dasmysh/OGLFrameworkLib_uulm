@@ -35,7 +35,7 @@ namespace cgu {
     static std::unique_ptr<GLRenderTarget> createStandardRT(const glm::uvec2& size)
     {
         FrameBufferDescriptor fbDesc;
-        fbDesc.texDesc.emplace_back(TextureDescriptor{ 64, GL_RG32F, GL_RG, GL_FLOAT });
+        fbDesc.texDesc_.emplace_back(TextureDescriptor{ 64, GL_RG32F, GL_RG, GL_FLOAT });
         return std::make_unique<GLRenderTarget>(size.x, size.y, fbDesc);
     }
 
@@ -52,12 +52,12 @@ namespace cgu {
 
     ShadowMap::~ShadowMap() = default;
 
-    void ShadowMap::RenderShadowGeometry(std::function<void(GLBatchRenderTarget&) > batch)
+    void ShadowMap::RenderShadowGeometry(const glm::vec4& clearColor, std::function<void(GLBatchRenderTarget&) > batch)
     {
-        glm::vec4 bgValue(spotLight_.GetCamera().GetFarZ(), spotLight_.GetCamera().GetFarZ() * spotLight_.GetCamera().GetFarZ(), 0.0f, 0.0f);
-        shadowMapRT_->GetTextures()[0]->SampleWrapBorderColor(bgValue);
+        // glm::vec4 bgValue(spotLight_.GetCamera().GetFarZ(), spotLight_.GetCamera().GetFarZ() * spotLight_.GetCamera().GetFarZ(), 0.0f, 0.0f);
+        shadowMapRT_->GetTextures()[0]->SampleWrapBorderColor(clearColor);
         shadowMapRT_->BatchDraw([&](cgu::GLBatchRenderTarget & brt) {
-            brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_RenderTarget) | static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), glm::value_ptr(bgValue), 1.0, 0);
+            brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_RenderTarget) | static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), glm::value_ptr(clearColor), clearColor.x, 0);
             spotLight_.GetCamera().SetViewShadowMap();
             batch(brt);
         });
@@ -107,10 +107,10 @@ namespace cgu {
         return bias * projection * view;
     }
 
-    const GLTexture* ShadowMap::GetShadowTexture() const
+    /*const GLTexture* ShadowMap::GetShadowTexture() const
     {
         return shadowMapRT_->GetTextures()[0].get();
-    }
+    }*/
 
     void ShadowMap::CreateBlurredTargets()
     {

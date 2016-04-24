@@ -54,7 +54,8 @@ namespace cgu {
         bool HandleKeyboard(int key, int scancode, int action, int mods, GLWindow* sender);
         bool HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender);
         void UpdateLight();
-        int UpdateLightParameters(SpotLightParams& params, int nextTextureUnit) const;
+        int UpdateLightParameters(SpotLightParams& params, int nextTextureUnit, std::vector<int>& shadowMapTextureUnits, int firstUnitsEntry) const;
+        void SetFOV(float fov) { camera_.SetFOV(fov); }
         /** Returns the view matrix of the light. */
         const glm::mat4& GetViewMatrix() const { return camera_.GetViewMatrix(); }
         /** Returns the lights position. */

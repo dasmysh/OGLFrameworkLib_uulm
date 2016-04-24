@@ -147,8 +147,8 @@ namespace cgu {
         auto handled = camArcball_.HandleMouse(button, action, mods, sender);
 
         if (mouseWheelDelta != 0) {
-            auto fov = GetFOV() - mouseWheelDelta * 0.03f;
-            fov = glm::clamp(fov, 1.0f, 80.0f);
+            auto fov = GetFOV() - mouseWheelDelta * glm::radians(0.03f);
+            fov = glm::clamp(fov, glm::radians(1.0f), glm::radians(80.0f));
             SetFOV(fov);
             handled = true;
         }

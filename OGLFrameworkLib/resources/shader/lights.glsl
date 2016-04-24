@@ -24,17 +24,27 @@ layout(std140) uniform lightsBuffer
     Light lights[NUM_LIGHTS];
 };
 
-vec2 shadow(vec3 worldPos, float NdotL, int lightIdx) {
+
+vec2 shadow(vec3 worldPos, float NdotL, int lightIdx, ivec2 offset = ivec2(0)) {
+    float back = dot(lights[lightIdx].direction.xyz, worldPos - lights[lightIdx].position.xyz);
+    if (back < 0.0f) return vec2(1.0f, 0.0f);
+
     vec4 shadowPos = lights[lightIdx].viewProjection * vec4(worldPos, 1.0f);
-    vec2 shadowTex = texture(shadowTextures[lightIdx], shadowPos.xy / shadowPos.w).xy;
 
-    float bias = 0.002*tan(acos(NdotL));
-    bias = clamp(bias, 0.0f, 0.005f);
+    float bias = 0.005 * tan(acos(NdotL));
+    bias = clamp(bias, 0.0f, 0.002f);
+    // bias = 0.0f;
 
-    float t = distance(lights[lightIdx].position.xyz, worldPos) - bias;
+    vec2 shadowTex = textureProjOffset(shadowTextures[lightIdx], shadowPos.xyw, offset).xy;
+    if (shadowTex.x == 1.0f) shadowTex.x = lights[lightIdx].farZ;
+
+    // float t = distance(lights[lightIdx].position.xyz, worldPos) - bias;
+    float t = (shadowPos.z - bias) / shadowPos.w;
 
     float mean = shadowTex.x;
+    // return vec2(t, mean);
     if (t <= mean) return vec2(1.0f, mean);
+    else return vec2(0.0f, mean);
 
     float variance = shadowTex.y - (mean * mean);
     variance = max(variance, 0.0001f);

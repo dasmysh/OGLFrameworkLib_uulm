@@ -16,7 +16,7 @@ namespace cgu {
 
 
     SpotLight::SpotLight(const glm::vec3& intensity, float fov, const glm::vec3& pos, std::unique_ptr<ShadowMap> shadowMap, ApplicationBase* app) :
-        camera_(GLFW_MOUSE_BUTTON_RIGHT, fov, shadowMap->GetSize(), 0.1f, 100.0f, pos, app->GetUBOBindingPoints()),
+        camera_(GLFW_MOUSE_BUTTON_RIGHT, fov, shadowMap->GetSize(), 5.0f, 15.0f, pos, app->GetUBOBindingPoints()),
         falloffWidth_(0.05f),
         intensity_(intensity),
         attenuation_(1.0f / 128.0f),
@@ -136,7 +136,7 @@ namespace cgu {
      *  @param nextTextureUnit the texture unit to use for this lights shadow map.
      *  @return the next texture unit.
      */
-    int SpotLight::UpdateLightParameters(SpotLightParams& params, int nextTextureUnit) const
+    int SpotLight::UpdateLightParameters(SpotLightParams& params, int nextTextureUnit, std::vector<int>& shadowMapTextureUnits, int firstUnitsEntry) const
     {
         params.position = glm::vec4(camera_.GetPosition(), 1.0f);
         params.direction = glm::vec4(glm::normalize(glm::vec3(0.0f) - camera_.GetPosition()), 1.0f);
@@ -144,10 +144,15 @@ namespace cgu {
         params.angFalloffStart = glm::cos(0.5f * camera_.GetFOV());
         params.angFalloffWidth = falloffWidth_;
         params.distAttenuation = attenuation_;
-        params.farZ = camera_.GetFarZ();
+        params.farZ = 100.0f; // camera_.GetFarZ();
         params.viewProjection = shadowMap_->GetViewProjectionTextureMatrix(camera_.GetViewMatrix(), camera_.GetProjMatrix());
-        shadowMap_->GetShadowTexture()->ActivateTexture(GL_TEXTURE0 + nextTextureUnit);
-        return nextTextureUnit + 1;
+
+        for (const auto& tex : shadowMap_->GetShadowTarget()->GetTextures()) {
+            shadowMapTextureUnits[firstUnitsEntry++] = nextTextureUnit;
+            tex->ActivateTexture(GL_TEXTURE0 + nextTextureUnit++);
+        }
+
+        return nextTextureUnit;
     }
 
     /**
@@ -168,7 +173,7 @@ namespace cgu {
      */
     int SpotLightArray::SetLightParameters(int firstTextureUnit, std::vector<int>& shadowMapTextureUnits)
     {
-        assert(shadowMapTextureUnits.size() == lights_.size());
+        assert(shadowMapTextureUnits.size() == lights_.size() * lights_[0].GetShadowMap()->GetShadowTarget()->GetTextures().size());
 
         if (lights_.size() != lightParams_.size()) {
             auto uniformBindingPoints = lightsUBO_->GetBindingPoints();
@@ -179,8 +184,9 @@ namespace cgu {
 
         auto nextTexture = firstTextureUnit;
         for (unsigned int i = 0; i < lights_.size(); ++i) {
-            shadowMapTextureUnits[i] = nextTexture;
-            nextTexture = lights_[i].UpdateLightParameters(lightParams_[i], nextTexture);
+            // shadowMapTextureUnits[i] = nextTexture;
+            auto nextUnitEntry = i * static_cast<int>(lights_[0].GetShadowMap()->GetShadowTarget()->GetTextures().size());
+            nextTexture = lights_[i].UpdateLightParameters(lightParams_[i], nextTexture, shadowMapTextureUnits, nextUnitEntry);
         }
 
         lightsUBO_->UploadData(0, sizeof(SpotLightParams) * static_cast<unsigned int>(lightParams_.size()), lightParams_.data());

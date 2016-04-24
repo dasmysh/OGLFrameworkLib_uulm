@@ -34,8 +34,8 @@ namespace cgu {
         vBlurUniformIds = vBlurProgram->GetUniformLocations({ "sourceFrontTex", "sourceTex", "targetFrontTex", "targetBackTex", "maxCoCRadius", "frontBlurRadius", "invFrontBlurRadius" });
 
         FrameBufferDescriptor hdrFBODesc;
-        hdrFBODesc.texDesc.emplace_back(TextureDescriptor{ 16, GL_RGBA32F, GL_RGBA, GL_FLOAT });
-        hdrFBODesc.texDesc.emplace_back(TextureDescriptor{ 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT });
+        hdrFBODesc.texDesc_.emplace_back(TextureDescriptor{ 16, GL_RGBA32F, GL_RGBA, GL_FLOAT });
+        hdrFBODesc.texDesc_.emplace_back(TextureDescriptor{ 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT });
         debugRT.reset(new GLRenderTarget(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), hdrFBODesc));
         debugRenderable = app->GetScreenQuadRenderable();
 
