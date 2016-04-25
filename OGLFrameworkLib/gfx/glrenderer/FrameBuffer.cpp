@@ -175,13 +175,27 @@ namespace cgu {
             throw std::runtime_error("Could not create frame buffer.");
     }
 
-    void FrameBuffer::ResolveFramebuffer(FrameBuffer* fb, unsigned int readBufferIndex, unsigned int drawBufferIndex) const
+    void FrameBuffer::ResolveFramebufferColor(FrameBuffer* fb, unsigned int readBufferIndex, unsigned int drawBufferIndex) const
     {
         OGL_CALL(glBindFramebuffer, GL_READ_FRAMEBUFFER, fbo);
         OGL_CALL(glReadBuffer, GL_COLOR_ATTACHMENT0 + readBufferIndex);
         OGL_CALL(glBindFramebuffer, GL_DRAW_FRAMEBUFFER, fb->fbo);
         OGL_CALL(glDrawBuffer, GL_COLOR_ATTACHMENT0 + drawBufferIndex);
         OGL_CALL(glBlitFramebuffer, 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        OGL_CALL(glBindFramebuffer, GL_READ_FRAMEBUFFER, 0);
+        OGL_CALL(glBindFramebuffer, GL_DRAW_FRAMEBUFFER, 0);
+    }
+
+    void FrameBuffer::ResolveFramebufferDepthStencil(FrameBuffer* fb, bool depth = true, bool stencil = true) const
+    {
+        OGL_CALL(glBindFramebuffer, GL_READ_FRAMEBUFFER, fbo);
+        OGL_CALL(glBindFramebuffer, GL_DRAW_FRAMEBUFFER, fb->fbo);
+        GLbitfield mask = 0;
+        if (depth) mask |= GL_DEPTH_BUFFER_BIT;
+        if (stencil) mask |= GL_STENCIL_BUFFER_BIT;
+        OGL_CALL(glBlitFramebuffer, 0, 0, width, height, 0, 0, width, height, mask, GL_NEAREST);
+        OGL_CALL(glBindFramebuffer, GL_READ_FRAMEBUFFER, 0);
+        OGL_CALL(glBindFramebuffer, GL_DRAW_FRAMEBUFFER, 0);
     }
 
     /**

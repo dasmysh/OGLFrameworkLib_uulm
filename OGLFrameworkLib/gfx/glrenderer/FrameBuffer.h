@@ -69,7 +69,8 @@ namespace cgu {
         void UseAsRenderTarget(const std::vector<unsigned int> drawBufferIndices);
         void Resize(unsigned int fbWidth, unsigned int fbHeight);
         const std::vector<std::unique_ptr<GLTexture>>& GetTextures() const { return textures; };
-        void ResolveFramebuffer(FrameBuffer* fb, unsigned int readBufferIndex, unsigned int drawBufferIndex) const;
+        void ResolveFramebufferColor(FrameBuffer* fb, unsigned int readBufferIndex, unsigned int drawBufferIndex) const;
+        void ResolveFramebufferDepthStencil(FrameBuffer* fb, bool depth = true, bool stencil = true) const;
 
         unsigned int GetWidth() const { return width; };
         unsigned int GetHeight() const { return height; };
