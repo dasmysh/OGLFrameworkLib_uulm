@@ -17,13 +17,12 @@ struct Light
     mat4 viewProjection;
 };
 
-uniform sampler2D shadowTextures[NUM_LIGHTS];
+uniform sampler2D shadowTextures[NUM_LIGHTS * NUM_SMTEX];
 
 layout(std140) uniform lightsBuffer
 {
     Light lights[NUM_LIGHTS];
 };
-
 
 vec2 shadow(vec3 worldPos, float NdotL, int lightIdx, ivec2 offset = ivec2(0)) {
     float back = dot(lights[lightIdx].direction.xyz, worldPos - lights[lightIdx].position.xyz);
@@ -31,8 +30,8 @@ vec2 shadow(vec3 worldPos, float NdotL, int lightIdx, ivec2 offset = ivec2(0)) {
 
     vec4 shadowPos = lights[lightIdx].viewProjection * vec4(worldPos, 1.0f);
 
-    float bias = 0.005 * tan(acos(NdotL));
-    bias = clamp(bias, 0.0f, 0.002f);
+    float bias = 0.002 * tan(acos(NdotL));
+    bias = clamp(bias, 0.0f, 0.005f);// + 0.001;
     // bias = 0.0f;
 
     vec2 shadowTex = textureProjOffset(shadowTextures[lightIdx], shadowPos.xyw, offset).xy;
