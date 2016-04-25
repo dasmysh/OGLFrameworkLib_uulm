@@ -19,7 +19,7 @@ namespace cgu {
     struct RenderBufferDescriptor
     {
         /** Holds the internal format of the render buffer. */
-        GLenum internalFormat;
+        GLenum internalFormat_;
     };
 
     /** Describes a texture render target for frame buffers. */
@@ -38,12 +38,14 @@ namespace cgu {
     struct FrameBufferDescriptor
     {
         FrameBufferDescriptor() = default;
-        FrameBufferDescriptor(const std::vector<FrameBufferTextureDescriptor>& tex, const std::vector<RenderBufferDescriptor>& rb) : texDesc(tex), rbDesc(rb) {}
+        FrameBufferDescriptor(const std::vector<FrameBufferTextureDescriptor>& tex, const std::vector<RenderBufferDescriptor>& rb) : texDesc_(tex), rbDesc_(rb), numSamples_(1) {}
 
         /** Holds descriptions for all textures used. */
-        std::vector<FrameBufferTextureDescriptor> texDesc;
+        std::vector<FrameBufferTextureDescriptor> texDesc_;
         /** Holds descriptions for all render buffers used. */
-        std::vector<RenderBufferDescriptor> rbDesc;
+        std::vector<RenderBufferDescriptor> rbDesc_;
+        /** Holds the number of samples for the frame buffer. */
+        unsigned int numSamples_ = 1;
     };
 
     /**
@@ -67,6 +69,7 @@ namespace cgu {
         void UseAsRenderTarget(const std::vector<unsigned int> drawBufferIndices);
         void Resize(unsigned int fbWidth, unsigned int fbHeight);
         const std::vector<std::unique_ptr<GLTexture>>& GetTextures() const { return textures; };
+        void ResolveFramebuffer(FrameBuffer* fb, unsigned int readBufferIndex, unsigned int drawBufferIndex) const;
 
         unsigned int GetWidth() const { return width; };
         unsigned int GetHeight() const { return height; };

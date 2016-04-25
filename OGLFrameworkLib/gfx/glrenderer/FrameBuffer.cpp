@@ -132,7 +132,7 @@ namespace cgu {
         OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
         unsigned int colorAtt = 0;
         drawBuffers.clear();
-        for (const auto& texDesc : desc.texDesc) {
+        for (const auto& texDesc : desc.texDesc_) {
             TextureRAII tex;
             OGL_CALL(glBindTexture, texDesc.texType_, tex);
             if (texDesc.texType_ == GL_TEXTURE_CUBE_MAP) {
@@ -140,7 +140,8 @@ namespace cgu {
                     OGL_CALL(glTexImage2D, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
                 }
             } else {
-                OGL_CALL(glTexImage2D, texDesc.texType_, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
+                if (desc.numSamples_ == 1) OGL_CALL(glTexImage2D, texDesc.texType_, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
+                else OGL_CALL(glTexImage2DMultisample, texDesc.texType_, desc.numSamples_, texDesc.texDesc_.internalFormat, width, height, GL_TRUE);
             }
             std::unique_ptr<GLTexture> texture{ new GLTexture{ std::move(tex), texDesc.texType_, texDesc.texDesc_ } };
 
@@ -157,11 +158,12 @@ namespace cgu {
         }
 
 
-        for (const auto& rbDesc : desc.rbDesc) {
+        for (const auto& rbDesc : desc.rbDesc_) {
             RenderbufferRAII rb;
             OGL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, rb);
-            OGL_CALL(glRenderbufferStorage, GL_RENDERBUFFER, rbDesc.internalFormat, width, height);
-            auto attachment = findAttachment(rbDesc.internalFormat, colorAtt, drawBuffers);
+            if (desc.numSamples_ == 1) OGL_CALL(glRenderbufferStorage, GL_RENDERBUFFER, rbDesc.internalFormat_, width, height);
+            else OGL_CALL(glRenderbufferStorageMultisample, GL_RENDERBUFFER, desc.numSamples_, rbDesc.internalFormat_, width, height);
+            auto attachment = findAttachment(rbDesc.internalFormat_, colorAtt, drawBuffers);
             OGL_CALL(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rb);
             renderBuffers.emplace_back(std::move(rb));
         }
@@ -171,6 +173,15 @@ namespace cgu {
         auto fboStatus = OGL_CALL(glCheckFramebufferStatus, GL_FRAMEBUFFER);
         if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
             throw std::runtime_error("Could not create frame buffer.");
+    }
+
+    void FrameBuffer::ResolveFramebuffer(FrameBuffer* fb, unsigned int readBufferIndex, unsigned int drawBufferIndex) const
+    {
+        OGL_CALL(glBindFramebuffer, GL_READ_FRAMEBUFFER, fbo);
+        OGL_CALL(glReadBuffer, GL_COLOR_ATTACHMENT0 + readBufferIndex);
+        OGL_CALL(glBindFramebuffer, GL_DRAW_FRAMEBUFFER, fb->fbo);
+        OGL_CALL(glDrawBuffer, GL_COLOR_ATTACHMENT0 + drawBufferIndex);
+        OGL_CALL(glBlitFramebuffer, 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
 
     /**

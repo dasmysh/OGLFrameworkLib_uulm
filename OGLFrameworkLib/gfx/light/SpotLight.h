@@ -14,6 +14,7 @@
 
 namespace cgu {
 
+    class GLRenderTarget;
     class GPUProgram;
     class ShadowMap;
 
@@ -40,8 +41,8 @@ namespace cgu {
     class SpotLight
     {
     public:
-        SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, const glm::uvec2& smSize,
-            unsigned int smComponents, const std::shared_ptr<GPUProgram>& smProgram, const std::shared_ptr<GPUProgram>& filterProgram, ApplicationBase* app);
+        SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, std::unique_ptr<GLRenderTarget>&& shadowMapRT,
+            const std::shared_ptr<GPUProgram>& smProgram, const std::shared_ptr<GPUProgram>& filterProgram, ApplicationBase* app);
         SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, const glm::uvec2& smSize, ApplicationBase* app);
         SpotLight(const SpotLight&);
         SpotLight& operator=(const SpotLight&);
@@ -53,7 +54,8 @@ namespace cgu {
         bool HandleKeyboard(int key, int scancode, int action, int mods, GLWindow* sender);
         bool HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender);
         void UpdateLight();
-        int UpdateLightParameters(SpotLightParams& params, int nextTextureUnit) const;
+        int UpdateLightParameters(SpotLightParams& params, int nextTextureUnit, std::vector<int>& shadowMapTextureUnits, int firstUnitsEntry) const;
+        void SetFOV(float fov) { camera_.SetFOV(fov); }
         /** Returns the view matrix of the light. */
         const glm::mat4& GetViewMatrix() const { return camera_.GetViewMatrix(); }
         /** Returns the lights position. */

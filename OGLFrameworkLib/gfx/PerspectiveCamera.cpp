@@ -124,7 +124,7 @@ namespace cgu {
     {
         screenSize_ = screenSize;
         aspectRatio_ = static_cast<float>(screenSize.x) / static_cast<float>(screenSize.y);
-        perspective_ = glm::perspective(glm::radians(fovY_), aspectRatio_, nearZ_, farZ_);
+        perspective_ = glm::perspective(fovY_, aspectRatio_, nearZ_, farZ_);
         view_ = glm::lookAt(camPos_, glm::vec3(0.0f), camUp_);
     }
 
@@ -217,7 +217,7 @@ namespace cgu {
     void PerspectiveCamera::SetFOV(float fov)
     {
         fovY_ = fov;
-        perspective_ = glm::perspective(glm::radians(fovY_), aspectRatio_, nearZ_, farZ_);
+        perspective_ = glm::perspective(fovY_, aspectRatio_, nearZ_, farZ_);
     }
 
     cguMath::Frustum<float> PerspectiveCamera::CalcViewFrustum(const glm::mat4& mvp) const
