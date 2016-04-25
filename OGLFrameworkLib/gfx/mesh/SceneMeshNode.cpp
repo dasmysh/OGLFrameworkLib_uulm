@@ -99,6 +99,12 @@ namespace cgu {
         aabb = cguMath::transformAABB(aabb_, transform);
     }
 
+    void SceneMeshNode::UpdateMeshes(const std::unordered_map<SubMesh*, SubMesh*>& meshUpdates)
+    {
+        for (auto& mesh : meshes_) mesh = meshUpdates.at(mesh);
+        for (auto& child : children_) child->UpdateMeshes(meshUpdates);
+    }
+
     void SceneMeshNode::write(std::ofstream& ofs)
     {
         std::vector<size_t> meshWriteIds(meshes_.size());

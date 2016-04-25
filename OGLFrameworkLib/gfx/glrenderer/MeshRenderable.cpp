@@ -114,6 +114,11 @@ namespace cgu {
         Draw<true>(modelMatrix, drawProgram_, drawAttribBinds_, overrideBump);
     }
 
+    void MeshRenderable::BindAsShaderBuffer(GLuint bindingPoint) const
+    {
+        OGL_CALL(glBindBufferBase, GL_SHADER_STORAGE_BUFFER, bindingPoint, vBuffer_);
+    }
+
     template <bool useMaterials>
     void MeshRenderable::Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump) const
     {

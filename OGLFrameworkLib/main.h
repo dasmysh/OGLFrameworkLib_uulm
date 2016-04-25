@@ -49,6 +49,9 @@ class ApplicationBase;
 #include <glad/glad_wgl.h>
 #pragma warning(pop)
 
+#undef min
+#undef max
+
 #include "core/g2logWrapper.h"
 #include "constants.h"
 

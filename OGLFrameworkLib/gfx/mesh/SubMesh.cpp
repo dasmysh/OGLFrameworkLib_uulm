@@ -11,6 +11,7 @@
 #include "SubMesh.h"
 #include "core/serializationHelper.h"
 #include "Mesh.h"
+#include <unordered_map>
 
 #undef min
 #undef max
@@ -64,6 +65,11 @@ namespace cgu {
             material_ = std::move(rhs.material_);
         }
         return *this;
+    }
+
+    void SubMesh::UpdateMaterials(const std::unordered_map<Material*, Material*>& materialUpdates)
+    {
+        material_ = materialUpdates.at(material_);
     }
 
     void SubMesh::write(std::ofstream& ofs) const

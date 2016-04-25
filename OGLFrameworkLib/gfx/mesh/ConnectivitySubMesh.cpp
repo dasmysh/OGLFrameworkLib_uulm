@@ -42,7 +42,7 @@ namespace cgu {
         unsigned int cid = 0;
         for (auto& idx : indexSet) {
             localVertexMap.insert(std::make_pair(idx, cid++));
-            verticesConnect_[cid].idx = idx;
+            verticesConnect_[idx].idx = idx;
         }
 
         // set vertex connectivity

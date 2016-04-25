@@ -33,7 +33,7 @@ namespace cgu {
         MeshRenderable& operator=(MeshRenderable&&);
 
         void Draw(const glm::mat4& modelMatrix, bool overrideBump = false) const;
-        void BindAsShaderBuffer() const;
+        void BindAsShaderBuffer(GLuint bindingPoint) const;
 
     protected:
         MeshRenderable(const Mesh* renderMesh, GPUProgram* program);

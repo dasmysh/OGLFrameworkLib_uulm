@@ -48,16 +48,18 @@ namespace cgu {
             assert(!VTX::HAS_TANGENTSPACE || (tangents_.size() == vertices_.size() && binormals_.size() == vertices_.size()));
             assert(VTX::NUM_TEXTURECOORDS <= texCoords_.size());
             assert(VTX::NUM_COLORS <= colors_.size());
+            assert(VTX::NUM_INDICES <= ids_.size());
             vertices.resize(vertices_.size());
             for (size_t i = 0; i < vertices_.size(); ++i) {
-                for (auto pd = 0; pd < VTX::POSITION_DIMENSION; ++pd) vertices[i].SetPosition(vertices_[i][pd], pd);
+                for (auto pd = 0; pd < glm::min(VTX::POSITION_DIMENSION, 3); ++pd) vertices[i].SetPosition(vertices_[i][pd], pd);
                 vertices[i].SetNormal(normals_[i]);
                 for (auto ti = 0; ti < VTX::NUM_TEXTURECOORDS; ++ti) {
-                    for (auto td = 0; td < VTX::TEXCOORD_DIMENSION; ++td) vertices[i].SetTexCoord(texCoords_[ti][i][td], ti, td);
+                    for (auto td = 0; td < glm::min(VTX::TEXCOORD_DIMENSION, 3); ++td) vertices[i].SetTexCoord(texCoords_[ti][i][td], ti, td);
                 }
                 vertices[i].SetTangent(tangents_[i]);
                 vertices[i].SetBinormal(binormals_[i]);
                 for (auto ci = 0; ci < VTX::NUM_COLORS; ++ci) vertices[i].SetColor(colors_[ci][i], ci);
+                for (auto ii = 0; ii < VTX::NUM_INDICES; ++ii) vertices[i].SetIndex(ids_[ii][i], ii);
             }
         }
 
@@ -74,6 +76,8 @@ namespace cgu {
         const std::vector<glm::vec3>& GetBinormals() const { return binormals_; }
         std::vector<std::vector<glm::vec4>>& GetColors() { return colors_; }
         const std::vector<std::vector<glm::vec4>>& GetColors() const { return colors_; }
+        std::vector<std::vector<unsigned int>>& GetIds() { return ids_; }
+        const std::vector<std::vector<unsigned int>>& GetIds() const { return ids_; }
         std::vector<unsigned int>& GetIndices() { return indices_; }
 
         void ReserveMesh(unsigned int maxUVChannels, unsigned int maxColorChannels, unsigned int numVertices, unsigned int numIndices, unsigned int numMaterials);
@@ -98,6 +102,8 @@ namespace cgu {
         std::vector<glm::vec3> binormals_;
         /** Holds all the single colors used by the mesh (and its sub-meshes). */
         std::vector<std::vector<glm::vec4>> colors_;
+        /** Holds the indices that are part of each vertex. */
+        std::vector<std::vector<unsigned int>> ids_;
         /** Holds all the indices used by the sub-meshes. */
         std::vector<unsigned int> indices_;
 

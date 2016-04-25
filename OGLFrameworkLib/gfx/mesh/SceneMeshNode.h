@@ -36,6 +36,7 @@ namespace cgu {
         unsigned int GetNumMeshes() const { return static_cast<unsigned int>(meshes_.size()); }
         const SubMesh* GetMesh(unsigned int idx) const { return meshes_[idx]; }
 
+        void UpdateMeshes(const std::unordered_map<SubMesh*, SubMesh*>& meshUpdates);
         void write(std::ofstream& ofs);
         void read(std::ifstream& ifs, const std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, SceneMeshNode*>& nodes);
 

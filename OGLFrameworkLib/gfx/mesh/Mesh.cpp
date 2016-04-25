@@ -32,17 +32,27 @@ namespace cgu {
         tangents_(rhs.tangents_),
         binormals_(rhs.binormals_),
         colors_(rhs.colors_),
+        ids_(rhs.ids_),
         indices_(rhs.indices_),
         rootTransform_(rhs.rootTransform_),
         rootNode_(std::make_unique<SceneMeshNode>(*rhs.rootNode_))
     {
+        std::unordered_map<Material*, Material*> materialUpdates;
         for (const auto& material : rhs.materials_) {
-            materials_.push_back(std::make_unique<Material>(*material));
+            auto newMat = std::make_unique<Material>(*material);
+            materialUpdates[material.get()] = newMat.get();
+            materials_.push_back(std::move(newMat));
         }
 
+        std::unordered_map<SubMesh*, SubMesh*> submeshUpdates;
         for (const auto& submesh : rhs.subMeshes_) {
-            subMeshes_.push_back(std::make_unique<SubMesh>(*submesh));
+            auto newSubMesh = std::make_unique<SubMesh>(*submesh);
+            newSubMesh->UpdateMaterials(materialUpdates);
+            submeshUpdates[submesh.get()] = newSubMesh.get();
+            subMeshes_.push_back(std::move(newSubMesh));
         }
+
+        rootNode_->UpdateMeshes(submeshUpdates);
     }
 
     /** Copy assignment operator. */
@@ -63,6 +73,7 @@ namespace cgu {
         tangents_(std::move(rhs.tangents_)),
         binormals_(std::move(rhs.binormals_)),
         colors_(std::move(rhs.colors_)),
+        ids_(std::move(ids_)),
         indices_(std::move(rhs.indices_)),
         rootTransform_(std::move(rhs.rootTransform_)),
         rootNode_(std::move(rhs.rootNode_)),
@@ -82,6 +93,7 @@ namespace cgu {
             tangents_ = std::move(rhs.tangents_);
             binormals_ = std::move(rhs.binormals_);
             colors_ = std::move(rhs.colors_);
+            ids_ = std::move(rhs.ids_);
             indices_ = std::move(rhs.indices_);
             rootTransform_ = std::move(rhs.rootTransform_);
             rootNode_ = std::move(rhs.rootNode_);
@@ -134,6 +146,7 @@ namespace cgu {
         serializeHelper::writeV(ofs, tangents_);
         serializeHelper::writeV(ofs, binormals_);
         serializeHelper::writeVV(ofs, colors_);
+        serializeHelper::writeVV(ofs, ids_);
         serializeHelper::writeV(ofs, indices_);
 
         serializeHelper::write(ofs, static_cast<uint64_t>(materials_.size()));
@@ -170,6 +183,7 @@ namespace cgu {
         serializeHelper::readV(ifs, tangents_);
         serializeHelper::readV(ifs, binormals_);
         serializeHelper::readVV(ifs, colors_);
+        serializeHelper::readVV(ifs, ids_);
         serializeHelper::readV(ifs, indices_);
 
         uint64_t numMaterials;

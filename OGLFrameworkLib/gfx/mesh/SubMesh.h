@@ -39,6 +39,7 @@ namespace cgu {
         const cguMath::AABB3<float>& GetLocalAABB() const { return aabb_; }
         const Material* GetMaterial() const { return material_; }
 
+        void UpdateMaterials(const std::unordered_map<Material*, Material*>& materialUpdates);
         void write(std::ofstream& ofs) const;
         void read(std::ifstream& ifs, std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, Material*>& materials);
 
