@@ -186,7 +186,7 @@ namespace cgu {
         OGL_CALL(glBindFramebuffer, GL_DRAW_FRAMEBUFFER, 0);
     }
 
-    void FrameBuffer::ResolveFramebufferDepthStencil(FrameBuffer* fb, bool depth = true, bool stencil = true) const
+    void FrameBuffer::ResolveFramebufferDepthStencil(FrameBuffer* fb, bool depth, bool stencil) const
     {
         OGL_CALL(glBindFramebuffer, GL_READ_FRAMEBUFFER, fbo);
         OGL_CALL(glBindFramebuffer, GL_DRAW_FRAMEBUFFER, fb->fbo);
