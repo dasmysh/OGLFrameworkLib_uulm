@@ -19,6 +19,14 @@ struct Light
 
 uniform sampler2D shadowTextures[NUM_LIGHTS * NUM_SMTEX];
 
+sampler2D getShadowTexComp(int lightIdx, int compIdx) {
+    return shadowTextures[NUM_SMTEX * lightIdx + compIdx];
+}
+
+sampler2D getShadowMap(int lightIdx) {
+    return getShadowTexComp(lightIdx, 0);
+}
+
 layout(std140) uniform lightsBuffer
 {
     Light lights[NUM_LIGHTS];
@@ -34,7 +42,7 @@ vec2 shadow(vec3 worldPos, float NdotL, int lightIdx, ivec2 offset = ivec2(0)) {
     bias = clamp(bias, 0.0f, 0.005f);// + 0.001;
     // bias = 0.0f;
 
-    vec2 shadowTex = textureProjOffset(shadowTextures[lightIdx], shadowPos.xyw, offset).xy;
+    vec2 shadowTex = textureProjOffset(getShadowMap(lightIdx), shadowPos.xyw, offset).xy;
     if (shadowTex.x == 1.0f) shadowTex.x = lights[lightIdx].farZ;
 
     // float t = distance(lights[lightIdx].position.xyz, worldPos) - bias;
@@ -52,6 +60,17 @@ vec2 shadow(vec3 worldPos, float NdotL, int lightIdx, ivec2 offset = ivec2(0)) {
     float pmax = variance / (variance + mmd * mmd);
     float p = float(t <= mean);
     return vec2(clamp(max(p, pmax), 0.0f, 1.0f), mean);
+}
+
+vec2 shadowPCF(vec3 pos, float NdotL, int lightIdx) {
+    vec2 shadowResult = shadow(pos, NdotL, lightIdx);
+    for (int x = -2; x < 2; ++x) {
+        for (int y = -2; y < 2; ++y) {
+            if (x != 0 || y != 0) shadowResult.x += shadow(pos, NdotL, lightIdx, ivec2(x,y)).x;
+        }
+    }
+    shadowResult.x /= 25.0f;
+    return shadowResult;
 }
 
 /*vec4 pointLightIntensitySingle(vec3 position, vec3 normal, vec3 view, int matIdx, int lightIdx, out float smDepth) {
@@ -115,7 +134,7 @@ vec4 lightSingleBRDF(vec3 position, vec3 normal, vec3 view, Material mat, int li
     light /= lDist;
 
     float NdotL = clamp(dot(light, normal), 0.0f, 1.0f);
-    float shadow = shadow(position, NdotL, lightIdx).r;
+    float shadow = shadowPCF(position, NdotL, lightIdx).r;
     float ltAttenuation = lightAttenuation(light, lDist, lightIdx);
     float attenuation = NdotL * ltAttenuation * shadow;
 

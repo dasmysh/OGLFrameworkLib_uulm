@@ -38,6 +38,9 @@ namespace cgu {
         isBackbuffer(false),
         desc(d)
     {
+        for (auto& texDesc : desc.texDesc_) {
+            if (texDesc.texType_ == GL_TEXTURE_2D && d.numSamples_ != 1) texDesc.texType_ = GL_TEXTURE_2D_MULTISAMPLE;
+        }
         Resize(fbWidth, fbHeight);
     }
 
@@ -178,9 +181,9 @@ namespace cgu {
     void FrameBuffer::ResolveFramebufferColor(FrameBuffer* fb, unsigned int readBufferIndex, unsigned int drawBufferIndex) const
     {
         OGL_CALL(glBindFramebuffer, GL_READ_FRAMEBUFFER, fbo);
-        OGL_CALL(glReadBuffer, GL_COLOR_ATTACHMENT0 + readBufferIndex);
+        OGL_CALL(glReadBuffer, drawBuffers[readBufferIndex]);
         OGL_CALL(glBindFramebuffer, GL_DRAW_FRAMEBUFFER, fb->fbo);
-        OGL_CALL(glDrawBuffer, GL_COLOR_ATTACHMENT0 + drawBufferIndex);
+        OGL_CALL(glDrawBuffer, fb->drawBuffers[drawBufferIndex]);
         OGL_CALL(glBlitFramebuffer, 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
         OGL_CALL(glBindFramebuffer, GL_READ_FRAMEBUFFER, 0);
         OGL_CALL(glBindFramebuffer, GL_DRAW_FRAMEBUFFER, 0);

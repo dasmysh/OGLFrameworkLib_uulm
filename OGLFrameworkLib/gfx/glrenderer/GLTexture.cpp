@@ -389,6 +389,7 @@ namespace cgu {
 
     void GLTexture::SampleWrapBorderColor(const glm::vec4& color) const
     {
+        if (id.textureType == GL_TEXTURE_2D_MULTISAMPLE) return;
         SetSampleWrap(GL_CLAMP_TO_BORDER);
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glTexParameterfv, id.textureType, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(color));
@@ -401,6 +402,7 @@ namespace cgu {
      */
     void GLTexture::SetSampleWrap(GLint param) const
     {
+        if (id.textureType == GL_TEXTURE_2D_MULTISAMPLE) return;
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_WRAP_S, param);
         if (id.textureType == GL_TEXTURE_2D || id.textureType == GL_TEXTURE_3D) {
@@ -417,6 +419,7 @@ namespace cgu {
      */
     void GLTexture::SampleLinear() const
     {
+        if (id.textureType == GL_TEXTURE_2D_MULTISAMPLE) return;
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         if (mipMapLevels > 1) {
             OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -434,6 +437,7 @@ namespace cgu {
      */
     void GLTexture::SampleNearest() const
     {
+        if (id.textureType == GL_TEXTURE_2D_MULTISAMPLE) return;
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         if (mipMapLevels > 1) {
             OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -448,6 +452,7 @@ namespace cgu {
 
     void GLTexture::ActivateShadowMapComparison() const
     {
+        if (id.textureType == GL_TEXTURE_2D_MULTISAMPLE) return;
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
         OGL_CALL(glTexParameteri, id.textureType, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
