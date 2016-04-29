@@ -22,7 +22,7 @@ namespace cgu {
     {
     public:
         ShaderBufferObject(const std::string& name, ShaderBufferBindingPoints& bindings);
-        ShaderBufferObject(const std::string& name, unsigned int size, ShaderBufferBindingPoints& bindings);
+        ShaderBufferObject(const std::string& name, unsigned int size, ShaderBufferBindingPoints& bindings, bool cpuAccess = false);
         ShaderBufferObject(const ShaderBufferObject& orig) = delete;
         ShaderBufferObject& operator=(const ShaderBufferObject& orig) = delete;
         ShaderBufferObject(ShaderBufferObject&& orig) = delete;
@@ -31,6 +31,7 @@ namespace cgu {
 
         void BindBuffer() const;
         void UploadData(unsigned int offset, unsigned int size, const void* data) const;
+        void DownloadData(unsigned int size, void* data) const;
 
     private:
         /** holds the buffer id. */

@@ -16,14 +16,14 @@ namespace cgu {
     * @param size the size of the buffer it is to be created with
     * @param bindings the binding points used to bind the buffer to
     */
-    ShaderBufferObject::ShaderBufferObject(const std::string& name, unsigned int size, ShaderBufferBindingPoints& bindings) :
+    ShaderBufferObject::ShaderBufferObject(const std::string& name, unsigned int size, ShaderBufferBindingPoints& bindings, bool cpuAccess) :
         bufferSize(size),
         bindingPoints(bindings),
         bindingPoint(bindingPoints.GetBindingPoint(name))
     {
         if (bufferSize > 0) {
             OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, ssbo);
-            OGL_CALL(glBufferData, GL_SHADER_STORAGE_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
+            OGL_CALL(glBufferData, GL_SHADER_STORAGE_BUFFER, bufferSize, nullptr, cpuAccess ? GL_STREAM_READ : GL_DYNAMIC_DRAW);
             OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, 0);
             BindBuffer();
         }
@@ -58,5 +58,13 @@ namespace cgu {
 
         OGL_CALL(glBufferSubData, GL_SHADER_STORAGE_BUFFER, offset, size, data);
         OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
+    void ShaderBufferObject::DownloadData(unsigned size, void* data) const
+    {
+        OGL_CALL(glBindBuffer, GL_SHADER_STORAGE_BUFFER, ssbo);
+        auto p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+        memcpy(data, p, size);
+        OGL_CALL(glUnmapBuffer, GL_SHADER_STORAGE_BUFFER);
     }
 }
