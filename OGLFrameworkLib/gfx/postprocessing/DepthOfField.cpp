@@ -48,8 +48,8 @@ namespace cgu {
     {
         if (ImGui::TreeNode("DepthOfField Parameters"))
         {
-            ImGui::InputFloat("DoF Focus", &params.focusZ, 0.1f);
-            ImGui::InputFloat("Aperture Radius", &params.apertureRadius, 0.001f);
+            ImGui::InputFloat("DoF Focus", &params.focusZ, 0.01f);
+            ImGui::InputFloat("Aperture Radius", &params.apertureRadius, 0.0001f);
             ImGui::TreePop();
         }
     }
@@ -171,7 +171,7 @@ namespace cgu {
 
     float DepthOfField::CalculateFocalLength(const ArcballCamera& cam) const
     {
-        const auto scale = 2.0f * glm::tan(glm::radians(cam.GetFOV()) * 0.5f);
+        const auto scale = 2.0f * glm::tan(cam.GetFOV() * 0.5f);
         return 1.0f / scale;
         // return static_cast<float>(sourceRTSize.y) / scale;
     }

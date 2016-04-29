@@ -19,8 +19,9 @@ void main() {
     vec4 result;
     result.rgb = texelFetch(colorTex, pos, 0).rgb;
     float z = reconstructLinearZ(texelFetch(depthTex, pos, 0).r, clipInfo);
-    result.a = (focusZ - z) * scale;
+    result.a = (z - focusZ) * scale;
     result.a = (result.a * 0.5f) + 0.5f;
+    // result.a = z;
 
     imageStore(targetTex, pos, result);
     // imageStore(targetTex, pos, vec4(result.rgb, 1));
