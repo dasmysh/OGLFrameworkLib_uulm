@@ -205,11 +205,22 @@ namespace cgu {
     {
         if (vtx.chunkId == chunkId) return;
 
-        vtx.chunkId = chunkId;
-        for (auto tId : vtx.triangles) {
-            for (auto vId : triangleConnect_[tId].vertex) {
-                MarkVertexForChunk(verticesConnect_[vId], chunkId);
+        std::queue<unsigned int> workingChunkQueue;
+        workingChunkQueue.push(vtx.idx);
+
+        while (!workingChunkQueue.empty()) {
+            auto vId = workingChunkQueue.front();
+            workingChunkQueue.pop();
+
+            if (verticesConnect_[vId].chunkId == chunkId) continue;
+
+            verticesConnect_[vId].chunkId = chunkId;
+            for (auto tId : verticesConnect_[vId].triangles) {
+                for (auto vIdNext : triangleConnect_[tId].vertex) {
+                    workingChunkQueue.push(vIdNext);
+                }
             }
+
         }
     }
 }

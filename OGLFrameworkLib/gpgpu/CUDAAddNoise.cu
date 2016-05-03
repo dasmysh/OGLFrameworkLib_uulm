@@ -6,12 +6,13 @@
 * @brief   Implementation of the CUDA grid initialization.
 */
 
+#define GLM_FORCE_CUDA
+#define GLM_SWIZZLE
+#include "cuda.h"
 #include "CUDAAddNoise.h"
 #include "cudamain.h"
 #include "gpgpu/CUDAGrid.h"
 
-#define GLM_FORCE_CUDA
-#define GLM_SWIZZLE
 #include <glm/glm.hpp>
 
 #pragma warning (disable : 4505)
