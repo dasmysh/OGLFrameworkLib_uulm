@@ -22,8 +22,12 @@ namespace cgu {
     /** Contains vertex connectivity information. */
     struct MeshConnectVertex
     {
+        MeshConnectVertex() : idx{ 0 }, chunkId{ 0 } {}
+
         /** Holds the vertex index. */
         unsigned int idx;
+        /** Holds the vertices chunk id. */
+        unsigned int chunkId;
         /** Holds the vertexes triangles. */
         std::vector<unsigned int> triangles;
     };
@@ -85,6 +89,8 @@ namespace cgu {
     private:
         void CreateAABB();
         void CreateRTree();
+        void CalculateChunkIds();
+        void MarkVertexForChunk(MeshConnectVertex& vtx, unsigned int chunkId);
 
         unsigned int GetVtxIndex(unsigned int localIndex) const { return verticesConnect_[localIndex].idx; }
         unsigned int GetVtxIndex(unsigned int triIdx, unsigned int vtxIdx) const { return GetVtxIndex(triangleConnect_[triIdx].vertex[vtxIdx]); }

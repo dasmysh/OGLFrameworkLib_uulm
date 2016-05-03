@@ -76,6 +76,7 @@ namespace cgu {
             }
         }
 
+        CalculateChunkIds();
         CreateAABB();
         CreateRTree();
     }
@@ -181,6 +182,34 @@ namespace cgu {
             }
             auto b = boost::geometry::return_envelope<box>(poly);
             fastFindTree_.insert(std::make_pair(b, i));
+        }
+    }
+
+    void ConnectivitySubMesh::CalculateChunkIds()
+    {
+        // invalidate all chunk ids.
+        auto invalidId = static_cast<unsigned int>(verticesConnect_.size());
+        for (auto& vtx : verticesConnect_) vtx.chunkId = invalidId;
+
+        unsigned int currentId = 0;
+        for (auto& vtx : verticesConnect_) {
+            if (vtx.chunkId != invalidId) continue;
+
+            MarkVertexForChunk(vtx, currentId);
+
+            ++currentId;
+        }
+    }
+
+    void ConnectivitySubMesh::MarkVertexForChunk(MeshConnectVertex& vtx, unsigned int chunkId)
+    {
+        if (vtx.chunkId == chunkId) return;
+
+        vtx.chunkId = chunkId;
+        for (auto tId : vtx.triangles) {
+            for (auto vId : triangleConnect_[tId].vertex) {
+                MarkVertexForChunk(verticesConnect_[vId], chunkId);
+            }
         }
     }
 }
