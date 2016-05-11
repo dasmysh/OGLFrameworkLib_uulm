@@ -196,8 +196,8 @@ namespace cgu {
         }
 
         // TODO: higher OpenGL version?
-        LOG(INFO) << L"Checking OpenGL version 4.0 ...";
-        if (!GLAD_GL_VERSION_4_0) {
+        LOG(INFO) << L"Checking OpenGL version 4.5 ...";
+        if (!GLAD_GL_VERSION_4_5) {
             this->ReleaseOpenGL();
             LOG(ERROR) << L"OpenGL version not supported.";
             throw std::runtime_error("OpenGL version not supported.");

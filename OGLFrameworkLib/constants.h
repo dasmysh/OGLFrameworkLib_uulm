@@ -16,7 +16,7 @@ static bool LOG_USE_TIMESTAMPS = false;
 /** The OpenGL major version used. */
 static unsigned int PTRN_OPENGL_MAJOR_VERSION = 4;
 /** The OpenGL minor version used. */
-static unsigned int PTRN_OPENGL_MINOR_VERSION = 0;
+static unsigned int PTRN_OPENGL_MINOR_VERSION = 5;
 
 /** The font program resource id. */
 static const char* fontProgramID = "shader/gui/renderText.vp|shader/gui/renderText.gp|shader/gui/renderText.fp";

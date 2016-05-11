@@ -22,12 +22,12 @@ namespace cgu {
      * @param renderMesh the Mesh to use for rendering.
      * @param prog the program used for rendering.
      */
-    MeshRenderable::MeshRenderable(const Mesh* renderMesh, GPUProgram* program) : mesh_(renderMesh), drawProgram_(program)
+    MeshRenderable::MeshRenderable(const Mesh* renderMesh, const GLBuffer* vBuffer, GPUProgram* program) :
+        mesh_(renderMesh),
+        vBuffer_(vBuffer),
+        iBuffer_(mesh_->GetIndexBuffer()),
+        drawProgram_(program)
     {
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer_);
-        OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, mesh_->GetIndices().size() * sizeof(unsigned int),
-            mesh_->GetIndices().data(), GL_STATIC_DRAW);
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     /**
@@ -41,10 +41,12 @@ namespace cgu {
      */
     MeshRenderable::MeshRenderable(const MeshRenderable& orig) :
         mesh_(orig.mesh_),
+        iBuffer_(mesh_->GetIndexBuffer()),
+        vBuffer_(orig.vBuffer_),
         drawProgram_(orig.drawProgram_),
         drawAttribBinds_(orig.drawAttribBinds_)
     {
-        auto bufferSize = 0;
+        /*auto bufferSize = 0;
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, orig.vBuffer_);
         OGL_CALL(glGetBufferParameteriv, GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bufferSize);
 
@@ -55,11 +57,7 @@ namespace cgu {
         OGL_CALL(glBindBuffer, GL_COPY_WRITE_BUFFER, vBuffer_);
         OGL_CALL(glCopyBufferSubData, GL_ARRAY_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, bufferSize);
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
-        OGL_CALL(glBindBuffer, GL_COPY_WRITE_BUFFER, 0);
-
-        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer_);
-        OGL_CALL(glBufferData, GL_ELEMENT_ARRAY_BUFFER, mesh_->GetIndices().size() * sizeof(unsigned int),
-            mesh_->GetIndices().data(), GL_STATIC_DRAW);
+        OGL_CALL(glBindBuffer, GL_COPY_WRITE_BUFFER, 0);*/
     }
 
     /**
@@ -114,16 +112,16 @@ namespace cgu {
         Draw<true>(modelMatrix, drawProgram_, drawAttribBinds_, overrideBump);
     }
 
-    void MeshRenderable::BindAsShaderBuffer(GLuint bindingPoint) const
+    /*void MeshRenderable::BindAsShaderBuffer(GLuint bindingPoint) const
     {
         OGL_CALL(glBindBufferBase, GL_SHADER_STORAGE_BUFFER, bindingPoint, vBuffer_);
-    }
+    }*/
 
     template <bool useMaterials>
     void MeshRenderable::Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump) const
     {
         program->UseProgram();
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_->GetBuffer());
         attribBinds.GetVertexAttributes()[0]->EnableVertexAttributeArray();
         DrawNode<useMaterials>(mesh_->GetRootTransform() * modelMatrix, mesh_->GetRootNode(), program, attribBinds, overrideBump);
         attribBinds.GetVertexAttributes()[0]->DisableVertexAttributeArray();
@@ -203,8 +201,8 @@ namespace cgu {
      *  @param program the GPU program for rendering.
      *  @param shadowProgram the GPU program for shadow map rendering.
      */
-    MeshRenderableShadowing::MeshRenderableShadowing(const Mesh* renderMesh, GPUProgram* program, GPUProgram* shadowProgram) :
-        MeshRenderable(renderMesh, program),
+    MeshRenderableShadowing::MeshRenderableShadowing(const Mesh* renderMesh, const GLBuffer* vBuffer, GPUProgram* program, GPUProgram* shadowProgram) :
+        MeshRenderable(renderMesh, vBuffer, program),
         shadowProgram_(shadowProgram)
     {
     }

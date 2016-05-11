@@ -67,11 +67,6 @@ namespace cgu {
         /** Holds the combine program uniform ids. */
         std::vector<BindingLocation> combineUniformIds;
 
-        std::shared_ptr<GPUProgram> debugProgram;
-        std::vector<BindingLocation> debugUniformIds;
-        cgu::ScreenQuadRenderable* debugRenderable;
-        std::unique_ptr<GLRenderTarget> debugRT;
-
         /** Holds the size of the source textures. */
         glm::ivec2 sourceRTSize;
     };

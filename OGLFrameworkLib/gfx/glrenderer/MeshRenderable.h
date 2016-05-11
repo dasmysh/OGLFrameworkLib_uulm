@@ -16,6 +16,8 @@
 
 namespace cgu {
 
+    class GLBuffer;
+
     /**
      * @brief  Renderable implementation for triangle meshes.
      *
@@ -33,11 +35,11 @@ namespace cgu {
         MeshRenderable& operator=(MeshRenderable&&);
 
         void Draw(const glm::mat4& modelMatrix, bool overrideBump = false) const;
-        void BindAsShaderBuffer(GLuint bindingPoint) const;
+        // void BindAsShaderBuffer(GLuint bindingPoint) const;
 
     protected:
-        MeshRenderable(const Mesh* renderMesh, GPUProgram* program);
-        template<class VTX> void CreateVertexBuffer();
+        MeshRenderable(const Mesh* renderMesh, const GLBuffer* vBuffer, GPUProgram* program);
+        template<class VTX> void CreateVertexAttributeBuffer();
         template<bool useMaterials> void Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump = false) const;
         template<bool useMaterials> void DrawNode(const glm::mat4& modelMatrix, const SceneMeshNode* node, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump = false) const;
         template<class VTX> void FillMeshAttributeBindings(GPUProgram* program, ShaderMeshAttributes& attribBinds) const;
@@ -45,10 +47,14 @@ namespace cgu {
     private:
         /** Holds the mesh to render. */
         const Mesh* mesh_;
+        /** Holds the vertex buffer. */
+        const GLBuffer* vBuffer_;
+        /** Holds the index buffer of the mesh base. */
+        const GLBuffer* iBuffer_;
         /** Holds the vertex buffer object name. */
-        BufferRAII vBuffer_;
+        // BufferRAII vBuffer_;
         /** Holds the index buffer object name of the mesh base. */
-        BufferRAII iBuffer_;
+        // BufferRAII iBuffer_;
         /** Holds the rendering GPU program for drawing. */
         GPUProgram* drawProgram_;
         /** Holds the shader attribute bindings for the shader. */
@@ -78,9 +84,9 @@ namespace cgu {
         void DrawShadow(const glm::mat4& modelMatrix) const;
 
     protected:
-        MeshRenderableShadowing(const Mesh* renderMesh, GPUProgram* program, GPUProgram* shadowProgram);
+        MeshRenderableShadowing(const Mesh* renderMesh, const GLBuffer* vBuffer, GPUProgram* program, GPUProgram* shadowProgram);
         MeshRenderableShadowing(const MeshRenderable& rhs, GPUProgram* shadowProgram);
-        template<class VTX> void CreateVertexBuffer();
+        template<class VTX> void CreateVertexAttributeBuffer();
 
     private:
         /** Holds the rendering GPU program for shadow map drawing. */
@@ -92,21 +98,14 @@ namespace cgu {
     template <class VTX>
     std::unique_ptr<MeshRenderable> MeshRenderable::create(const Mesh* renderMesh, GPUProgram* program)
     {
-        std::unique_ptr<MeshRenderable> result{ new MeshRenderable(renderMesh, program) };
-        result->CreateVertexBuffer<VTX>();
+        std::unique_ptr<MeshRenderable> result{ new MeshRenderable(renderMesh, renderMesh->GetVertexBuffer<VTX>(), program) };
+        result->CreateVertexAttributeBuffer<VTX>();
         return std::move(result);
     }
 
     template <class VTX>
-    void MeshRenderable::CreateVertexBuffer()
+    void MeshRenderable::CreateVertexAttributeBuffer()
     {
-        // TODO: Visual studio does now know EBCO. [2/23/2016 Sebastian Maisch]
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
-        std::vector<VTX> vertices;
-        mesh_->GetVertices(vertices);
-        OGL_CALL(glBufferData, GL_ARRAY_BUFFER, vertices.size() * sizeof(VTX), vertices.data(), GL_STATIC_DRAW);
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
-
         FillMeshAttributeBindings<VTX>(drawProgram_, drawAttribBinds_);
     }
 
@@ -119,8 +118,8 @@ namespace cgu {
 
         auto shaderPositions = program->GetAttributeLocations(attributeNames);
 
-        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_);
-        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer_, iBuffer_));
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_->GetBuffer());
+        attribBinds.GetVertexAttributes().push_back(program->CreateVertexAttributeArray(vBuffer_->GetBuffer(), iBuffer_->GetBuffer()));
         GenerateVertexAttribute<VTX>(attribBinds.GetVertexAttributes().back(), shaderPositions);
         OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
 
@@ -135,8 +134,8 @@ namespace cgu {
     template <class VTX>
     std::unique_ptr<MeshRenderableShadowing> MeshRenderableShadowing::create(const Mesh* renderMesh, GPUProgram* program, GPUProgram* shadowProgram)
     {
-        std::unique_ptr<MeshRenderableShadowing> result{ new MeshRenderableShadowing(renderMesh, program, shadowProgram) };
-        result->CreateVertexBuffer<VTX>();
+        std::unique_ptr<MeshRenderableShadowing> result{ new MeshRenderableShadowing(renderMesh, renderMesh->GetVertexBuffer<VTX>(), program, shadowProgram) };
+        result->CreateVertexAttributeBuffer<VTX>();
         return std::move(result);
     }
 
@@ -144,14 +143,14 @@ namespace cgu {
     std::unique_ptr<MeshRenderableShadowing> MeshRenderableShadowing::create(const MeshRenderable& rhs, GPUProgram* shadowProgram)
     {
         std::unique_ptr<MeshRenderableShadowing> result{ new MeshRenderableShadowing(rhs, shadowProgram) };
-        result->CreateVertexBuffer<VTX>();
+        result->CreateVertexAttributeBuffer<VTX>();
         return std::move(result);
     }
 
     template <class VTX>
-    void MeshRenderableShadowing::CreateVertexBuffer()
+    void MeshRenderableShadowing::CreateVertexAttributeBuffer()
     {
-        MeshRenderable::CreateVertexBuffer<VTX>();
+        MeshRenderable::CreateVertexAttributeBuffer<VTX>();
         FillMeshAttributeBindings<VTX>(shadowProgram_, shadowAttribBinds_);
     }
 }

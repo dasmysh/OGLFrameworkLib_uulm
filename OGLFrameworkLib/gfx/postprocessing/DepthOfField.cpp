@@ -8,7 +8,6 @@
 
 #include "DepthOfField.h"
 #include "app/ApplicationBase.h"
-#include "app/GLWindow.h"
 #include <imgui.h>
 #include "gfx/ArcballCamera.h"
 
@@ -19,8 +18,6 @@ namespace cgu {
         cocUniformIds(cocProgram->GetUniformLocations({ "colorTex", "depthTex", "targetTex", "focusZ", "scale", "clipInfo" })),
         combineProgram(app->GetGPUProgramManager()->GetResource("shader/dof/combineDoF.cp")),
         combineUniformIds(combineProgram->GetUniformLocations({ "cocTex", "sourceFrontTex", "sourceBackTex", "targetTex" })),
-        debugProgram(app->GetGPUProgramManager()->GetResource("shader/screenQuad.vp|shader/debugTexOut.fp")),
-        debugUniformIds(debugProgram->GetUniformLocations({ "sourceTex" })),
         sourceRTSize(sourceSize)
     {
         params.focusZ = 2.3f;
@@ -32,12 +29,6 @@ namespace cgu {
         hBlurUniformIds = hBlurProgram->GetUniformLocations({ "sourceTex", "targetFrontTex", "targetBackTex", "maxCoCRadius", "frontBlurRadius", "invFrontBlurRadius" });
         vBlurProgram = app->GetGPUProgramManager()->GetResource("shader/dof/blurDoF.cp," + shaderDefines.str());
         vBlurUniformIds = vBlurProgram->GetUniformLocations({ "sourceFrontTex", "sourceTex", "targetFrontTex", "targetBackTex", "maxCoCRadius", "frontBlurRadius", "invFrontBlurRadius" });
-
-        FrameBufferDescriptor hdrFBODesc;
-        hdrFBODesc.texDesc_.emplace_back(TextureDescriptor{ 16, GL_RGBA32F, GL_RGBA, GL_FLOAT });
-        hdrFBODesc.texDesc_.emplace_back(TextureDescriptor{ 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT });
-        debugRT.reset(new GLRenderTarget(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight(), hdrFBODesc));
-        debugRenderable = app->GetScreenQuadRenderable();
 
         Resize(sourceSize);
     }
@@ -84,16 +75,6 @@ namespace cgu {
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_SCALL(glFinish);
 
-        float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        debugRT->BatchDraw([this,&clearColor](GLBatchRenderTarget& brt)
-        {
-            brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_RenderTarget) | static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), clearColor, 1.0, 0);
-            debugProgram->UseProgram();
-            cocRT->ActivateTexture(GL_TEXTURE0);
-            debugProgram->SetUniform(debugUniformIds[0], 0);
-            debugRenderable->Draw();
-        });
-
         hBlurProgram->UseProgram();
         hBlurProgram->SetUniform(hBlurUniformIds[0], 0);
         hBlurProgram->SetUniform(hBlurUniformIds[1], 0);
@@ -107,15 +88,6 @@ namespace cgu {
         OGL_CALL(glDispatchCompute, numGroups.x / RT_SIZE_FACTOR, numGroups.y, 1);
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         OGL_SCALL(glFinish);
-
-        debugRT->BatchDraw([this, &clearColor](GLBatchRenderTarget& brt)
-        {
-            brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_RenderTarget) | static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), clearColor, 1.0, 0);
-            debugProgram->UseProgram();
-            blurRTs[0][0]->ActivateTexture(GL_TEXTURE0);
-            debugProgram->SetUniform(debugUniformIds[0], 0);
-            debugRenderable->Draw();
-        });
 
         vBlurProgram->UseProgram();
         vBlurProgram->SetUniform(vBlurUniformIds[0], 0);
@@ -165,8 +137,6 @@ namespace cgu {
         blurRTs[0][1].reset(new GLTexture(size.x / RT_SIZE_FACTOR, size.y, texDesc, nullptr));
         blurRTs[1][0].reset(new GLTexture(size.x / RT_SIZE_FACTOR, size.y / RT_SIZE_FACTOR, texDesc, nullptr));
         blurRTs[1][1].reset(new GLTexture(size.x / RT_SIZE_FACTOR, size.y / RT_SIZE_FACTOR, texDesc, nullptr));
-
-        debugRT->Resize(screenSize.x, screenSize.y);
     }
 
     float DepthOfField::CalculateFocalLength(const ArcballCamera& cam) const

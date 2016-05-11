@@ -109,8 +109,9 @@ vec4 spotLightIntensitySingle(vec3 position, vec3 normal, vec3 view, int matIdx,
 }*/
 
 float pointLightAttenuation(vec3 light, float lDist, int lightIdx) {
-    float curve = min(pow(lDist / lights[lightIdx].farZ, 6.0), 1.0);
-    return mix(1.0 / (1.0 + lights[lightIdx].distAttenuation * lDist * lDist), 0.0, curve);
+    // float curve = min(pow(lDist / lights[lightIdx].farZ, 6.0), 1.0);
+    // return mix(1.0 / (1.0 + lights[lightIdx].distAttenuation * lDist * lDist), 0.0, curve);
+    return 1.0f / (4.0f * M_PI * lDist * lDist);
 }
 
 float spotLightAttenuation(vec3 light, float lDist, int lightIdx) {

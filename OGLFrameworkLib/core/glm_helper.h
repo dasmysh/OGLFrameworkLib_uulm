@@ -27,6 +27,10 @@ namespace glm {
     inline std::ostream& operator<<(std::ostream& str, const glm::vec3& v){
         return str << "(" << v.x << " " << v.y << " " << v.z << ")";
     }
+    
+    inline std::wostream& operator<<(std::wostream& str, const glm::vec3& v){
+        return str << "(" << v.x << " " << v.y << " " << v.z << ")";
+    }
 
     inline std::istream& operator>>(std::istream& str, glm::vec3& v){
         char bVec, eVec;

@@ -1,3 +1,4 @@
+// shadertype=glsl
 #version 430
 
 uniform sampler2D sourceTex;
@@ -6,8 +7,9 @@ uniform vec2 dir;
 uniform float bloomWidth;
 
 // blur code from https://software.intel.com/en-us/blogs/2014/07/15/an-investigation-of-fast-real-time-gpu-based-image-blur-algorithms
-vec3 GaussianBlur(sampler2D tex0, vec2 centreUV, vec2 pixelOffset) {
-    vec3 colOut = vec3(0, 0, 0);
+vec4 GaussianBlur(sampler2D tex0, vec2 centreUV, vec2 pixelOffset) {
+    vec4 colOut = texture(tex0, centreUV).rgba;
+    colOut.COMP_SWIZZLE = BTYPE(0);
     ////////////////////////////////////////////////;
     // Kernel width 7 x 7
     //
@@ -25,9 +27,9 @@ vec3 GaussianBlur(sampler2D tex0, vec2 centreUV, vec2 pixelOffset) {
 
     for(int i = 0; i < stepCount; i++) {
         vec2 texCoordOffset = gOffsets[i] * pixelOffset;
-        vec3 color = texture(tex0, centreUV + texCoordOffset).xyz;
-        color += texture(tex0, centreUV - texCoordOffset).xyz;
-        colOut += gWeights[i] * color;
+        BTYPE color = texture(tex0, centreUV + texCoordOffset).COMP_SWIZZLE;
+        color += texture(tex0, centreUV - texCoordOffset).COMP_SWIZZLE;
+        colOut.COMP_SWIZZLE += gWeights[i] * color;
     }
 
     return colOut;
@@ -44,6 +46,6 @@ void main() {
     vec2 dirPixels = (dir / vec2(sourceSize)) * bloomWidth;
     vec2 tex = (vec2(pos) + vec2(0.5f)) / vec2(targetSize);
 
-    vec4 result = vec4(GaussianBlur(sourceTex, tex, dirPixels), 1.0f);
+    vec4 result = GaussianBlur(sourceTex, tex, dirPixels);
     imageStore(targetTex, pos, result);
 }

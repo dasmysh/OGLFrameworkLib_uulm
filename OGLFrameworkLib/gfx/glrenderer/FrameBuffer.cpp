@@ -143,8 +143,8 @@ namespace cgu {
                     OGL_CALL(glTexImage2D, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
                 }
             } else {
-                if (desc.numSamples_ == 1) OGL_CALL(glTexImage2D, texDesc.texType_, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr);
-                else OGL_CALL(glTexImage2DMultisample, texDesc.texType_, desc.numSamples_, texDesc.texDesc_.internalFormat, width, height, GL_TRUE);
+                if (desc.numSamples_ == 1) { OGL_CALL(glTexImage2D, texDesc.texType_, 0, texDesc.texDesc_.internalFormat, width, height, 0, texDesc.texDesc_.format, texDesc.texDesc_.type, nullptr); }
+                else { OGL_CALL(glTexImage2DMultisample, texDesc.texType_, desc.numSamples_, texDesc.texDesc_.internalFormat, width, height, GL_TRUE); }
             }
             std::unique_ptr<GLTexture> texture{ new GLTexture{ std::move(tex), texDesc.texType_, texDesc.texDesc_ } };
 
@@ -164,8 +164,8 @@ namespace cgu {
         for (const auto& rbDesc : desc.rbDesc_) {
             RenderbufferRAII rb;
             OGL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, rb);
-            if (desc.numSamples_ == 1) OGL_CALL(glRenderbufferStorage, GL_RENDERBUFFER, rbDesc.internalFormat_, width, height);
-            else OGL_CALL(glRenderbufferStorageMultisample, GL_RENDERBUFFER, desc.numSamples_, rbDesc.internalFormat_, width, height);
+            if (desc.numSamples_ == 1) { OGL_CALL(glRenderbufferStorage, GL_RENDERBUFFER, rbDesc.internalFormat_, width, height); }
+            else { OGL_CALL(glRenderbufferStorageMultisample, GL_RENDERBUFFER, desc.numSamples_, rbDesc.internalFormat_, width, height); }
             auto attachment = findAttachment(rbDesc.internalFormat_, colorAtt, drawBuffers);
             OGL_CALL(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rb);
             renderBuffers.emplace_back(std::move(rb));

@@ -8,8 +8,19 @@
 
 #include "GLUniformBuffer.h"
 #include "ShaderBufferBindingPoints.h"
+#include "GLBuffer.h"
 
 namespace cgu {
+
+    GLUniformBuffer::GLUniformBuffer(const std::string& name, ShaderBufferBindingPoints* bindings) :
+        buffer_{ make_owned<GLBuffer>(GL_STREAM_DRAW) },
+        bindingPoints_(bindings),
+        bindingPoint_(bindingPoints_->GetBindingPoint(name)),
+        uboName_(name)
+    {
+        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, buffer_->GetBuffer());
+        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, 0);
+    }
 
     /**
      * Constructor.
@@ -19,14 +30,9 @@ namespace cgu {
      */
     GLUniformBuffer::GLUniformBuffer(const std::string& name, unsigned int size,
         ShaderBufferBindingPoints* bindings) :
-        bufferSize(size),
-        bindingPoints(bindings),
-        bindingPoint(bindingPoints->GetBindingPoint(name)),
-        uboName(name)
+        GLUniformBuffer(name, bindings)
     {
-        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo);
-        OGL_CALL(glBufferData, GL_UNIFORM_BUFFER, size, nullptr, GL_STREAM_DRAW);
-        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, 0);
+        buffer_->InitializeData(size, nullptr);
         BindBuffer();
     }
 
@@ -34,8 +40,12 @@ namespace cgu {
      *  Copy constructor.
      */
     GLUniformBuffer::GLUniformBuffer(const GLUniformBuffer& rhs) :
-        GLUniformBuffer(rhs.uboName, bufferSize, bindingPoints)
+        GLUniformBuffer(rhs.uboName_, bindingPoints_)
     {
+        std::vector<int8_t> tmp(rhs.buffer_->GetBufferSize());
+        rhs.buffer_->DownloadData(tmp);
+        buffer_->InitializeData(tmp);
+        BindBuffer();
     }
 
     /**
@@ -54,11 +64,10 @@ namespace cgu {
      *  Move constructor.
      */
     GLUniformBuffer::GLUniformBuffer(GLUniformBuffer&& rhs) :
-        ubo(std::move(rhs.ubo)),
-        bufferSize(std::move(rhs.bufferSize)),
-        bindingPoints(std::move(rhs.bindingPoints)),
-        bindingPoint(std::move(rhs.bindingPoint)),
-        uboName(std::move(uboName))
+        buffer_(std::move(rhs.buffer_)),
+        bindingPoints_(std::move(rhs.bindingPoints_)),
+        bindingPoint_(std::move(rhs.bindingPoint_)),
+        uboName_(std::move(uboName_))
     {
     }
 
@@ -69,11 +78,10 @@ namespace cgu {
     {
         if (this != &rhs) {
             this->~GLUniformBuffer();
-            ubo = std::move(rhs.ubo);
-            bufferSize = std::move(rhs.bufferSize);
-            bindingPoints = std::move(rhs.bindingPoints);
-            bindingPoint = std::move(rhs.bindingPoint);
-            uboName = std::move(rhs.uboName);
+            buffer_ = std::move(rhs.buffer_);
+            bindingPoints_ = std::move(rhs.bindingPoints_);
+            bindingPoint_ = std::move(rhs.bindingPoint_);
+            uboName_ = std::move(rhs.uboName_);
         }
         return *this;
     }
@@ -87,16 +95,14 @@ namespace cgu {
      * @param size the size of the data
      * @param data the data to store in the buffer
      */
-    void GLUniformBuffer::UploadData(unsigned int offset, unsigned int size, const void* data) const
+    void GLUniformBuffer::UploadData(unsigned int offset, unsigned int size, const void* data)
     {
-        assert((offset + size) <= bufferSize);
-        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, ubo);
-        OGL_CALL(glBufferSubData, GL_UNIFORM_BUFFER, offset, size, data);
-        OGL_CALL(glBindBuffer, GL_UNIFORM_BUFFER, 0);
+        assert((offset + size) <= buffer_->GetBufferSize());
+        buffer_->UploadData(offset, size, data);
     }
 
     void GLUniformBuffer::BindBuffer() const
     {
-        OGL_CALL(glBindBufferRange, GL_UNIFORM_BUFFER, bindingPoint, ubo, 0, bufferSize);
+        OGL_CALL(glBindBufferRange, GL_UNIFORM_BUFFER, bindingPoint_, buffer_->GetBuffer(), 0, buffer_->GetBufferSize());
     }
 }

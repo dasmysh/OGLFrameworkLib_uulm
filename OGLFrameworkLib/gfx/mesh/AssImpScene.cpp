@@ -136,6 +136,7 @@ namespace cgu {
             save(binFilename);
         }
 
+        CreateIndexBuffer();
         auto rootScale = GetNamedParameterValue("scale", 1.0f);
         auto rootScaleV = GetNamedParameterValue("scaleV", glm::vec3(1.0f));
         auto rootTranslate = GetNamedParameterValue("translate", glm::vec3(0.0f));

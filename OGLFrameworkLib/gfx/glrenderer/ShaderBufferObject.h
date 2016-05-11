@@ -10,9 +10,11 @@
 #define SHADERBUFFEROBJECT_H
 
 #include "main.h"
+#include <core/owned_ptr.h>
 
 namespace cgu {
     
+    class GLBuffer;
     class ShaderBufferBindingPoints;
 
     /**
@@ -21,27 +23,30 @@ namespace cgu {
     class ShaderBufferObject
     {
     public:
-        ShaderBufferObject(const std::string& name, ShaderBufferBindingPoints& bindings);
-        ShaderBufferObject(const std::string& name, unsigned int size, ShaderBufferBindingPoints& bindings, bool cpuAccess = false);
-        ShaderBufferObject(const ShaderBufferObject& orig) = delete;
-        ShaderBufferObject& operator=(const ShaderBufferObject& orig) = delete;
-        ShaderBufferObject(ShaderBufferObject&& orig) = delete;
-        ShaderBufferObject& operator=(ShaderBufferObject&& orig) = delete;
+        ShaderBufferObject(const std::string& name, GLBuffer* buffer, ShaderBufferBindingPoints* bindings, bool cpuAccess = false);
+        ShaderBufferObject(const std::string& name, ShaderBufferBindingPoints* bindings, bool cpuAccess = false);
+        // ShaderBufferObject(const std::string& name, unsigned int size, ShaderBufferBindingPoints* bindings, bool cpuAccess = false);
+        ShaderBufferObject(const ShaderBufferObject&);
+        ShaderBufferObject& operator=(const ShaderBufferObject&);
+        ShaderBufferObject(ShaderBufferObject&&);
+        ShaderBufferObject& operator=(ShaderBufferObject&&);
         ~ShaderBufferObject();
 
+        GLBuffer* GetBuffer() { return buffer_; }
+        const GLBuffer* GetBuffer() const { return buffer_; }
         void BindBuffer() const;
-        void UploadData(unsigned int offset, unsigned int size, const void* data) const;
-        void DownloadData(unsigned int size, void* data) const;
+        // void UploadData(unsigned int offset, unsigned int size, const void* data) const;
+        // void DownloadData(unsigned int size, void* data) const;
 
     private:
-        /** holds the buffer id. */
-        BufferRAII ssbo;
-        /** Holds the current size of the buffer. */
-        unsigned int bufferSize;
+        ShaderBufferObject(GLuint bindingPoint, ShaderBufferBindingPoints* bindings);
+
+        /** holds the buffer object. */
+        owned_ptr<GLBuffer> buffer_;
         /** holds the shader buffer objects binding points. */
-        ShaderBufferBindingPoints& bindingPoints;
+        ShaderBufferBindingPoints* bindingPoints_;
         /** holds the buffer binding point. */
-        GLuint bindingPoint;
+        GLuint bindingPoint_;
     };
 }
 

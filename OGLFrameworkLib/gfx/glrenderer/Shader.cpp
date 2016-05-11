@@ -182,7 +182,8 @@ namespace cgu {
         unsigned int firstFileId = 0;
         auto shaderText = LoadShaderFile(filename, defines, firstFileId, 0);
 
-        ShaderRAII shader{ OGL_CALL(glCreateShader, type) };
+        auto shdrTmp = OGL_CALL(glCreateShader, type);
+        ShaderRAII shader{ shdrTmp };
         if (!shader) {
             LOG(ERROR) << L"Could not create shader!";
             throw std::runtime_error("Could not create shader!");

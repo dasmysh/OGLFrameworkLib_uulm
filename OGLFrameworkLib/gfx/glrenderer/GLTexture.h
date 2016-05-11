@@ -74,6 +74,8 @@ namespace cgu {
         void AddTextureToArray(const std::string& file, unsigned int slice) const;
         void SetData(const void* data) const;
         void DownloadData(std::vector<uint8_t>& data) const;
+        void DownloadData8Bit(std::vector<uint8_t>& data) const;
+        void SaveTextureToFile(const std::string& filename) const;
         void UploadData(std::vector<uint8_t>& data) const;
         void GenerateMipMaps() const;
         void GenerateMinMaxMaps(GPUProgram* minMaxProgram, const std::vector<BindingLocation>& uniformNames) const;

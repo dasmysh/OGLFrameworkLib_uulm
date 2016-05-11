@@ -9,6 +9,7 @@
 #include "GLTexture.h"
 #include <stb_image.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <stb_image_write.h>
 
 #undef min
 #undef max
@@ -260,6 +261,63 @@ namespace cgu {
 
         OGL_CALL(glBindTexture, id.textureType, 0);
         OGL_CALL(glBindBuffer, GL_PIXEL_PACK_BUFFER, 0);
+    }
+
+    void GLTexture::DownloadData8Bit(std::vector<uint8_t>& data) const
+    {
+        auto comp = 0;
+        if (descriptor.format == GL_RED) comp = 1;
+        else if (descriptor.format == GL_RG) comp = 2;
+        else if (descriptor.format == GL_RGB) comp = 3;
+        else if (descriptor.format == GL_RGBA) comp = 4;
+        else {
+            LOG(WARNING) << "Texture format not supported for downloading.";
+            return;
+        }
+
+        data.resize(width * height * depth * comp);
+        assert(data.size() != 0);
+
+        // TODO: create external PBOs for real asynchronous up-/download [8/19/2015 Sebastian Maisch]
+        BufferRAII pbo;
+        OGL_CALL(glBindBuffer, GL_PIXEL_PACK_BUFFER, pbo);
+        OGL_CALL(glBufferData, GL_PIXEL_PACK_BUFFER, data.size(), nullptr, GL_STREAM_READ);
+
+        OGL_CALL(glBindTexture, id.textureType, id.textureId);
+        OGL_CALL(glGetTexImage, id.textureType, 0, descriptor.format, GL_UNSIGNED_BYTE, 0);
+
+        OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
+        auto gpuMem = OGL_CALL(glMapBuffer, GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+        if (gpuMem) {
+            memcpy(data.data(), gpuMem, data.size());
+            OGL_CALL(glUnmapBuffer, GL_PIXEL_PACK_BUFFER);
+        }
+
+        OGL_CALL(glBindTexture, id.textureType, 0);
+        OGL_CALL(glBindBuffer, GL_PIXEL_PACK_BUFFER, 0);
+    }
+
+    void GLTexture::SaveTextureToFile(const std::string& filename) const
+    {
+        auto comp = 0;
+        if (descriptor.format == GL_RED) comp = 1;
+        else if(descriptor.format == GL_RG) comp = 2;
+        else if(descriptor.format == GL_RGB) comp = 3;
+        else if(descriptor.format == GL_RGBA) comp = 4;
+        else {
+            LOG(WARNING) << "Texture format not supported for saving.";
+            return;
+        }
+        std::vector<uint8_t> screenData;
+        DownloadData8Bit(screenData);
+
+        auto stride = width * 4;
+        for (unsigned i = 0; i < height / 2; ++i) {
+            auto first = i * stride;
+            auto last = ((i + 1) * stride) - 1;
+            std::swap_ranges(screenData.begin() + first, screenData.begin() + last, screenData.end() - last - 1);
+        }
+        stbi_write_png(filename.c_str(), width, height, comp, screenData.data(), stride * sizeof(uint8_t));
     }
 
     /**

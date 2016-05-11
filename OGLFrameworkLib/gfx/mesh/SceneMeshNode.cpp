@@ -54,6 +54,7 @@ namespace cgu {
         nodeName_(rhs.nodeName_),
         meshes_(rhs.meshes_),
         localTransform_(rhs.localTransform_),
+        aabb_(rhs.aabb_),
         parent_(rhs.parent_)
     {
         children_.resize(rhs.children_.size());
@@ -65,6 +66,7 @@ namespace cgu {
         children_(std::move(rhs.children_)),
         meshes_(std::move(rhs.meshes_)),
         localTransform_(std::move(rhs.localTransform_)),
+        aabb_(std::move(rhs.aabb_)),
         parent_(std::move(rhs.parent_))
     {
 
@@ -87,6 +89,7 @@ namespace cgu {
             children_ = std::move(rhs.children_);
             meshes_ = std::move(rhs.meshes_);
             localTransform_ = std::move(rhs.localTransform_);
+            aabb_ = std::move(rhs.aabb_);
             parent_ = std::move(rhs.parent_);
         }
         return *this;

@@ -390,6 +390,14 @@ namespace cgu {
         OGL_CALL(glUniform1iv, name->iBinding, static_cast<GLsizei>(data.size()), data.data());
     }
 
+    void GPUProgram::SetUniform(BindingLocation name, unsigned data) const
+    {
+        GLuint cProg;
+        OGL_CALL(glGetIntegerv, GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&cProg));
+        assert(program == cProg);
+        OGL_CALL(glUniform1ui, name->iBinding, data);
+    }
+
     /**
      * Sets a uniform with given OpenGL name/location (int version)
      * @param name the location of the uniform

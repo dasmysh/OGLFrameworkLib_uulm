@@ -14,6 +14,7 @@
 #include "core/serializationHelper.h"
 #include "core/TextureManager.h"
 #include "SceneMeshNode.h"
+#include <gfx/glrenderer/GLBuffer.h>
 
 #undef min
 #undef max
@@ -75,6 +76,8 @@ namespace cgu {
         colors_(std::move(rhs.colors_)),
         ids_(std::move(ids_)),
         indices_(std::move(rhs.indices_)),
+        vBuffers_(std::move(rhs.vBuffers_)),
+        iBuffer_(std::move(rhs.iBuffer_)),
         rootTransform_(std::move(rhs.rootTransform_)),
         rootNode_(std::move(rhs.rootNode_)),
         materials_(std::move(rhs.materials_)),
@@ -95,6 +98,8 @@ namespace cgu {
             colors_ = std::move(rhs.colors_);
             ids_ = std::move(rhs.ids_);
             indices_ = std::move(rhs.indices_);
+            vBuffers_ = std::move(rhs.vBuffers_);
+            iBuffer_ = std::move(rhs.iBuffer_);
             rootTransform_ = std::move(rhs.rootTransform_);
             rootNode_ = std::move(rhs.rootNode_);
             materials_ = std::move(rhs.materials_);
@@ -131,6 +136,14 @@ namespace cgu {
     void Mesh::AddSubMesh(const std::string& name, unsigned idxOffset, unsigned numIndices, Material* material)
     {
         subMeshes_.push_back(std::make_unique<SubMesh>(this, name, idxOffset, numIndices, material));
+    }
+
+    void Mesh::CreateIndexBuffer()
+    {
+        iBuffer_ = std::make_unique<GLBuffer>(GL_STATIC_DRAW);
+        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, iBuffer_->GetBuffer());
+        iBuffer_->InitializeData(indices_);
+        OGL_CALL(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     void Mesh::CreateSceneNodes(aiNode* rootNode)

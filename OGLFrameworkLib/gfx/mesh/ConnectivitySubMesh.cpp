@@ -20,48 +20,60 @@
 namespace cgu {
 
     /** Default constructor. */
-    ConnectivitySubMesh::ConnectivitySubMesh(const Mesh* mesh, unsigned int subMeshId) :
+    ConnectivitySubMesh::ConnectivitySubMesh(const Mesh* mesh, const std::vector<unsigned int>& localIdxMap, unsigned int subMeshId) :
         mesh_(mesh),
         subMeshId_(subMeshId)
     {
-        std::set<unsigned int> indexSet;
         auto subMesh = mesh_->GetSubMesh(subMeshId_);
 
         auto lastIndex = subMesh->GetIndexOffset() + subMesh->GetNumberOfIndices();
+
+        std::set<unsigned int> indexSet;
         for (auto i = subMesh->GetIndexOffset(); i < lastIndex; i += 3) {
             std::array<unsigned int, 3> indices = { mesh_->GetIndices()[i], mesh_->GetIndices()[i + 1], mesh_->GetIndices()[i + 2] };
-            triangleConnect_.emplace_back(indices);
-            indexSet.insert(mesh_->GetIndices()[i]);
-            indexSet.insert(mesh_->GetIndices()[i + 1]);
-            indexSet.insert(mesh_->GetIndices()[i + 2]);
+            std::array<unsigned int, 3> localIndices = { localIdxMap[indices[0]], localIdxMap[indices[1]], localIdxMap[indices[2]] };
+            indexSet.insert(indices[0]);
+            indexSet.insert(indices[1]);
+            indexSet.insert(indices[2]);
+            triangleConnect_.emplace_back(indices, localIndices);
         }
 
-        std::unordered_map<unsigned int, unsigned int> localVertexMap;
+        // std::unordered_map<unsigned int, unsigned int> localVertexMap;
 
         verticesConnect_.resize(indexSet.size());
         unsigned int cid = 0;
         for (auto& idx : indexSet) {
-            localVertexMap.insert(std::make_pair(idx, cid++));
+            // localVertexMap.insert(std::make_pair(idx, cid++));
             verticesConnect_[idx].idx = idx;
+            verticesConnect_[idx].locOnlyIdx = localIdxMap[idx];
         }
 
         // set vertex connectivity
         for (auto i = 0; i < triangleConnect_.size(); ++i) {
             auto& tri = triangleConnect_[i];
-            tri.vertex[0] = localVertexMap[tri.vertex[0]];
+            /*tri.vertex[0] = localVertexMap[tri.vertex[0]];
             tri.vertex[1] = localVertexMap[tri.vertex[1]];
-            tri.vertex[2] = localVertexMap[tri.vertex[2]];
-            verticesConnect_[tri.vertex[0]].triangles.push_back(i);
-            verticesConnect_[tri.vertex[1]].triangles.push_back(i);
-            verticesConnect_[tri.vertex[2]].triangles.push_back(i);
+            tri.vertex[2] = localVertexMap[tri.vertex[2]];*/
+            std::array<bool, 3> insertVtx{ { false, false, false } };
+            
+            for (auto j = 0; j < 3; ++j) {
+                auto& vl = verticesConnect_[tri.locOnlyVtxIds_[0]].triangles;
+                if (std::find(vl.begin(), vl.end(), i) == vl.end()) vl.push_back(i);
+                
+                auto& vg = verticesConnect_[tri.vertex_[0]].triangles;
+                if (std::find(vg.begin(), vg.end(), i) == vg.end()) vg.push_back(i);
+            }
+            /*verticesConnect_[tri.locOnlyVtxIds_[0]].triangles.push_back(i);
+            verticesConnect_[tri.locOnlyVtxIds_[1]].triangles.push_back(i);
+            verticesConnect_[tri.locOnlyVtxIds_[2]].triangles.push_back(i);*/
         }
 
         // set triangle neighbors
         for (auto i = 0; i < triangleConnect_.size(); ++i) {
             auto& tri = triangleConnect_[i];
             for (unsigned int ni = 0; ni < 3; ++ni) {
-                auto vi0 = tri.vertex[(ni + 1) % 3];
-                auto vi1 = tri.vertex[(ni + 2) % 3];
+                auto vi0 = tri.locOnlyVtxIds_[(ni + 1) % 3];
+                auto vi1 = tri.locOnlyVtxIds_[(ni + 2) % 3];
                 std::vector<unsigned int> isect;
                 std::set_intersection(verticesConnect_[vi0].triangles.begin(), verticesConnect_[vi0].triangles.end(),
                     verticesConnect_[vi1].triangles.begin(), verticesConnect_[vi1].triangles.end(), std::back_inserter(isect));
@@ -69,9 +81,9 @@ namespace cgu {
                 // this triangle is the triangle itself not its neighbor
                 assert(isect.size() <= 2); // both this triangle and the neighbor should be found
                 if (isect.size() == 2) {
-                    tri.neighbors[ni] = isect[0] == i ? isect[1] : isect[0];
+                    tri.neighbors_[ni] = isect[0] == i ? isect[1] : isect[0];
                 } else {
-                    tri.neighbors[ni] = -1;
+                    tri.neighbors_[ni] = -1;
                 }
             }
         }
@@ -135,7 +147,7 @@ namespace cgu {
      *  Find index of triangle that contains the given point.
      *  @param pt the point to find the triangle for.
      */
-    unsigned int ConnectivitySubMesh::FindContainingTriangle(const glm::vec3 pt)
+    unsigned int ConnectivitySubMesh::FindContainingTriangle(const glm::vec3 pt) const
     {
         if (!cguMath::pointInAABB3Test(aabb_, pt)) return -1;
 
@@ -161,7 +173,7 @@ namespace cgu {
         if (triangleConnect_.empty()) return;
         aabb_.minmax[0] = aabb_.minmax[1] = vertices[GetVtxIndex(0, 0)].xyz();
         for (const auto& tri : triangleConnect_) {
-            for (auto vi : tri.vertex) {
+            for (auto vi : tri.locOnlyVtxIds_) {
                 aabb_.minmax[0] = glm::min(aabb_.minmax[0], vertices[vi].xyz());
                 aabb_.minmax[1] = glm::max(aabb_.minmax[1], vertices[vi].xyz());
             }
@@ -195,10 +207,18 @@ namespace cgu {
         for (auto& vtx : verticesConnect_) {
             if (vtx.chunkId != invalidId) continue;
 
-            MarkVertexForChunk(vtx, currentId);
+            if (vtx.idx == vtx.locOnlyIdx) {
+                MarkVertexForChunk(vtx, verticesConnect_[vtx.locOnlyIdx].chunkId);
+            } else {
+                MarkVertexForChunk(vtx, currentId);
 
-            ++currentId;
+                ++currentId;
+            }
         }
+
+        //for (auto& vtx : verticesConnect_) {
+            // propagate local chunk ids to global vertices
+        //}
     }
 
     void ConnectivitySubMesh::MarkVertexForChunk(MeshConnectVertex& vtx, unsigned int chunkId)
@@ -216,7 +236,7 @@ namespace cgu {
 
             verticesConnect_[vId].chunkId = chunkId;
             for (auto tId : verticesConnect_[vId].triangles) {
-                for (auto vIdNext : triangleConnect_[tId].vertex) {
+                for (auto vIdNext : triangleConnect_[tId].locOnlyVtxIds_) {
                     workingChunkQueue.push(vIdNext);
                 }
             }
