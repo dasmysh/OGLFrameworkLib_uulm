@@ -32,6 +32,8 @@ namespace cgu {
         AssimpScene& operator=(AssimpScene&&);
         virtual ~AssimpScene();
 
+        std::string GetFullFilename() const override;
+
     private:
         std::shared_ptr<const GLTexture2D> loadTexture(const std::string& relFilename, const std::string& params, ApplicationBase* app) const;
         void save(const std::string& filename) const;

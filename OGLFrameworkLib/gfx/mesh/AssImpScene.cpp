@@ -177,6 +177,11 @@ namespace cgu {
     /** Destructor. */
     AssimpScene::~AssimpScene() = default;
 
+    std::string AssimpScene::GetFullFilename() const
+    {
+        return Resource::FindResourceLocation(Resource::GetFilename());
+    }
+
     std::shared_ptr<const GLTexture2D> AssimpScene::loadTexture(const std::string& relFilename, const std::string& params, ApplicationBase* app) const
     {
         boost::filesystem::path sceneFilePath{ GetParameters()[0] };

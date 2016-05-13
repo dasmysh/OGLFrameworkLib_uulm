@@ -53,6 +53,7 @@ namespace cgu {
 
         template<class VTX> GLBuffer* GetVertexBuffer() { return vBuffers_.at(typeid(VTX)).get(); }
         template<class VTX> const GLBuffer* GetVertexBuffer() const { return vBuffers_.at(typeid(VTX)).get(); }
+        virtual std::string GetFullFilename() const { return ""; };
 
     protected:
         void SetRootTransform(const glm::mat4& rootTransform) { rootTransform_ = rootTransform; }

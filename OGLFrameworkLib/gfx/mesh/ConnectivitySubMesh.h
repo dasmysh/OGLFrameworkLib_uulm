@@ -19,56 +19,8 @@
 
 namespace cgu {
 
-    /** Contains vertex connectivity information. */
-    struct MeshConnectVertex
-    {
-        MeshConnectVertex() : idx{ 0 }, locOnlyIdx{ 0 }, chunkId{ 0 } {}
-
-        /** Holds the vertex index. */
-        unsigned int idx;
-        /** Holds the location only vertex index. */
-        unsigned int locOnlyIdx;
-        /** Holds the vertices chunk id. */
-        unsigned int chunkId;
-        /** Holds the vertexes triangles. */
-        std::vector<unsigned int> triangles;
-    };
-
-    /** Contains indices for triangles vertices and connectivity. */
-    struct MeshConnectTriangle
-    {
-        MeshConnectTriangle() {}
-
-        explicit MeshConnectTriangle(const std::array<unsigned int, 3>& v, const std::array<unsigned int, 3>& lv) :
-            vertex_(v),
-            locOnlyVtxIds_(lv),
-            neighbors_({ { -1, -1, -1 } })
-        {};
-
-        /*bool operator<(const MeshConnectTriangle& rhs) const {
-            if (vertex[0] < rhs.vertex[0]) return true;
-            if (vertex[0] == rhs.vertex[0]) {
-                if (vertex[1] < rhs.vertex[1]) return true;
-                if (vertex[1] == rhs.vertex[1]) {
-                    if (vertex[2] < rhs.vertex[2]) return true;
-                }
-            }
-            return false;
-        };
-
-        bool operator==(const MeshConnectTriangle& rhs) const {
-            return rhs.vertex[0] == vertex[0]
-                && rhs.vertex[1] == vertex[1]
-                && rhs.vertex[2] == vertex[2];
-        };*/
-
-        /** Holds the triangles vertices. */
-        std::array<unsigned int, 3> vertex_;
-        /** Holds the triangles location only vertex ids. */
-        std::array<unsigned int, 3> locOnlyVtxIds_;
-        /** Holds the triangles neighbors. */
-        std::array<int, 3> neighbors_;
-    };
+    struct MeshConnectVertex;
+    class ConnectivityMesh;
 
     /**
      * @brief  Collects connectivity information in sub-meshes.
@@ -79,35 +31,38 @@ namespace cgu {
     class ConnectivitySubMesh
     {
     public:
-        ConnectivitySubMesh(const Mesh* mesh, const std::vector<unsigned int>& localIdxMap, unsigned int subMeshId);
+        ConnectivitySubMesh(const Mesh* mesh, const ConnectivityMesh* cmesh, unsigned int subMeshId, unsigned int triangleRangeStart);
         ConnectivitySubMesh(const ConnectivitySubMesh&);
         ConnectivitySubMesh& operator=(const ConnectivitySubMesh&);
         ConnectivitySubMesh(ConnectivitySubMesh&&);
         ConnectivitySubMesh& operator=(ConnectivitySubMesh&&);
         ~ConnectivitySubMesh();
 
-        unsigned int FindContainingTriangle(const glm::vec3 point) const;
-        const std::vector<MeshConnectVertex>& GetVertices() const { return verticesConnect_; }
-        const MeshConnectTriangle& GetTriangle(unsigned int idx) const { return triangleConnect_[idx]; }
+        // void FindPointsWithinRadius(const glm::vec3 center, float radius, std::vector<>& ) const;
+        // unsigned int FindContainingTriangle(const glm::vec3 point) const;
         const SubMesh& GetSubMeshObject() const { return *mesh_->GetSubMesh(subMeshId_); }
 
-    private:
-        void CreateAABB();
-        void CreateRTree();
-        void CalculateChunkIds();
-        void MarkVertexForChunk(MeshConnectVertex& vtx, unsigned int chunkId);
+        static std::unique_ptr<ConnectivitySubMesh> load(std::ifstream& meshFile, const Mesh* mesh, const ConnectivityMesh* cmesh);
+        void save(std::ofstream& ofs) const;
 
-        unsigned int GetVtxIndex(unsigned int localIndex) const { return verticesConnect_[localIndex].idx; }
-        unsigned int GetVtxIndex(unsigned int triIdx, unsigned int vtxIdx) const { return GetVtxIndex(triangleConnect_[triIdx].vertex_[vtxIdx]); }
+    private:
+        explicit ConnectivitySubMesh(const Mesh* mesh, const ConnectivityMesh* cmesh);
+
+        void CreateAABB();
+
+        //unsigned int GetVtxIndex(unsigned int localIndex) const { return cMesh_-> verticesConnect_[localIndex].idx; }
+        // unsigned int GetVtxIndex(unsigned int triIdx, unsigned int vtxIdx) const { return  GetVtxIndex(triangleConnect_[triIdx].vertex_[vtxIdx]); }
 
         /** The mesh to create connectivity from. */
         const Mesh* mesh_;
+        /** The connectivity mesh. */
+        const ConnectivityMesh* cMesh_;
         /** The id of the sub-mesh to create the connectivity from. */
         unsigned int subMeshId_;
-        /** Holds a list of triangles with connectivity information. */
-        std::vector<MeshConnectTriangle> triangleConnect_;
-        /** Holds a list of vertex connectivity information. */
-        std::vector<MeshConnectVertex> verticesConnect_;
+        /** Holds the first triangle index. */
+        unsigned int triangleRangeStart_;
+        /** Holds the number of triangles. */
+        unsigned int numTriangles_;
         /** Holds the bounding box of the sub-meshes. */
         cguMath::AABB3<float> aabb_;
 
@@ -116,10 +71,10 @@ namespace cgu {
         typedef boost::geometry::model::polygon<point, false, false> polygon; // CCW, open polygon
         typedef std::pair<box, unsigned> polyIdxBox;
 
-        typedef boost::geometry::index::rtree<polyIdxBox, boost::geometry::index::quadratic<16>> RTreeType;
+        typedef boost::geometry::index::rtree<polyIdxBox, boost::geometry::index::quadratic<16>> TriangleRTreeType;
 
         /** Holds the tree for fast finding points in triangles. */
-        RTreeType fastFindTree_;
+        // TriangleRTreeType triangleFastFindTree_;
 
     };
 }
