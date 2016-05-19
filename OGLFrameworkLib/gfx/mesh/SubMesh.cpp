@@ -74,6 +74,7 @@ namespace cgu {
 
     void SubMesh::write(std::ofstream& ofs) const
     {
+        VersionableSerializerType::writeHeader(ofs);
         serializeHelper::write(ofs, reinterpret_cast<uint64_t>(this));
         serializeHelper::write(ofs, objectName_);
         serializeHelper::write(ofs, indexOffset_);
@@ -83,17 +84,24 @@ namespace cgu {
         serializeHelper::write(ofs, reinterpret_cast<uint64_t>(material_));
     }
 
-    void SubMesh::read(std::ifstream& ifs, std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, Material*>& materials)
+    bool SubMesh::read(std::ifstream& ifs, std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, Material*>& materials)
     {
-        uint64_t meshID, materialID;
-        serializeHelper::read(ifs, meshID);
-        serializeHelper::read(ifs, objectName_);
-        serializeHelper::read(ifs, indexOffset_);
-        serializeHelper::read(ifs, numIndices_);
-        serializeHelper::read(ifs, aabb_.minmax[0]);
-        serializeHelper::read(ifs, aabb_.minmax[1]);
-        serializeHelper::read(ifs, materialID);
-        meshes[meshID] = this;
-        material_ = materials[materialID];
+        bool correctHeader;
+        unsigned int actualVersion;
+        std::tie(correctHeader, actualVersion) = VersionableSerializerType::checkHeader(ifs);
+        if (correctHeader) {
+            uint64_t meshID, materialID;
+            serializeHelper::read(ifs, meshID);
+            serializeHelper::read(ifs, objectName_);
+            serializeHelper::read(ifs, indexOffset_);
+            serializeHelper::read(ifs, numIndices_);
+            serializeHelper::read(ifs, aabb_.minmax[0]);
+            serializeHelper::read(ifs, aabb_.minmax[1]);
+            serializeHelper::read(ifs, materialID);
+            meshes[meshID] = this;
+            material_ = materials[materialID];
+            return true;
+        }
+        return false;
     }
 }

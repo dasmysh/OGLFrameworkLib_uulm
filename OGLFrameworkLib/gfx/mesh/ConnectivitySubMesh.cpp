@@ -114,22 +114,29 @@ namespace cgu {
         return -1;
     }*/
 
-    std::unique_ptr<ConnectivitySubMesh> ConnectivitySubMesh::load(std::ifstream& ifs, const Mesh* mesh, const ConnectivityMesh* cmesh)
+    std::tuple<std::unique_ptr<ConnectivitySubMesh>, bool> ConnectivitySubMesh::load(std::ifstream& ifs, const Mesh* mesh, const ConnectivityMesh* cmesh)
     {
-        std::unique_ptr<ConnectivitySubMesh> result{ new ConnectivitySubMesh(mesh, cmesh) };
-        serializeHelper::read(ifs, result->subMeshId_);
-        serializeHelper::read(ifs, result->triangleRangeStart_);
-        serializeHelper::read(ifs, result->numTriangles_);
-        serializeHelper::read(ifs, result->aabb_.minmax[0]);
-        serializeHelper::read(ifs, result->aabb_.minmax[1]);
+        bool correctHeader;
+        unsigned int actualVersion;
+        std::tie(correctHeader, actualVersion) = VersionableSerializerType::checkHeader(ifs);
+        if (correctHeader) {
+            std::unique_ptr<ConnectivitySubMesh> result{ new ConnectivitySubMesh(mesh, cmesh) };
+            serializeHelper::read(ifs, result->subMeshId_);
+            serializeHelper::read(ifs, result->triangleRangeStart_);
+            serializeHelper::read(ifs, result->numTriangles_);
+            serializeHelper::read(ifs, result->aabb_.minmax[0]);
+            serializeHelper::read(ifs, result->aabb_.minmax[1]);
 
-        // result->CreateTriangleRTree();
+            // result->CreateTriangleRTree();
 
-        return std::move(result);
+            return std::make_tuple(std::move(result), true);
+        }
+        return std::make_tuple(nullptr, false);
     }
 
     void ConnectivitySubMesh::save(std::ofstream& ofs) const
     {
+        VersionableSerializerType::writeHeader(ofs);
         serializeHelper::write(ofs, subMeshId_);
         serializeHelper::write(ofs, triangleRangeStart_);
         serializeHelper::write(ofs, numTriangles_);

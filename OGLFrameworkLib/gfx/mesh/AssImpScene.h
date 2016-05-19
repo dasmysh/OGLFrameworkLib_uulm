@@ -12,6 +12,7 @@
 #include "main.h"
 #include "gfx/Material.h"
 #include "Mesh.h"
+#include <core/serializationHelper.h>
 
 namespace cgu {
 
@@ -35,9 +36,12 @@ namespace cgu {
         std::string GetFullFilename() const override;
 
     private:
+        using VersionableSerializerType = serializeHelper::VersionableSerializer<'M', 'B', 'A', 'M', 1001>;
+
+        void createNewMesh(const std::string& filename, const std::string& textureParamsString, const std::string& binFilename, ApplicationBase* app);
         std::shared_ptr<const GLTexture2D> loadTexture(const std::string& relFilename, const std::string& params, ApplicationBase* app) const;
         void save(const std::string& filename) const;
-        void load(const std::string& filename, ApplicationBase* app);
+        bool load(const std::string& filename, ApplicationBase* app);
     };
 }
 

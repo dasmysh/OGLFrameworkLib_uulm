@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include <core/math/math.h>
+#include <core/serializationHelper.h>
 
 struct aiNode;
 
@@ -38,9 +39,11 @@ namespace cgu {
 
         void UpdateMeshes(const std::unordered_map<SubMesh*, SubMesh*>& meshUpdates);
         void write(std::ofstream& ofs);
-        void read(std::ifstream& ifs, const std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, SceneMeshNode*>& nodes);
+        bool read(std::ifstream& ifs, const std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, SceneMeshNode*>& nodes);
 
     private:
+        using VersionableSerializerType = serializeHelper::VersionableSerializer<'S', 'M', 'N', '_', 1001>;
+
         /** The nodes name. */
         std::string nodeName_;
         /** The nodes childen. */

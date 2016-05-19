@@ -153,6 +153,7 @@ namespace cgu {
 
     void Mesh::write(std::ofstream& ofs) const
     {
+        VersionableSerializerType::writeHeader(ofs);
         serializeHelper::writeV(ofs, vertices_);
         serializeHelper::writeV(ofs, normals_);
         serializeHelper::writeVV(ofs, texCoords_);
@@ -188,56 +189,63 @@ namespace cgu {
         rootNode_->write(ofs);
     }
 
-    void Mesh::read(std::ifstream& ifs, TextureManager& texMan)
+    bool Mesh::read(std::ifstream& ifs, TextureManager& texMan)
     {
-        serializeHelper::readV(ifs, vertices_);
-        serializeHelper::readV(ifs, normals_);
-        serializeHelper::readVV(ifs, texCoords_);
-        serializeHelper::readV(ifs, tangents_);
-        serializeHelper::readV(ifs, binormals_);
-        serializeHelper::readVV(ifs, colors_);
-        serializeHelper::readVV(ifs, ids_);
-        serializeHelper::readV(ifs, indices_);
+        bool correctHeader;
+        unsigned int actualVersion;
+        std::tie(correctHeader, actualVersion) = VersionableSerializerType::checkHeader(ifs);
+        if (correctHeader) {
+            serializeHelper::readV(ifs, vertices_);
+            serializeHelper::readV(ifs, normals_);
+            serializeHelper::readVV(ifs, texCoords_);
+            serializeHelper::readV(ifs, tangents_);
+            serializeHelper::readV(ifs, binormals_);
+            serializeHelper::readVV(ifs, colors_);
+            serializeHelper::readVV(ifs, ids_);
+            serializeHelper::readV(ifs, indices_);
 
-        uint64_t numMaterials;
-        std::unordered_map<uint64_t, Material*> materialMap;
-        std::unordered_map<uint64_t, SubMesh*> meshMap;
-        std::unordered_map<uint64_t, SceneMeshNode*> nodeMap;
-        serializeHelper::read(ifs, numMaterials);
-        materials_.resize(numMaterials);
-        for (auto& mat : materials_) {
-            mat.reset(new Material());
-            uint64_t materialID;
-            serializeHelper::read(ifs, materialID);
-            serializeHelper::read(ifs, mat->params.diffuseAlbedo);
-            serializeHelper::read(ifs, mat->params.refraction);
-            serializeHelper::read(ifs, mat->params.specularScaling);
-            serializeHelper::read(ifs, mat->params.roughness);
-            serializeHelper::read(ifs, mat->params.specularExponent);
-            serializeHelper::read(ifs, mat->ambient);
-            serializeHelper::read(ifs, mat->alpha);
-            serializeHelper::read(ifs, mat->minOrientedAlpha);
-            serializeHelper::read(ifs, mat->bumpMultiplier);
-            std::string diffuseTexId, bumpTexId;
-            serializeHelper::read(ifs, diffuseTexId);
-            serializeHelper::read(ifs, bumpTexId);
-            if (diffuseTexId.size() > 0) mat->diffuseTex = texMan.GetResource(diffuseTexId);
-            if (bumpTexId.size() > 0) mat->bumpTex = texMan.GetResource(bumpTexId);
-            materialMap[materialID] = mat.get();
+            uint64_t numMaterials;
+            std::unordered_map<uint64_t, Material*> materialMap;
+            std::unordered_map<uint64_t, SubMesh*> meshMap;
+            std::unordered_map<uint64_t, SceneMeshNode*> nodeMap;
+            serializeHelper::read(ifs, numMaterials);
+            materials_.resize(numMaterials);
+            for (auto& mat : materials_) {
+                mat.reset(new Material());
+                uint64_t materialID;
+                serializeHelper::read(ifs, materialID);
+                serializeHelper::read(ifs, mat->params.diffuseAlbedo);
+                serializeHelper::read(ifs, mat->params.refraction);
+                serializeHelper::read(ifs, mat->params.specularScaling);
+                serializeHelper::read(ifs, mat->params.roughness);
+                serializeHelper::read(ifs, mat->params.specularExponent);
+                serializeHelper::read(ifs, mat->ambient);
+                serializeHelper::read(ifs, mat->alpha);
+                serializeHelper::read(ifs, mat->minOrientedAlpha);
+                serializeHelper::read(ifs, mat->bumpMultiplier);
+                std::string diffuseTexId, bumpTexId;
+                serializeHelper::read(ifs, diffuseTexId);
+                serializeHelper::read(ifs, bumpTexId);
+                if (diffuseTexId.size() > 0) mat->diffuseTex = texMan.GetResource(diffuseTexId);
+                if (bumpTexId.size() > 0) mat->bumpTex = texMan.GetResource(bumpTexId);
+                materialMap[materialID] = mat.get();
+            }
+
+            uint64_t numMeshes;
+
+            serializeHelper::read(ifs, numMeshes);
+            subMeshes_.resize(numMeshes);
+            for (auto& mesh : subMeshes_) {
+                mesh.reset(new SubMesh());
+                if (!mesh->read(ifs, meshMap, materialMap)) return false;
+            }
+
+            serializeHelper::read(ifs, rootTransform_);
+            rootNode_ = std::make_unique<SceneMeshNode>();
+            nodeMap[0] = nullptr;
+            if (!rootNode_->read(ifs, meshMap, nodeMap)) return false;
+            return true;
         }
-
-        uint64_t numMeshes;
-
-        serializeHelper::read(ifs, numMeshes);
-        subMeshes_.resize(numMeshes);
-        for (auto& mesh : subMeshes_) {
-            mesh.reset(new SubMesh());
-            mesh->read(ifs, meshMap, materialMap);
-        }
-
-        serializeHelper::read(ifs, rootTransform_);
-        rootNode_ = std::make_unique<SceneMeshNode>();
-        nodeMap[0] = nullptr;
-        rootNode_->read(ifs, meshMap, nodeMap);
+        return false;
     }
 }

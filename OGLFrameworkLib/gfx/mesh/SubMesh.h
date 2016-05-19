@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include <core/math/primitives.h>
+#include <core/serializationHelper.h>
 
 namespace cgu {
 
@@ -41,9 +42,11 @@ namespace cgu {
 
         void UpdateMaterials(const std::unordered_map<Material*, Material*>& materialUpdates);
         void write(std::ofstream& ofs) const;
-        void read(std::ifstream& ifs, std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, Material*>& materials);
+        bool read(std::ifstream& ifs, std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, Material*>& materials);
 
     private:
+        using VersionableSerializerType = serializeHelper::VersionableSerializer<'S', 'M', 'E', 'S', 1001>;
+
         /** Holds the sub-meshes object name. */
         std::string objectName_;
         /** The index offset the sub-mesh starts. */

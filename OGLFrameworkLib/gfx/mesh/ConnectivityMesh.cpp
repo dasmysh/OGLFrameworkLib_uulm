@@ -33,39 +33,7 @@ namespace cgu {
         auto connectFilePath = origPath.parent_path().string() + "/" + origPath.stem().string() + "_connectivity.myshbin";
         CreateVertexRTree();
 
-        if (boost::filesystem::exists(connectFilePath)) {
-            load(connectFilePath);
-        } else {
-            std::vector<unsigned int> reducedVertexMap(mesh->GetVertices().size(), static_cast<unsigned int>(mesh->GetVertices().size()));
-
-            cguMath::AABB3<float> meshAABB;
-            mesh->GetRootNode()->GetBoundingBox(meshAABB, glm::mat4(1.0f));
-            auto querySize = (meshAABB.minmax[1] - meshAABB.minmax[0]) / 20000.0f;
-
-            for (auto i = 0; i < mesh->GetVertices().size(); ++i) {
-                if (reducedVertexMap[i] != mesh->GetVertices().size()) continue;
-
-                typedef boost::geometry::model::box<point> box;
-                const auto& v = mesh->GetVertices()[i];
-                box queryBox(point(v.x - querySize.x, v.y - querySize.y, v.z - querySize.z), point(v.x + querySize.x, v.y + querySize.y, v.z + querySize.z));
-                namespace bgi = boost::geometry::index;
-                for (const auto& qr : vertexFindTree_ | bgi::adaptors::queried(bgi::within(queryBox))) {
-                    if (mesh->GetVertices()[i] == mesh->GetVertices()[qr.second]) reducedVertexMap[qr.second] = i;
-                }
-            }
-
-            verticesConnect_.resize(mesh_->GetVertices().size());
-
-            for (unsigned int smI = 0; smI < mesh_->GetNumSubmeshes(); ++smI) {
-                auto firstIdx = FillSubmeshConnectivity(smI, reducedVertexMap);
-
-                subMeshConnectivity_.emplace_back(std::make_unique<ConnectivitySubMesh>(mesh_, this, smI, firstIdx));
-            }
-
-            CalculateChunkIds();
-            mesh_->GetRootNode()->GetBoundingBox(aabb_, mesh_->GetRootTransform());
-            save(connectFilePath);
-        }
+        if (!load(connectFilePath)) CreateNewConnectivity(connectFilePath, mesh);
         CreateTriangleRTree();
     }
 
@@ -121,6 +89,39 @@ namespace cgu {
     /** Default destructor. */
     ConnectivityMesh::~ConnectivityMesh() = default;
 
+    void ConnectivityMesh::CreateNewConnectivity(const std::string& connectFilePath, const Mesh* mesh)
+    {
+        std::vector<unsigned int> reducedVertexMap(mesh->GetVertices().size(), static_cast<unsigned int>(mesh->GetVertices().size()));
+
+        cguMath::AABB3<float> meshAABB;
+        mesh->GetRootNode()->GetBoundingBox(meshAABB, glm::mat4(1.0f));
+        auto querySize = (meshAABB.minmax[1] - meshAABB.minmax[0]) / 20000.0f;
+
+        for (auto i = 0; i < mesh->GetVertices().size(); ++i) {
+            if (reducedVertexMap[i] != mesh->GetVertices().size()) continue;
+
+            typedef boost::geometry::model::box<point> box;
+            const auto& v = mesh->GetVertices()[i];
+            box queryBox(point(v.x - querySize.x, v.y - querySize.y, v.z - querySize.z), point(v.x + querySize.x, v.y + querySize.y, v.z + querySize.z));
+            namespace bgi = boost::geometry::index;
+            for (const auto& qr : vertexFindTree_ | bgi::adaptors::queried(bgi::within(queryBox))) {
+                if (mesh->GetVertices()[i] == mesh->GetVertices()[qr.second]) reducedVertexMap[qr.second] = i;
+            }
+        }
+
+        verticesConnect_.resize(mesh_->GetVertices().size());
+
+        for (unsigned int smI = 0; smI < mesh_->GetNumSubmeshes(); ++smI) {
+            auto firstIdx = FillSubmeshConnectivity(smI, reducedVertexMap);
+
+            subMeshConnectivity_.emplace_back(std::make_unique<ConnectivitySubMesh>(mesh_, this, smI, firstIdx));
+        }
+
+        CalculateChunkIds();
+        mesh_->GetRootNode()->GetBoundingBox(aabb_, mesh_->GetRootTransform());
+        save(connectFilePath);
+    }
+
     void ConnectivityMesh::FindPointsWithinRadius(const glm::vec3 center, float radius, std::vector<unsigned>& result) const
     {
         typedef boost::geometry::model::box<point> box;
@@ -157,10 +158,10 @@ namespace cgu {
             auto& tri = triangleConnect_[i];
 
             for (auto j = 0; j < 3; ++j) {
-                auto& vl = verticesConnect_[tri.locOnlyVtxIds_[0]].triangles;
+                auto& vl = verticesConnect_[tri.locOnlyVtxIds_[j]].triangles;
                 if (std::find(vl.begin(), vl.end(), i) == vl.end()) vl.push_back(i);
 
-                auto& vg = verticesConnect_[tri.vertex_[0]].triangles;
+                auto& vg = verticesConnect_[tri.vertex_[j]].triangles;
                 if (std::find(vg.begin(), vg.end(), i) == vg.end()) vg.push_back(i);
             }
         }
@@ -220,46 +221,61 @@ namespace cgu {
         throw std::out_of_range("Containing triangle not found!");*/
     }
 
-    void ConnectivityMesh::load(const std::string& meshFile)
+    bool ConnectivityMesh::load(const std::string& meshFile)
     {
-        std::ifstream inBinFile(meshFile, std::ios::binary);
-        if (inBinFile.is_open()) {
-            serializeHelper::read(inBinFile, aabb_.minmax[0]);
-            serializeHelper::read(inBinFile, aabb_.minmax[1]);
+        if (boost::filesystem::exists(meshFile)) {
+            std::ifstream inBinFile(meshFile, std::ios::binary);
+            if (inBinFile.is_open()) {
+                bool correctHeader;
+                unsigned int actualVersion;
+                std::tie(correctHeader, actualVersion) = VersionableSerializerType::checkHeader(inBinFile);
+                if (correctHeader) {
+                    serializeHelper::read(inBinFile, aabb_.minmax[0]);
+                    serializeHelper::read(inBinFile, aabb_.minmax[1]);
 
-            unsigned int triSize, vtxSize;
-            serializeHelper::read(inBinFile, triSize);
-            triangleConnect_.resize(triSize);
-            for (auto& tri : triangleConnect_) {
-                serializeHelper::read(inBinFile, tri.vertex_[0]);
-                serializeHelper::read(inBinFile, tri.vertex_[1]);
-                serializeHelper::read(inBinFile, tri.vertex_[2]);
-                serializeHelper::read(inBinFile, tri.locOnlyVtxIds_[0]);
-                serializeHelper::read(inBinFile, tri.locOnlyVtxIds_[1]);
-                serializeHelper::read(inBinFile, tri.locOnlyVtxIds_[2]);
-                serializeHelper::read(inBinFile, tri.neighbors_[0]);
-                serializeHelper::read(inBinFile, tri.neighbors_[1]);
-                serializeHelper::read(inBinFile, tri.neighbors_[2]);
+                    unsigned int triSize, vtxSize;
+                    serializeHelper::read(inBinFile, triSize);
+                    triangleConnect_.resize(triSize);
+                    for (auto& tri : triangleConnect_) {
+                        serializeHelper::read(inBinFile, tri.vertex_[0]);
+                        serializeHelper::read(inBinFile, tri.vertex_[1]);
+                        serializeHelper::read(inBinFile, tri.vertex_[2]);
+                        serializeHelper::read(inBinFile, tri.locOnlyVtxIds_[0]);
+                        serializeHelper::read(inBinFile, tri.locOnlyVtxIds_[1]);
+                        serializeHelper::read(inBinFile, tri.locOnlyVtxIds_[2]);
+                        serializeHelper::read(inBinFile, tri.neighbors_[0]);
+                        serializeHelper::read(inBinFile, tri.neighbors_[1]);
+                        serializeHelper::read(inBinFile, tri.neighbors_[2]);
+                    }
+
+                    serializeHelper::read(inBinFile, vtxSize);
+                    verticesConnect_.resize(vtxSize);
+                    for (auto& vtx : verticesConnect_) {
+                        serializeHelper::read(inBinFile, vtx.idx);
+                        serializeHelper::read(inBinFile, vtx.locOnlyIdx);
+                        serializeHelper::read(inBinFile, vtx.chunkId);
+                        serializeHelper::readV(inBinFile, vtx.triangles);
+                    }
+
+                    unsigned int numSubmeshes;
+                    serializeHelper::read(inBinFile, numSubmeshes);
+                    subMeshConnectivity_.resize(numSubmeshes);
+                    for (auto& submesh : subMeshConnectivity_) {
+                        bool loadedCorrectly;
+                        std::tie(submesh, loadedCorrectly) = std::move(ConnectivitySubMesh::load(inBinFile, mesh_, this));
+                        if (!loadedCorrectly) return false;
+                    }
+                    return true;
+                }
             }
-
-            serializeHelper::read(inBinFile, vtxSize);
-            verticesConnect_.resize(vtxSize);
-            for (auto& vtx : verticesConnect_) {
-                serializeHelper::read(inBinFile, vtx.idx);
-                serializeHelper::read(inBinFile, vtx.locOnlyIdx);
-                serializeHelper::read(inBinFile, vtx.chunkId);
-                serializeHelper::readV(inBinFile, vtx.triangles);
-            }
-
-            unsigned int numSubmeshes;
-            serializeHelper::read(inBinFile, numSubmeshes);
-            for (auto& submesh : subMeshConnectivity_) submesh = ConnectivitySubMesh::load(inBinFile, mesh_, this);
         }
+        return false;
     }
 
     void ConnectivityMesh::save(const std::string& meshFile) const
     {
         std::ofstream ofs(meshFile, std::ios::out | std::ios::binary);
+        VersionableSerializerType::writeHeader(ofs);
         serializeHelper::write(ofs, aabb_.minmax[0]);
         serializeHelper::write(ofs, aabb_.minmax[1]);
 
@@ -324,7 +340,7 @@ namespace cgu {
         for (auto& vtx : verticesConnect_) {
             if (vtx.chunkId != invalidId) continue;
 
-            if (vtx.idx == vtx.locOnlyIdx) {
+            if (vtx.idx != vtx.locOnlyIdx) {
                 MarkVertexForChunk(vtx, verticesConnect_[vtx.locOnlyIdx].chunkId);
             } else {
                 MarkVertexForChunk(vtx, currentId);

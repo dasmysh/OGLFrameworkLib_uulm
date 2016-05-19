@@ -42,10 +42,12 @@ namespace cgu {
         // unsigned int FindContainingTriangle(const glm::vec3 point) const;
         const SubMesh& GetSubMeshObject() const { return *mesh_->GetSubMesh(subMeshId_); }
 
-        static std::unique_ptr<ConnectivitySubMesh> load(std::ifstream& meshFile, const Mesh* mesh, const ConnectivityMesh* cmesh);
+        static std::tuple<std::unique_ptr<ConnectivitySubMesh>, bool> load(std::ifstream& meshFile, const Mesh* mesh, const ConnectivityMesh* cmesh);
         void save(std::ofstream& ofs) const;
 
     private:
+        using VersionableSerializerType = serializeHelper::VersionableSerializer<'C', 'T', 'S', 'M', 1001>;
+
         explicit ConnectivitySubMesh(const Mesh* mesh, const ConnectivityMesh* cmesh);
 
         void CreateAABB();

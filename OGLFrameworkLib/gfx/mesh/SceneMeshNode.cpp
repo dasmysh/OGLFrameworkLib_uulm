@@ -110,6 +110,7 @@ namespace cgu {
 
     void SceneMeshNode::write(std::ofstream& ofs)
     {
+        VersionableSerializerType::writeHeader(ofs);
         std::vector<size_t> meshWriteIds(meshes_.size());
         for (auto i = 0; i < meshes_.size(); ++i) meshWriteIds[i] = reinterpret_cast<uint64_t>(meshes_[i]);
 
@@ -127,34 +128,41 @@ namespace cgu {
         for (auto i = 0; i < children_.size(); ++i) children_[i]->write(ofs);
     }
 
-    void SceneMeshNode::read(std::ifstream& ifs, const std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, SceneMeshNode*>& nodes)
+    bool SceneMeshNode::read(std::ifstream& ifs, const std::unordered_map<uint64_t, SubMesh*>& meshes, std::unordered_map<uint64_t, SceneMeshNode*>& nodes)
     {
-        children_.clear();
-        meshes_.clear();
+        bool correctHeader;
+        unsigned int actualVersion;
+        std::tie(correctHeader, actualVersion) = VersionableSerializerType::checkHeader(ifs);
+        if (correctHeader) {
+            children_.clear();
+            meshes_.clear();
 
-        uint64_t nodeID, parentNodeID;
-        std::vector<uint64_t> meshIDs, childIDs;
+            uint64_t nodeID, parentNodeID;
+            std::vector<uint64_t> meshIDs, childIDs;
 
-        serializeHelper::read(ifs, nodeID);
-        serializeHelper::read(ifs, nodeName_);
-        serializeHelper::read(ifs, localTransform_);
-        serializeHelper::read(ifs, aabb_.minmax[0]);
-        serializeHelper::read(ifs, aabb_.minmax[1]);
-        serializeHelper::read(ifs, parentNodeID);
-        serializeHelper::readV(ifs, meshIDs);
-        serializeHelper::readV(ifs, childIDs);
+            serializeHelper::read(ifs, nodeID);
+            serializeHelper::read(ifs, nodeName_);
+            serializeHelper::read(ifs, localTransform_);
+            serializeHelper::read(ifs, aabb_.minmax[0]);
+            serializeHelper::read(ifs, aabb_.minmax[1]);
+            serializeHelper::read(ifs, parentNodeID);
+            serializeHelper::readV(ifs, meshIDs);
+            serializeHelper::readV(ifs, childIDs);
 
-        meshes_.resize(meshIDs.size());
-        for (auto i = 0; i < meshes_.size(); ++i) meshes_[i] = meshes.at(meshIDs[i]);
+            meshes_.resize(meshIDs.size());
+            for (auto i = 0; i < meshes_.size(); ++i) meshes_[i] = meshes.at(meshIDs[i]);
 
-        parent_ = nodes[parentNodeID];
-        nodes[nodeID] = this;
+            parent_ = nodes[parentNodeID];
+            nodes[nodeID] = this;
 
-        children_.resize(childIDs.size());
-        for (auto i = 0; i < children_.size(); ++i) {
-            children_[i] = std::make_unique<SceneMeshNode>();
-            children_[i]->read(ifs, meshes, nodes);
+            children_.resize(childIDs.size());
+            for (auto i = 0; i < children_.size(); ++i) {
+                children_[i] = std::make_unique<SceneMeshNode>();
+                if(!children_[i]->read(ifs, meshes, nodes)) return false;
+            }
+            return true;
         }
+        return false;
     }
 
 }

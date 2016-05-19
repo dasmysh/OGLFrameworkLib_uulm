@@ -12,6 +12,7 @@
 #include "main.h"
 #include <typeindex>
 #include "gfx/glrenderer/GLBuffer.h"
+#include <core/serializationHelper.h>
 
 struct aiNode;
 
@@ -79,9 +80,11 @@ namespace cgu {
         void CreateSceneNodes(aiNode* rootNode);
 
         void write(std::ofstream& ofs) const;
-        void read(std::ifstream& ifs, TextureManager& texMan);
+        bool read(std::ifstream& ifs, TextureManager& texMan);
 
     private:
+        using VersionableSerializerType = serializeHelper::VersionableSerializer<'M', 'E', 'S', 'H', 1001>;
+
         /** Holds all the single points used by the mesh (and its sub-meshes) as points or in vertices. */
         std::vector<glm::vec3> vertices_;
         /** Holds all the single normals used by the mesh (and its sub-meshes). */

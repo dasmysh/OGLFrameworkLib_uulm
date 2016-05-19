@@ -14,6 +14,7 @@
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/index/rtree.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
+#include <core/serializationHelper.h>
 
 namespace cgu {
 
@@ -68,6 +69,7 @@ namespace cgu {
         ConnectivityMesh(const ConnectivityMesh&);
         ConnectivityMesh& operator=(const ConnectivityMesh&);
         ConnectivityMesh(ConnectivityMesh&&);
+
         ConnectivityMesh& operator=(ConnectivityMesh&&);
         ~ConnectivityMesh();
 
@@ -80,9 +82,12 @@ namespace cgu {
         const MeshConnectTriangle& GetTriangle(unsigned int idx) const { return triangleConnect_[idx]; }
 
     private:
-        void load(const std::string& meshFile);
+        using VersionableSerializerType = serializeHelper::VersionableSerializer<'C', 'N', 'T', 'M', 1001>;
+
+        bool load(const std::string& meshFile);
         void save(const std::string& meshFile) const;
 
+        void CreateNewConnectivity(const std::string& connectFilePath, const Mesh* mesh);
         void CreateVertexRTree();
         void CreateTriangleRTree();
         unsigned int FillSubmeshConnectivity(unsigned int smI, const std::vector<unsigned int>& reducedVertexMap);
