@@ -10,10 +10,10 @@
 
 #include "ConnectivitySubMesh.h"
 #include "core/math/math.h"
-#include <boost/geometry/index/rtree.hpp>
 #include "SubMesh.h"
 #include <core/serializationHelper.h>
 #include "ConnectivityMesh.h"
+#include "ConnectivityMeshImpl.h"
 
 #undef min
 #undef max
@@ -22,7 +22,7 @@
 namespace cgu {
 
 
-    ConnectivitySubMesh::ConnectivitySubMesh(const Mesh* mesh, const ConnectivityMesh* cmesh) :
+    ConnectivitySubMesh::ConnectivitySubMesh(const Mesh* mesh, const impl::ConnectivityMeshImpl* cmesh) :
         mesh_(mesh),
         cMesh_(cmesh),
         subMeshId_(0),
@@ -32,7 +32,7 @@ namespace cgu {
     }
 
     /** Default constructor. */
-    ConnectivitySubMesh::ConnectivitySubMesh(const Mesh* mesh, const ConnectivityMesh* cmesh, unsigned int subMeshId, unsigned int triangleRangeStart) :
+    ConnectivitySubMesh::ConnectivitySubMesh(const Mesh* mesh, const impl::ConnectivityMeshImpl* cmesh, unsigned int subMeshId, unsigned int triangleRangeStart) :
         mesh_(mesh),
         cMesh_(cmesh),
         subMeshId_(subMeshId),
@@ -114,7 +114,7 @@ namespace cgu {
         return -1;
     }*/
 
-    std::tuple<std::unique_ptr<ConnectivitySubMesh>, bool> ConnectivitySubMesh::load(std::ifstream& ifs, const Mesh* mesh, const ConnectivityMesh* cmesh)
+    std::tuple<std::unique_ptr<ConnectivitySubMesh>, bool> ConnectivitySubMesh::load(std::ifstream& ifs, const Mesh* mesh, const impl::ConnectivityMeshImpl* cmesh)
     {
         bool correctHeader;
         unsigned int actualVersion;

@@ -28,6 +28,7 @@ namespace cgu {
     {
     public:
         template<class VTX> static std::unique_ptr<MeshRenderable> create(const Mesh* renderMesh, GPUProgram* program);
+        template<class VTX> static std::unique_ptr<MeshRenderable> create(const Mesh* renderMesh, const GLBuffer* iBuffer, GPUProgram* program);
         virtual ~MeshRenderable();
         MeshRenderable(const MeshRenderable&);
         MeshRenderable& operator=(const MeshRenderable&);
@@ -35,10 +36,12 @@ namespace cgu {
         MeshRenderable& operator=(MeshRenderable&&);
 
         void Draw(const glm::mat4& modelMatrix, bool overrideBump = false) const;
+        void DrawPart(const glm::mat4& modelMatrix, unsigned int start, unsigned int count, GLenum mode) const;
         // void BindAsShaderBuffer(GLuint bindingPoint) const;
 
     protected:
         MeshRenderable(const Mesh* renderMesh, const GLBuffer* vBuffer, GPUProgram* program);
+        MeshRenderable(const Mesh* renderMesh, const GLBuffer* vBuffer, const GLBuffer* iBuffer, GPUProgram* program);
         template<class VTX> void CreateVertexAttributeBuffer();
         template<bool useMaterials> void Draw(const glm::mat4& modelMatrix, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump = false) const;
         template<bool useMaterials> void DrawNode(const glm::mat4& modelMatrix, const SceneMeshNode* node, GPUProgram* program, const ShaderMeshAttributes& attribBinds, bool overrideBump = false) const;
@@ -99,6 +102,14 @@ namespace cgu {
     std::unique_ptr<MeshRenderable> MeshRenderable::create(const Mesh* renderMesh, GPUProgram* program)
     {
         std::unique_ptr<MeshRenderable> result{ new MeshRenderable(renderMesh, renderMesh->GetVertexBuffer<VTX>(), program) };
+        result->CreateVertexAttributeBuffer<VTX>();
+        return std::move(result);
+    }
+
+    template <class VTX>
+    std::unique_ptr<MeshRenderable> MeshRenderable::create(const Mesh* renderMesh, const GLBuffer* iBuffer, GPUProgram* program)
+    {
+        std::unique_ptr<MeshRenderable> result{ new MeshRenderable(renderMesh, renderMesh->GetVertexBuffer<VTX>(), iBuffer, program) };
         result->CreateVertexAttributeBuffer<VTX>();
         return std::move(result);
     }

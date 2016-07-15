@@ -16,11 +16,16 @@
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <boost/serialization/version.hpp>
+#include "ConnectivityMeshImpl.h"
 
 namespace cgu {
 
     struct MeshConnectVertex;
     class ConnectivityMesh;
+    namespace impl {
+        class ConnectivityMeshImpl;
+    }
 
     /**
      * @brief  Collects connectivity information in sub-meshes.
@@ -31,7 +36,7 @@ namespace cgu {
     class ConnectivitySubMesh
     {
     public:
-        ConnectivitySubMesh(const Mesh* mesh, const ConnectivityMesh* cmesh, unsigned int subMeshId, unsigned int triangleRangeStart);
+        ConnectivitySubMesh(const Mesh* mesh, const impl::ConnectivityMeshImpl* cmesh, unsigned int subMeshId, unsigned int triangleRangeStart);
         ConnectivitySubMesh(const ConnectivitySubMesh&);
         ConnectivitySubMesh& operator=(const ConnectivitySubMesh&);
         ConnectivitySubMesh(ConnectivitySubMesh&&);
@@ -42,14 +47,29 @@ namespace cgu {
         // unsigned int FindContainingTriangle(const glm::vec3 point) const;
         const SubMesh& GetSubMeshObject() const { return *mesh_->GetSubMesh(subMeshId_); }
 
-        static std::tuple<std::unique_ptr<ConnectivitySubMesh>, bool> load(std::ifstream& meshFile, const Mesh* mesh, const ConnectivityMesh* cmesh);
+        static std::tuple<std::unique_ptr<ConnectivitySubMesh>, bool> load(std::ifstream& meshFile, const Mesh* mesh, const impl::ConnectivityMeshImpl* cmesh);
         void save(std::ofstream& ofs) const;
 
     private:
+        friend class boost::serialization::access;
+        //template<class Archive> friend void boost::serialization::load_construct_data(Archive&, cgu::ConnectivitySubMesh*, const unsigned int);
         using VersionableSerializerType = serializeHelper::VersionableSerializer<'C', 'T', 'S', 'M', 1001>;
 
-        explicit ConnectivitySubMesh(const Mesh* mesh, const ConnectivityMesh* cmesh);
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version)
+        {
+            ar & subMeshId_;
+            ar & triangleRangeStart_;
+            ar & numTriangles_;
+            ar & aabb_.minmax;
 
+            if (version > 1) {} // do things here...
+        }
+
+    public:
+        explicit ConnectivitySubMesh(const Mesh* mesh, const impl::ConnectivityMeshImpl* cmesh);
+
+    private:
         void CreateAABB();
 
         //unsigned int GetVtxIndex(unsigned int localIndex) const { return cMesh_-> verticesConnect_[localIndex].idx; }
@@ -58,7 +78,7 @@ namespace cgu {
         /** The mesh to create connectivity from. */
         const Mesh* mesh_;
         /** The connectivity mesh. */
-        const ConnectivityMesh* cMesh_;
+        const impl::ConnectivityMeshImpl* cMesh_;
         /** The id of the sub-mesh to create the connectivity from. */
         unsigned int subMeshId_;
         /** Holds the first triangle index. */
@@ -79,6 +99,18 @@ namespace cgu {
         // TriangleRTreeType triangleFastFindTree_;
 
     };
+}
+
+BOOST_CLASS_VERSION(cgu::ConnectivitySubMesh, 1)
+
+namespace boost {
+    namespace serialization {
+        template<class Archive>
+        void load_construct_data(Archive& ar, cgu::ConnectivitySubMesh* t, const unsigned int) {
+            const auto& carchive = (static_cast<cgu::impl::serialization::iarchive&>(ar));
+            ::new(t)cgu::ConnectivitySubMesh(carchive.mesh_, carchive.cmesh_);
+        }
+    }
 }
 
 #endif /* CONNECTIVITYSUBMESH_H */

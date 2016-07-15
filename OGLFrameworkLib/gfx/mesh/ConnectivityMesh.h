@@ -10,17 +10,15 @@
 #define CONNECTIVITYMESH_H
 
 #include "main.h"
-#include <core/math/math.h>
-#include <boost/geometry/geometries/point.hpp>
-#include <boost/geometry/index/rtree.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <core/serializationHelper.h>
 
 namespace cgu {
 
     class Mesh;
     class ConnectivitySubMesh;
 
+    namespace impl {
+        class ConnectivityMeshImpl;
+    }
 
     /** Contains vertex connectivity information. */
     struct MeshConnectVertex
@@ -35,6 +33,15 @@ namespace cgu {
         unsigned int chunkId;
         /** Holds the vertexes triangles. */
         std::vector<unsigned int> triangles;
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int)
+        {
+            ar & idx;
+            ar & locOnlyIdx;
+            ar & chunkId;
+            ar & triangles;
+        }
     };
 
     /** Contains indices for triangles vertices and connectivity. */
@@ -54,6 +61,14 @@ namespace cgu {
         std::array<unsigned int, 3> locOnlyVtxIds_;
         /** Holds the triangles neighbors. */
         std::array<int, 3> neighbors_;
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int)
+        {
+            ar & vertex_;
+            ar & locOnlyVtxIds_;
+            ar & neighbors_;
+        }
     };
 
     /**
@@ -74,49 +89,17 @@ namespace cgu {
         ~ConnectivityMesh();
 
         void FindPointsWithinRadius(const glm::vec3 center, float radius, std::vector<unsigned int>& result) const;
-        unsigned int FindContainingTriangle(const glm::vec3 point);
-        const std::vector<std::unique_ptr<ConnectivitySubMesh>>& GetSubMeshes() const { return subMeshConnectivity_; }
+        unsigned int FindNearest(const glm::vec3 center) const;
+        unsigned int FindContainingTriangle(const glm::vec3 point) const;
+        const std::vector<std::unique_ptr<ConnectivitySubMesh>>& GetSubMeshes() const;
 
-        const std::vector<MeshConnectVertex>& GetVertices() const { return verticesConnect_; }
-        const std::vector<MeshConnectTriangle>& GetTriangles() const { return triangleConnect_; }
-        const MeshConnectTriangle& GetTriangle(unsigned int idx) const { return triangleConnect_[idx]; }
+        const std::vector<MeshConnectVertex>& GetVertices() const;
+        const std::vector<MeshConnectTriangle>& GetTriangles() const;
+        const MeshConnectTriangle& GetTriangle(unsigned int idx) const;
 
     private:
-        using VersionableSerializerType = serializeHelper::VersionableSerializer<'C', 'N', 'T', 'M', 1001>;
+        std::unique_ptr<impl::ConnectivityMeshImpl> impl_;
 
-        bool load(const std::string& meshFile);
-        void save(const std::string& meshFile) const;
-
-        void CreateNewConnectivity(const std::string& connectFilePath, const Mesh* mesh);
-        void CreateVertexRTree();
-        void CreateTriangleRTree();
-        unsigned int FillSubmeshConnectivity(unsigned int smI, const std::vector<unsigned int>& reducedVertexMap);
-        void CalculateChunkIds();
-        void MarkVertexForChunk(MeshConnectVertex& vtx, unsigned int chunkId);
-
-        /** The mesh to create connectivity from. */
-        const Mesh* mesh_;
-        /** Holds a list of triangles with connectivity information. */
-        std::vector<MeshConnectTriangle> triangleConnect_;
-        /** Holds a list of vertex connectivity information. */
-        std::vector<MeshConnectVertex> verticesConnect_;
-        /** Contains a bounding box containing all sub-meshes. */
-        cguMath::AABB3<float> aabb_;
-        /** Connectivity information for the sub-meshes. */
-        std::vector<std::unique_ptr<ConnectivitySubMesh>> subMeshConnectivity_;
-
-        typedef boost::geometry::model::point<float, 3, boost::geometry::cs::cartesian> point;
-        typedef boost::geometry::model::box<point> box;
-        typedef boost::geometry::model::polygon<point, false, false> polygon; // CCW, open polygon
-        typedef std::pair<box, unsigned> polyIdxBox;
-        typedef std::pair<point, unsigned> vtxIdxPoint;
-        typedef boost::geometry::index::rtree<vtxIdxPoint, boost::geometry::index::quadratic<16>> VertexRTreeType;
-        typedef boost::geometry::index::rtree<polyIdxBox, boost::geometry::index::quadratic<16>> TriangleRTreeType;
-
-        /** Holds the tree for fast finding vertices and nearest neighbors. */
-        VertexRTreeType vertexFindTree_;
-        /** Holds the tree for fast finding points in triangles. */
-        TriangleRTreeType triangleFastFindTree_;
     };
 }
 

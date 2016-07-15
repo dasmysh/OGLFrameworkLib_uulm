@@ -23,9 +23,14 @@ namespace cgu {
      * @param prog the program used for rendering.
      */
     MeshRenderable::MeshRenderable(const Mesh* renderMesh, const GLBuffer* vBuffer, GPUProgram* program) :
+        MeshRenderable(renderMesh, vBuffer, renderMesh->GetIndexBuffer(), program)
+    {
+    }
+
+    MeshRenderable::MeshRenderable(const Mesh* renderMesh, const GLBuffer* vBuffer, const GLBuffer* iBuffer, GPUProgram* program) :
         mesh_(renderMesh),
         vBuffer_(vBuffer),
-        iBuffer_(mesh_->GetIndexBuffer()),
+        iBuffer_(iBuffer),
         drawProgram_(program)
     {
     }
@@ -110,6 +115,19 @@ namespace cgu {
     void MeshRenderable::Draw(const glm::mat4& modelMatrix, bool overrideBump) const
     {
         Draw<true>(modelMatrix, drawProgram_, drawAttribBinds_, overrideBump);
+    }
+
+    void MeshRenderable::DrawPart(const glm::mat4& modelMatrix, unsigned start, unsigned count, GLenum mode) const
+    {
+        drawProgram_->UseProgram();
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer_->GetBuffer());
+        drawAttribBinds_.GetVertexAttributes()[0]->EnableVertexAttributeArray();
+        auto localMatrix = mesh_->GetRootNode()->GetLocalTransform() * modelMatrix;
+        drawProgram_->SetUniform(drawAttribBinds_.GetUniformIds()[0], localMatrix);
+        drawProgram_->SetUniform(drawAttribBinds_.GetUniformIds()[1], glm::inverseTranspose(glm::mat3(localMatrix)));
+        OGL_CALL(glDrawElements, mode, count, GL_UNSIGNED_INT, (static_cast<char*>(nullptr)) + (start * sizeof(unsigned int)));
+        drawAttribBinds_.GetVertexAttributes()[0]->DisableVertexAttributeArray();
+        OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
     }
 
     /*void MeshRenderable::BindAsShaderBuffer(GLuint bindingPoint) const
