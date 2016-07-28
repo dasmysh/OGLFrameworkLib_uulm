@@ -140,6 +140,23 @@ unsigned cgu::impl::ConnectivityMeshImpl::FindNearest(const glm::vec3 center) co
     return static_cast<unsigned int>(verticesConnect_.size());
 }
 
+void cgu::impl::ConnectivityMeshImpl::FindTrianglesWithinRadius(const glm::vec3 center, float radius, std::vector<unsigned>& result) const
+{
+    auto minPt = center - glm::vec3(radius);
+    auto maxPt = center + glm::vec3(radius);
+    box queryBox(point(minPt.x, minPt.y, minPt.z), point(maxPt.x, maxPt.y, maxPt.z));
+    namespace bgi = boost::geometry::index;
+    for (const auto& qr : triangleFastFindTree_ | bgi::adaptors::queried(bgi::within(queryBox))) result.push_back(static_cast<unsigned>(qr.second));
+}
+
+unsigned cgu::impl::ConnectivityMeshImpl::FindNearestTriangle(const glm::vec3 center) const
+{
+    namespace bgi = boost::geometry::index;
+    point pcenter(center.x, center.y, center.z);
+    for (const auto& qr : triangleFastFindTree_ | bgi::adaptors::queried(bgi::nearest(pcenter, 1))) return static_cast<unsigned>(qr.second);
+    return static_cast<unsigned int>(triangleConnect_.size());
+}
+
 unsigned int cgu::impl::ConnectivityMeshImpl::FillSubmeshConnectivity(unsigned int smI, const std::vector<unsigned int>& reducedVertexMap)
 {
     const auto& subMesh = mesh_->GetSubMesh(smI);

@@ -90,6 +90,8 @@ namespace cgu {
 
         void FindPointsWithinRadius(const glm::vec3 center, float radius, std::vector<unsigned int>& result) const;
         unsigned int FindNearest(const glm::vec3 center) const;
+        void FindTrianglesWithinRadius(const glm::vec3 center, float radius, std::vector<unsigned int>& result) const;
+        unsigned int FindNearestTriangle(const glm::vec3 center) const;
         unsigned int FindContainingTriangle(const glm::vec3 point) const;
         const std::vector<std::unique_ptr<ConnectivitySubMesh>>& GetSubMeshes() const;
 

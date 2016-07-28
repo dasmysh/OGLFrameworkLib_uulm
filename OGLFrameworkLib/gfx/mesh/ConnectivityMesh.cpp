@@ -68,6 +68,16 @@ namespace cgu {
         return impl_->FindNearest(center);
     }
 
+    void ConnectivityMesh::FindTrianglesWithinRadius(const glm::vec3 center, float radius, std::vector<unsigned>& result) const
+    {
+        impl_->FindTrianglesWithinRadius(center, radius, result);
+    }
+
+    unsigned ConnectivityMesh::FindNearestTriangle(const glm::vec3 center) const
+    {
+        return impl_->FindNearestTriangle(center);
+    }
+
     /**
      *  Find index of triangle that contains the given point.
      *  @param point the point to find the triangle for.
