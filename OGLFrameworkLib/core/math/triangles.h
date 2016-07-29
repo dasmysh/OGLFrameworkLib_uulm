@@ -11,6 +11,7 @@
 
 #include <glm/glm.hpp>
 #include "primitives.h"
+#include <random>
 
 namespace cguMath {
 
