@@ -29,6 +29,7 @@ namespace cgu {
     public:
         template<class VTX> static std::unique_ptr<MeshRenderable> create(const Mesh* renderMesh, GPUProgram* program);
         template<class VTX> static std::unique_ptr<MeshRenderable> create(const Mesh* renderMesh, const GLBuffer* iBuffer, GPUProgram* program);
+        template<class VTX> static std::unique_ptr<MeshRenderable> create(const Mesh* renderMesh, const GLBuffer* vBuffer, const GLBuffer* iBuffer, GPUProgram* program);
         virtual ~MeshRenderable();
         MeshRenderable(const MeshRenderable&);
         MeshRenderable& operator=(const MeshRenderable&);
@@ -76,6 +77,7 @@ namespace cgu {
     class MeshRenderableShadowing : public MeshRenderable
     {
     public:
+        template<class VTX> static std::unique_ptr<MeshRenderableShadowing> create(const Mesh* renderMesh, const GLBuffer* vBuffer, GPUProgram* program, GPUProgram* shadowProgram);
         template<class VTX> static std::unique_ptr<MeshRenderableShadowing> create(const Mesh* renderMesh, GPUProgram* program, GPUProgram* shadowProgram);
         template<class VTX> static std::unique_ptr<MeshRenderableShadowing> create(const MeshRenderable& rhs, GPUProgram* shadowProgram);
         MeshRenderableShadowing(const MeshRenderableShadowing&);
@@ -115,6 +117,14 @@ namespace cgu {
     }
 
     template <class VTX>
+    std::unique_ptr<MeshRenderable> MeshRenderable::create(const Mesh* renderMesh, const GLBuffer* vBuffer, const GLBuffer* iBuffer, GPUProgram* program)
+    {
+        std::unique_ptr<MeshRenderable> result{ new MeshRenderable(renderMesh, vBuffer, iBuffer, program) };
+        result->CreateVertexAttributeBuffer<VTX>();
+        return std::move(result);
+    }
+
+    template <class VTX>
     void MeshRenderable::CreateVertexAttributeBuffer()
     {
         FillMeshAttributeBindings<VTX>(drawProgram_, drawAttribBinds_);
@@ -143,11 +153,17 @@ namespace cgu {
     }
 
     template <class VTX>
-    std::unique_ptr<MeshRenderableShadowing> MeshRenderableShadowing::create(const Mesh* renderMesh, GPUProgram* program, GPUProgram* shadowProgram)
+    std::unique_ptr<MeshRenderableShadowing> MeshRenderableShadowing::create(const Mesh* renderMesh, const GLBuffer* vBuffer, GPUProgram* program, GPUProgram* shadowProgram)
     {
-        std::unique_ptr<MeshRenderableShadowing> result{ new MeshRenderableShadowing(renderMesh, renderMesh->GetVertexBuffer<VTX>(), program, shadowProgram) };
+        std::unique_ptr<MeshRenderableShadowing> result{ new MeshRenderableShadowing(renderMesh, vBuffer, program, shadowProgram) };
         result->CreateVertexAttributeBuffer<VTX>();
         return std::move(result);
+    }
+
+    template <class VTX>
+    std::unique_ptr<MeshRenderableShadowing> MeshRenderableShadowing::create(const Mesh* renderMesh, GPUProgram* program, GPUProgram* shadowProgram)
+    {
+        return std::move(MeshRenderableShadowing::create<VTX>(renderMesh, renderMesh->GetVertexBuffer<VTX>(), program, shadowProgram));
     }
 
     template <class VTX>

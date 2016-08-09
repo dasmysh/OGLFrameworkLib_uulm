@@ -51,6 +51,8 @@ namespace cgu {
         void GetVertices(std::vector<VTX>& vertices) const;
         template<class VTX>
         void CreateVertexBuffer();
+        template<class VTX>
+        void CreateVertexBuffer(const std::vector<VTX>& vertices);
 
         template<class VTX> GLBuffer* GetVertexBuffer() { return vBuffers_.at(typeid(VTX)).get(); }
         template<class VTX> const GLBuffer* GetVertexBuffer() const { return vBuffers_.at(typeid(VTX)).get(); }
@@ -151,6 +153,21 @@ namespace cgu {
             auto vBuffer = std::make_unique<GLBuffer>(GL_STATIC_DRAW);
             std::vector<VTX> vertices;
             GetVertices(vertices);
+            OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer->GetBuffer());
+            vBuffer->InitializeData(vertices);
+            OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
+            vBuffers_[typeid(VTX)] = std::move(vBuffer);
+        }
+    }
+
+    template <class VTX>
+    void Mesh::CreateVertexBuffer(const std::vector<VTX>& vertices)
+    {
+        try {
+            vBuffers_.at(typeid(VTX));
+        }
+        catch (std::out_of_range e) {
+            auto vBuffer = std::make_unique<GLBuffer>(GL_STATIC_DRAW);
             OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vBuffer->GetBuffer());
             vBuffer->InitializeData(vertices);
             OGL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
