@@ -141,6 +141,7 @@ namespace cgu {
     void GLVertexAttributeArray::AddVertexAttribute(BindingLocation location, int size, GLenum type,
         GLboolean normalized, GLsizei stride, size_t offset)
     {
+        if (location->iBinding == -1)  return;
         vertex_attribute_desc desc;
         desc.shaderType = VAShaderType::FLOAT;
         desc.location = location;
@@ -166,6 +167,7 @@ namespace cgu {
     void GLVertexAttributeArray::AddVertexAttributeI(BindingLocation location, int size, GLenum type,
         GLsizei stride, size_t offset)
     {
+        if (location->iBinding == -1)  return;
         vertex_attribute_desc desc;
         desc.shaderType = VAShaderType::INTEGER;
         desc.location = location;
@@ -190,6 +192,7 @@ namespace cgu {
     void GLVertexAttributeArray::AddVertexAttributeL(BindingLocation location, int size, GLenum type,
         GLsizei stride, size_t offset)
     {
+        if (location->iBinding == -1)  return;
         vertex_attribute_desc desc;
         desc.shaderType = VAShaderType::DOUBLE;
         desc.location = location;
