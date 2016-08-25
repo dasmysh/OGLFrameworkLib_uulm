@@ -142,14 +142,6 @@ namespace boost {
             ar & g.first;
             ar & g.second;
         }
-
-        template<class Archive>
-        void serialize(Archive & ar, glm::vec3& g, const unsigned int)
-        {
-            ar & g.x;
-            ar & g.y;
-            ar & g.z;
-        }
     }
 }
 

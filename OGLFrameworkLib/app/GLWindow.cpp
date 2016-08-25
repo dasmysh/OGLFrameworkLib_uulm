@@ -333,6 +333,11 @@ namespace cgu {
         return glfwGetMouseButton(window_, button) == GLFW_PRESS;
     }
 
+    bool GLWindow::IsKeyPressed(int key) const
+    {
+        return glfwGetKey(window_, key) == GLFW_PRESS;
+    }
+
     void GLWindow::WindowPosCallback(int xpos, int ypos) const
     {
         config.windowLeft = xpos;

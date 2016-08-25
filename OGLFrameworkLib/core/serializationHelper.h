@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include <fstream>
+#include <boost/serialization/nvp.hpp>
 
 namespace cgu {
 
@@ -74,6 +75,19 @@ namespace cgu {
                 write(ofs, V);
             }
         };
+    }
+}
+
+namespace boost {
+    namespace serialization {
+
+        template<class Archive>
+        void serialize(Archive & ar, glm::vec3& g, const unsigned int)
+        {
+            ar & make_nvp(BOOST_PP_STRINGIZE(x), g.x);
+            ar & make_nvp(BOOST_PP_STRINGIZE(y), g.y);
+            ar & make_nvp(BOOST_PP_STRINGIZE(z), g.z);
+        }
     }
 }
 

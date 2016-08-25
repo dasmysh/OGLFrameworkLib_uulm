@@ -44,6 +44,7 @@ namespace cgu {
         void SetViewShadowMap() const;
         void RotateOrigin(const glm::quat& camOrientStep);
         void MoveCamera(const glm::vec3& translation);
+        void SetPosition(const glm::vec3& position);
 
         cguMath::Frustum<float> GetViewFrustum(const glm::mat4& modelM) const;
         float GetSignedDistance2ToUnitAABB(const glm::mat4& world) const;

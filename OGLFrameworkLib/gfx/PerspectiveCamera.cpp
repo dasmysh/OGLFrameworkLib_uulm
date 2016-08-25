@@ -173,6 +173,12 @@ namespace cgu {
         view_ = glm::lookAt(camPos_, glm::vec3(0.0f), camUp_);
     }
 
+    void PerspectiveCamera::SetPosition(const glm::vec3& position)
+    {
+        camPos_ = position;
+        view_ = glm::lookAt(camPos_, glm::vec3(0.0f), camUp_);
+    }
+
     cguMath::Frustum<float> PerspectiveCamera::GetViewFrustum(const glm::mat4& modelM) const
     {
         auto mvp = perspective_ * view_ * modelM;

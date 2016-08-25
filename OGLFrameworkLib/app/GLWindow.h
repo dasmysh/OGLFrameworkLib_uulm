@@ -40,6 +40,7 @@ namespace cgu {
 
         Configuration& GetConfig() const { return config; };
         bool IsMouseButtonPressed(int button) const;
+        bool IsKeyPressed(int key) const;
 
         /** Returns the windows width. */
         unsigned int GetWidth() const { return width; }
