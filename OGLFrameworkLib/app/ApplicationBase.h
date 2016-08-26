@@ -24,6 +24,8 @@
 
 namespace cgu {
 
+    class SimpleMeshRenderer;
+
     /**
      * @brief Application base.
      * <para>    Base class for all applications using this framework. </para>
@@ -71,6 +73,7 @@ namespace cgu {
         ScreenQuadRenderable* GetScreenQuadRenderable() const;
         ArcballCamera* GetCameraView() const;
         OrthogonalView* GetOrthoginalView() const { return orthoView_.get(); }
+        const SimpleMeshRenderer* GetSimpleMeshes() const { return simpleMeshes_.get(); }
 
     private:
         class GLFWInitObject
@@ -134,6 +137,8 @@ namespace cgu {
         std::shared_ptr<GPUProgram> fontProgram_;
         /** Holds the screen quad renderable. */
         std::unique_ptr<ScreenQuadRenderable> screenQuadRenderable_;
+        /** Holds the simple meshes renderer. */
+        std::unique_ptr<SimpleMeshRenderer> simpleMeshes_;
     };
 }
 #endif /* APPLICATIONBASE_H */

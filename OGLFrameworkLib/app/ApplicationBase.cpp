@@ -14,6 +14,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
 #include <GLFW/glfw3.h>
+#include <gfx/mesh/SimpleMeshRenderer.h>
 
 namespace cgu {
 
@@ -49,7 +50,7 @@ namespace cgu {
         orthoView_(),
         cameraView_(),
         fontProgram_(nullptr),
-        screenQuadRenderable_(nullptr)
+        screenQuadRenderable_(nullptr)        
     {
         texManager_.reset(new TextureManager(this));
         volManager_.reset(new VolumeManager(this));
@@ -66,6 +67,7 @@ namespace cgu {
         fontProgram_ = programManager_->GetResource(fontProgramID);
         fontProgram_->BindUniformBlock(orthoProjectionUBBName, uniformBindingPoints_);
         screenQuadRenderable_.reset(new ScreenQuadRenderable());
+        simpleMeshes_ = std::make_unique<SimpleMeshRenderer>(this);
     }
 
     ApplicationBase::~ApplicationBase() = default;

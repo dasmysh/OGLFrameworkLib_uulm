@@ -182,4 +182,5 @@ $RECYCLE.BIN/
 *.app
 
 # include all resource files
-!**/resources/*.obj
+!**/resources/**/*.obj
+*.myshbin
