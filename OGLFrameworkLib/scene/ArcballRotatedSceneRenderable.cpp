@@ -37,7 +37,7 @@ namespace cgu {
 
     void ArcballRotatedSceneRenderable::Update(const ArcballCamera& camera, float, float)
     {
-        auto orient = glm::inverse(rotArcball.GetWorldRotation(camera.GetViewMatrix())) * orientation;
-        UpdatePositionOrientation(position, orient);
+        auto orient = glm::inverse(rotArcball.GetWorldRotation(camera.GetViewMatrix())) * GetOrientation();
+        UpdatePositionOrientation(GetPosition(), orient);
     }
 }

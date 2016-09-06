@@ -209,6 +209,7 @@ namespace cgu {
         OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
         if (!isBackbuffer) OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
         OGL_CALL(glViewport, 0, 0, width, height);
+        OGL_CALL(glScissor, 0, 0, width, height);
     }
 
     /**
@@ -224,6 +225,7 @@ namespace cgu {
         OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
         OGL_CALL(glDrawBuffers, static_cast<GLsizei>(drawBuffersReduced.size()), drawBuffersReduced.data());
         OGL_CALL(glViewport, 0, 0, width, height);
+        OGL_CALL(glScissor, 0, 0, width, height);
     }
 
     unsigned int FrameBuffer::findAttachment(GLenum internalFormat, unsigned int& colorAtt, std::vector<GLenum> &drawBuffers)

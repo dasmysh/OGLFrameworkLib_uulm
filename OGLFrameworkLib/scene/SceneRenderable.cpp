@@ -14,41 +14,41 @@
 namespace cgu {
 
     SceneRenderable::SceneRenderable(MeshRenderable* theRenderable, const glm::vec3& pos, const glm::quat& orient) :
-        renderable(theRenderable),
-        position(pos),
-        orientation(orient),
-        worldMatrix(1.0f)
+        renderable_(theRenderable),
+        position_(pos),
+        orientation_(orient),
+        worldMatrix_(1.0f)
     {
-        UpdatePositionOrientation(position, orientation);
+        UpdatePositionOrientation(position_, orientation_);
     }
 
     SceneRenderable::SceneRenderable(const glm::vec3& pos, const glm::quat& orient) :
-        renderable(nullptr),
-        position(pos),
-        orientation(orient),
-        worldMatrix(1.0f)
+        renderable_(nullptr),
+        position_(pos),
+        orientation_(orient),
+        worldMatrix_(1.0f)
     {
-        UpdatePositionOrientation(position, orientation);
+        UpdatePositionOrientation(position_, orientation_);
     }
 
     void SceneRenderable::ResetScene(const glm::mat4& world)
     {
-        worldMatrix = world;
-        position = glm::vec3(world[3]);
-        orientation = glm::quat_cast(world);
+        worldMatrix_ = world;
+        position_ = glm::vec3(world[3]);
+        orientation_ = glm::quat_cast(world);
     }
 
     void SceneRenderable::UpdatePositionOrientation(const glm::vec3& pos, const glm::quat& orient)
     {
-        position = pos;
-        orientation = orient;
-        glm::mat4 matOrient(glm::mat3_cast(orientation));
-        worldMatrix = glm::mat4(matOrient[0], matOrient[1], matOrient[2], glm::vec4(position, 1));
+        position_ = pos;
+        orientation_ = orient;
+        glm::mat4 matOrient(glm::mat3_cast(orientation_));
+        worldMatrix_ = glm::mat4(matOrient[0], matOrient[1], matOrient[2], glm::vec4(position_, 1));
     }
 
     void SceneRenderable::Draw(const ArcballCamera& camera) const
     {
         camera.SetView();
-        renderable->Draw(worldMatrix);
+        renderable_->Draw(worldMatrix_);
     }
 }

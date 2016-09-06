@@ -227,6 +227,7 @@ namespace cgu {
         if (config.useSRGB) {
             glEnable(GL_FRAMEBUFFER_SRGB);
         }
+        glEnable(GL_SCISSOR_TEST);
 
         LOG(INFO) << L"OpenGL context initialized.";
 

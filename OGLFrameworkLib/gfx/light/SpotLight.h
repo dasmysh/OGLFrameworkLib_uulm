@@ -69,6 +69,8 @@ namespace cgu {
         /** Returns the shadow map. */
         ShadowMap* GetShadowMap() const { return shadowMap_.get(); }
 
+        void SetPosition(const glm::vec3& position) { camera_.SetPosition(position); }
+
     private:
 
         SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, std::unique_ptr<ShadowMap> shadowMap, ApplicationBase* app);

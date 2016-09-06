@@ -26,20 +26,25 @@ namespace cgu {
         void UpdatePositionOrientation(const glm::vec3& pos, const glm::quat& orient);
         void Draw(const ArcballCamera& camera) const;
 
+        const glm::quat& GetOrientation() const { return orientation_; }
+        const glm::mat4& GetWorldMatrix() const { return worldMatrix_; }
+        const glm::vec3& GetPosition() const { return position_; }
+
     protected:
         /** Constructor used for derivations that create their own renderables. */
         SceneRenderable(const glm::vec3& pos, const glm::quat& orient);
         /** Reset the scene orientation and position. */
         void ResetScene(const glm::mat4& world);
 
+    private:
         /** Holds the renderable used for display. */
-        MeshRenderable* renderable;
+        MeshRenderable* renderable_;
         /** Holds the objects position in space. */
-        glm::vec3 position;
+        glm::vec3 position_;
         /** Holds the objects orientation. */
-        glm::quat orientation;
+        glm::quat orientation_;
         /** Holds the objects world matrix. */
-        glm::mat4 worldMatrix;
+        glm::mat4 worldMatrix_;
     };
 }
 

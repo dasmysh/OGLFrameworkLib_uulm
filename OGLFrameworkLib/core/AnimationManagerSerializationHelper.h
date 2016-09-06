@@ -12,6 +12,8 @@
 #include "main.h"
 
 namespace cgu {
+    class OrbitAnimation;
+    class RotationAnimation;
     class WaypointAnimation;
 
     class AnimationManagerSerializationHelper final
@@ -21,6 +23,16 @@ namespace cgu {
         static void SaveAnimation(std::ostream& file, const WaypointAnimation& animation);
         static void LoadAnimations(std::istream& file, std::vector<WaypointAnimation>& animations, std::vector<std::string>& animationNames);
         static void SaveAnimations(std::ostream& file, const std::vector<WaypointAnimation>& animations, const std::vector<std::string>& animationNames);
+
+        static void LoadAnimation(std::istream& file, RotationAnimation& animation);
+        static void SaveAnimation(std::ostream& file, const RotationAnimation& animation);
+        static void LoadAnimations(std::istream& file, std::vector<RotationAnimation>& animations, std::vector<std::string>& animationNames);
+        static void SaveAnimations(std::ostream& file, const std::vector<RotationAnimation>& animations, const std::vector<std::string>& animationNames);
+
+        static void LoadAnimation(std::istream& file, OrbitAnimation& animation);
+        static void SaveAnimation(std::ostream& file, const OrbitAnimation& animation);
+        static void LoadAnimations(std::istream& file, std::vector<OrbitAnimation>& animations, std::vector<std::string>& animationNames);
+        static void SaveAnimations(std::ostream& file, const std::vector<OrbitAnimation>& animations, const std::vector<std::string>& animationNames);
     private:
         AnimationManagerSerializationHelper();
         ~AnimationManagerSerializationHelper();
