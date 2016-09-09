@@ -102,7 +102,7 @@ namespace cgu {
         cubeMapRT_.Resize(size, size);
     }
 
-    void EnvironmentMapGenerator::DrawEnvMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&)> batch)
+    void EnvironmentMapGenerator::DrawEnvMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&, const glm::vec3&, const glm::mat4&, const glm::mat4&)> batch)
     {
         std::vector<unsigned int> drawBufferIndices(1, 0);
         auto perspectiveUBO = perspectiveUBO_.get();
@@ -114,16 +114,17 @@ namespace cgu {
             view[1] = glm::vec4(up_[i], 0.0f);
             view[2] = glm::vec4(dir_[i], 0.0f);
             view[3] = glm::vec4(-glm::dot(position, right_[i]), -glm::dot(position, up_[i]), -glm::dot(position, dir_[i]), 1.0f);
-            auto viewProjection = perspective_ * glm::transpose(view);
-            cubeMapRT_.BatchDraw(drawBufferIndices, [&clearColor, &batch, &perspectiveUBO, &viewProjection](cgu::GLBatchRenderTarget & brt){
+            view = glm::transpose(view);
+            cubeMapRT_.BatchDraw(drawBufferIndices, [&clearColor, &batch, &perspectiveUBO, this, position, &view](cgu::GLBatchRenderTarget & brt){
                 brt.Clear(static_cast<unsigned int>(cgu::ClearFlags::CF_RenderTarget) | static_cast<unsigned int>(cgu::ClearFlags::CF_Depth), clearColor, 1.0, 0);
 
+                auto viewProjection = perspective_ * view;
                 if (perspectiveUBO) {
                     perspectiveUBO->UploadData(0, sizeof(glm::mat4), &viewProjection);
                     perspectiveUBO->BindBuffer();
                 }
 
-                batch(brt);
+                batch(brt, position, view, perspective_);
             });
         }
 

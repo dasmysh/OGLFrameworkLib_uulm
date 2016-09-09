@@ -35,8 +35,12 @@ namespace cgu {
         const GLTexture* GetTexture() const;
 
     private:
+        void LoadTextureLDR(const std::string& filename);
+        void LoadTextureHDR(const std::string& filename);
+        std::tuple<int, int> FindFormat(const std::string& filename, int imgChannels) const;
+
         /** Holds the texture. */
-        std::unique_ptr<GLTexture> texture;
+        std::unique_ptr<GLTexture> texture_;
     };
 }
 

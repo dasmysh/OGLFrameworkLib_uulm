@@ -39,6 +39,7 @@ namespace cgu {
         typename T::Editor& GetEditor() { return editor_; }
 
         void StartAnimation();
+        void StopAnimation();
         bool DoAnimationStep(float elapsedTime);
 
         // void ShowAnimationMenu(const std::string& name);
@@ -88,6 +89,7 @@ namespace cgu {
         ~AnimationManager();
 
         void StartAnimation();
+        void StopAnimation();
         bool DoAnimationStep(float elapsedTime);
 
         void ShowAnimationMenu(const std::string& name, bool showMenu);

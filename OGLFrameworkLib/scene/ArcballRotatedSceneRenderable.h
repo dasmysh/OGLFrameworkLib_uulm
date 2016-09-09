@@ -14,6 +14,8 @@
 
 namespace cgu {
 
+    class PerspectiveCamera;
+
     class ArcballRotatedSceneRenderable : public SceneRenderable
     {
     public:
@@ -21,7 +23,7 @@ namespace cgu {
         virtual ~ArcballRotatedSceneRenderable();
 
         virtual bool HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender);
-        virtual void Update(const ArcballCamera& camera, float time, float elapsed);
+        virtual void Update(const PerspectiveCamera& camera, float time, float elapsed);
         virtual void Resize(const glm::uvec2& screenSize) = 0;
 
     protected:

@@ -27,16 +27,23 @@ namespace cgu {
      */
     PerspectiveCamera::PerspectiveCamera(float theFovY, const glm::uvec2& theScreenSize, float theNearZ, float theFarZ,
         const glm::vec3& theCamPos, ShaderBufferBindingPoints* uniformBindingPoints) :
-        fovY_(theFovY),
+        PerspectiveCamera(theFovY, theScreenSize, theNearZ, theFarZ, theCamPos, glm::vec3(0.0f), uniformBindingPoints)
+    {
+    }
+
+    PerspectiveCamera::PerspectiveCamera(float fovY, const glm::uvec2& theScreenSize, float nearZ, float farZ,
+        const glm::vec3& camPos, const glm::vec3& lookAtPt, ShaderBufferBindingPoints* uniformBindingPoints) :
+        fovY_(fovY),
         aspectRatio_(static_cast<float>(theScreenSize.x) / static_cast<float>(theScreenSize.y)),
         screenSize_(theScreenSize),
-        nearZ_(theNearZ),
-        farZ_(theFarZ),
-        camPos_(theCamPos),
+        nearZ_(nearZ),
+        farZ_(farZ),
+        camPos_(camPos),
+        lookAtPos_(lookAtPt),
         camOrient_(1.0f, 0.0f, 0.0f, 0.0f),
         camUp_(0.0f, 1.0f, 0.0f),
         perspectiveUBO_(uniformBindingPoints == nullptr ? nullptr : std::make_unique<GLUniformBuffer>(perspectiveProjectionUBBName,
-            static_cast<unsigned int>(sizeof(PerspectiveParams)), uniformBindingPoints))
+        static_cast<unsigned int>(sizeof(PerspectiveParams)), uniformBindingPoints))
     {
         Resize(screenSize_);
     }
@@ -49,6 +56,7 @@ namespace cgu {
         farZ_(rhs.farZ_),
         perspective_(rhs.perspective_),
         camPos_(rhs.camPos_),
+        lookAtPos_(rhs.lookAtPos_),
         camOrient_(rhs.camOrient_),
         camUp_(rhs.camUp_),
         view_(rhs.view_),
@@ -73,6 +81,7 @@ namespace cgu {
         farZ_(std::move(rhs.farZ_)),
         perspective_(std::move(rhs.perspective_)),
         camPos_(std::move(rhs.camPos_)),
+        lookAtPos_(std::move(rhs.lookAtPos_)),
         camOrient_(std::move(rhs.camOrient_)),
         camUp_(std::move(rhs.camUp_)),
         view_(std::move(rhs.view_)),
@@ -91,6 +100,7 @@ namespace cgu {
             farZ_ = rhs.farZ_;
             perspective_ = rhs.perspective_;
             camPos_ = rhs.camPos_;
+            lookAtPos_ = rhs.lookAtPos_;
             camOrient_ = rhs.camOrient_;
             camUp_ = rhs.camUp_;
             view_ = rhs.view_;
@@ -125,7 +135,7 @@ namespace cgu {
         screenSize_ = screenSize;
         aspectRatio_ = static_cast<float>(screenSize.x) / static_cast<float>(screenSize.y);
         perspective_ = glm::perspective(fovY_, aspectRatio_, nearZ_, farZ_);
-        view_ = glm::lookAt(camPos_, glm::vec3(0.0f), camUp_);
+        view_ = glm::lookAt(camPos_, lookAtPos_, camUp_);
     }
 
     void PerspectiveCamera::SetView() const
@@ -164,19 +174,19 @@ namespace cgu {
         camUp_ = matOrient[1];
         camPos_ = matOrientStep * camPos_;
 
-        view_ = glm::lookAt(camPos_, glm::vec3(0.0f), camUp_);
+        view_ = glm::lookAt(camPos_, lookAtPos_, camUp_);
     }
 
     void PerspectiveCamera::MoveCamera(const glm::vec3& translation)
     {
         camPos_ += translation;
-        view_ = glm::lookAt(camPos_, glm::vec3(0.0f), camUp_);
+        view_ = glm::lookAt(camPos_, lookAtPos_, camUp_);
     }
 
     void PerspectiveCamera::SetPosition(const glm::vec3& position)
     {
         camPos_ = position;
-        view_ = glm::lookAt(camPos_, glm::vec3(0.0f), camUp_);
+        view_ = glm::lookAt(camPos_, lookAtPos_, camUp_);
     }
 
     cguMath::Frustum<float> PerspectiveCamera::GetViewFrustum(const glm::mat4& modelM) const

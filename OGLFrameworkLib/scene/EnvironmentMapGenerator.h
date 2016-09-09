@@ -28,7 +28,7 @@ namespace cgu {
         virtual ~EnvironmentMapGenerator();
 
         void Resize(unsigned int size);
-        void DrawEnvMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&) > batch);
+        void DrawEnvMap(const glm::vec3& position, std::function<void(GLBatchRenderTarget&, const glm::vec3&, const glm::mat4&, const glm::mat4&) > batch);
         std::unique_ptr<GLTexture> GenerateIrradianceMap(unsigned int irrMipLevel = 3) const;
         void UpdateIrradianceMap(const GPUProgram* irrProgram, const std::vector<BindingLocation>& irrUniformIds, const GLTexture* irrMap, unsigned int irrMipLevel = 3) const;
 

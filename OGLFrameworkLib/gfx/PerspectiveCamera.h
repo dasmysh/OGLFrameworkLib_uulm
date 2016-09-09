@@ -32,6 +32,8 @@ namespace cgu {
     public:
         PerspectiveCamera(float fovY, const glm::uvec2& theScreenSize, float nearZ, float farZ, const glm::vec3& camPos,
             ShaderBufferBindingPoints* uniformBindingPoints);
+        PerspectiveCamera(float fovY, const glm::uvec2& theScreenSize, float nearZ, float farZ, const glm::vec3& camPos,
+            const glm::vec3& lookAtPt, ShaderBufferBindingPoints* uniformBindingPoints);
         PerspectiveCamera(const PerspectiveCamera&);
         PerspectiveCamera& operator=(const PerspectiveCamera&);
         PerspectiveCamera(PerspectiveCamera&&);
@@ -79,6 +81,8 @@ namespace cgu {
         glm::mat4 perspective_;
         /** Holds the current camera position. */
         glm::vec3 camPos_;
+        /** Holds the position to look at. */
+        glm::vec3 lookAtPos_;
         /** Holds the current camera orientation. */
         glm::quat camOrient_;
         /** holds the current up vector of the camera. */

@@ -24,13 +24,13 @@ namespace cgu {
         virtual ~BaseAnimation();
 
         virtual void StartAnimation();
+        void StopAnimation() { animationRunning_ = false; }
         virtual bool DoAnimationStep(float elapsedTime);
 
         bool IsAnimationRunning() const { return animationRunning_; }
 
     protected:
         float GetCurrentTime() const { return currentAnimationTime_; }
-        void StopAnimation() { animationRunning_ = false; }
 
     private:
         /** Needed for serialization */

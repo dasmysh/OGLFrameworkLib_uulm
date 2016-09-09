@@ -18,7 +18,7 @@ namespace cgu {
     OrbitAnimation::OrbitAnimation() :
         startPosition_(0.0f),
         rotationAxis_(0.0f, 1.0f, 0.0f),
-        frequency_(1.0f)
+        frequency_(0.0f)
     {
     }
 
@@ -34,6 +34,10 @@ namespace cgu {
     bool OrbitAnimation::DoAnimationStep(float elapsedTime)
     {
         if (!BaseAnimation::DoAnimationStep(elapsedTime)) return false;
+        if (frequency_ < 0.00001f) {
+            StopAnimation();
+            return false;
+        }
         currentState_ = glm::rotate(startPosition_, glm::two_pi<float>() * (GetCurrentTime() / frequency_), rotationAxis_);
         return true;
     }

@@ -17,7 +17,7 @@ namespace cgu {
     RotationAnimation::RotationAnimation() :
         startOrientation_(),
         rotationAxis_(0.0f, 1.0f, 0.0f),
-        frequency_(1.0f)
+        frequency_(0.0f)
     {
     }
 
@@ -33,6 +33,10 @@ namespace cgu {
     bool RotationAnimation::DoAnimationStep(float elapsedTime)
     {
         if (!BaseAnimation::DoAnimationStep(elapsedTime)) return false;
+        if (frequency_ < 0.00001f) {
+            StopAnimation();
+            return false;
+        }
         currentState_ = glm::rotate(startOrientation_, glm::two_pi<float>() * (GetCurrentTime() / frequency_), rotationAxis_);
         return true;
     }

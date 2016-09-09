@@ -14,7 +14,7 @@
 namespace cgu {
 
     WaypointAnimation::WaypointAnimation() :
-        totalTime_(1.0f),
+        totalTime_(0.0f),
         interpolationMode_(0),
         normalizeTime_(false)
     {
@@ -65,6 +65,10 @@ namespace cgu {
     bool WaypointAnimation::DoAnimationStep(float elapsedTime)
     {
         if (!BaseAnimation::DoAnimationStep(elapsedTime)) return false;
+        if (totalTime_ < 0.00001f) {
+            StopAnimation();
+            return false;
+        }
 
         auto cI = 1;
         for (; cI < waypoints_.size(); ++cI) if (waypoints_[cI].second > GetCurrentTime()) break;

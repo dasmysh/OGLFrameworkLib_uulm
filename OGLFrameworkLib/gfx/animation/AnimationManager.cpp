@@ -40,98 +40,18 @@ namespace cgu {
     }
 
     template <class T>
+    void TAnimationManager<T>::StopAnimation()
+    {
+        for (auto& a : animations_) a.StopAnimation();
+    }
+
+    template <class T>
     bool TAnimationManager<T>::DoAnimationStep(float elapsedTime)
     {
         auto running = false;
         for (auto& a : animations_) if (a.DoAnimationStep(elapsedTime)) running = true;
         return running;
     }
-
-    /*template <class T>
-    void TAnimationManager<T>::ShowAnimationMenu(const std::string& name)
-    {
-        static auto showLoadAnimationPopup = false;
-        static auto showSaveAnimationPopup = false;
-        static auto showSelectEditAnimationPopup = false;
-        if (ImGui::BeginMenu(name.c_str())) {
-            ImGui::MenuItem("Load Animation", nullptr, &showLoadAnimationPopup);
-            ImGui::MenuItem("Save Animation", nullptr, &showSaveAnimationPopup);
-            ImGui::MenuItem("Select Edit Animation", nullptr, &showSelectEditAnimationPopup);
-            ImGui::EndMenu();
-        }
-
-        if (showLoadAnimationPopup) ImGui::OpenPopup("Load Animation");
-        if (ImGui::BeginPopupModal("Load Animation", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            static auto waypointSet = 0;
-            static std::string wpFileName;
-
-            std::array<char, 1024> tmpFilename;
-            auto lastPos = wpFileName.copy(tmpFilename.data(), 1023, 0);
-            tmpFilename[lastPos] = '\0';
-            if (ImGui::InputText("File Name", tmpFilename.data(), tmpFilename.size())) {
-                wpFileName = tmpFilename.data();
-            }
-
-            for (const auto& set : animationsByName_) ImGui::RadioButton(set.first.c_str(), &waypointSet, set.second.first);
-            if (ImGui::Button("Load")) {
-                LoadAnimation(wpFileName, waypointSet);
-                ImGui::CloseCurrentPopup();
-                showLoadAnimationPopup = false;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Close")) {
-                ImGui::CloseCurrentPopup();
-                showLoadAnimationPopup = false;
-            }
-            ImGui::EndPopup();
-        }
-
-        if (showSaveAnimationPopup) ImGui::OpenPopup("Save Animation");
-        if (ImGui::BeginPopupModal("Save Animation", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            static auto waypointSet = 0;
-            static std::string wpFileName;
-
-            std::array<char, 1024> tmpFilename;
-            auto lastPos = wpFileName.copy(tmpFilename.data(), 1023, 0);
-            tmpFilename[lastPos] = '\0';
-            if (ImGui::InputText("File Name", tmpFilename.data(), tmpFilename.size())) {
-                wpFileName = tmpFilename.data();
-            }
-
-            for (const auto& set : animationsByName_) ImGui::RadioButton(set.first.c_str(), &waypointSet, set.second.first);
-            if (ImGui::Button("Save")) {
-                SaveAnimation(wpFileName, waypointSet);
-                ImGui::CloseCurrentPopup();
-                showSaveAnimationPopup = false;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Close")) {
-                ImGui::CloseCurrentPopup();
-                showSaveAnimationPopup = false;
-            }
-            ImGui::EndPopup();
-        }
-
-
-
-        if (showSelectEditAnimationPopup) ImGui::OpenPopup("Select Edit Animation");
-        if (ImGui::BeginPopupModal("Select Edit Animation", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            auto waypointSet = static_cast<int>(currentAnimation_);
-
-            for (const auto& set : animationsByName_) ImGui::RadioButton(set.first.c_str(), &waypointSet, set.second.first);
-            if (ImGui::Button("Edit")) {
-                currentAnimation_ = static_cast<unsigned>(waypointSet);
-                ImGui::CloseCurrentPopup();
-                showSelectEditAnimationPopup = false;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Close")) {
-                ImGui::CloseCurrentPopup();
-                showSelectEditAnimationPopup = false;
-            }
-            ImGui::EndPopup();
-        }
-    }*/
 
     template <class T>
     void TAnimationManager<T>::ShowAnimationMenu(const std::string& name, bool showMenu, bool showEdit)
@@ -288,6 +208,13 @@ namespace cgu {
         wpAnimations_.StartAnimation();
         rotAnimations_.StartAnimation();
         orbAnimations_.StartAnimation();
+    }
+
+    void AnimationManager::StopAnimation()
+    {
+        wpAnimations_.StopAnimation();
+        rotAnimations_.StopAnimation();
+        orbAnimations_.StopAnimation();
     }
 
     bool AnimationManager::DoAnimationStep(float elapsedTime)
