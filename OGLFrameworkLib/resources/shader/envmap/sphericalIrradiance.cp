@@ -1,3 +1,4 @@
+// shadertype=glsl
 #version 430
 
 #include "../coordinates.glsl"
@@ -8,6 +9,7 @@ layout(rgba32f) uniform image2D irradianceMap;
 
 uniform ivec2 sourceRectMin;
 uniform ivec2 sourceRectMax;
+
 uniform int materialIdx;
 
 const float pi = 3.14159265f;
@@ -23,6 +25,7 @@ void main() {
     vec4 value = vec4(0.0f);
     if (sourceRectMin.x != 0 || sourceRectMin.y != 0) value = imageLoad(irradianceMap, pos);
 
+
     //vec4 dummy = value;
 
     vec3 env = sphericalToCartesian(vec2((float(pos.x) / float(targetSize.x)) * 2.0f * pi, (float(pos.y) / float(targetSize.y)) * pi));
@@ -33,6 +36,8 @@ void main() {
             vec3 light = sphericalToCartesian(sph);
             float cosTerm = clamp(dot(light, env), 0.0f, 1.0f);
             float weight = sin(sph.y);
+
+
             vec3 radiance = brdfI(light, env, env, materialIdx) * imageLoad(sphericalTex, ivec2(ix, iy)).rgb * cosTerm * weight;
             value += vec4(radiance, 1.0f);
         }

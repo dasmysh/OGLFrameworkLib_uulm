@@ -189,7 +189,8 @@ unsigned int cgu::impl::ConnectivityMeshImpl::FillSubmeshConnectivity(unsigned i
     }
 
     // set triangle neighbors
-    for (auto i = 0; i < triangleConnect_.size(); ++i) {
+    // TODO: find a suitable solution for meshes with more than two neighbors along one edge. [9/20/2016 Sebastian Maisch]
+    /*for (auto i = 0; i < triangleConnect_.size(); ++i) {
         auto& tri = triangleConnect_[i];
         for (unsigned int ni = 0; ni < 3; ++ni) {
             auto vi0 = tri.locOnlyVtxIds_[(ni + 1) % 3];
@@ -211,7 +212,7 @@ unsigned int cgu::impl::ConnectivityMeshImpl::FillSubmeshConnectivity(unsigned i
                 tri.neighbors_[ni] = -1;
             }
         }
-    }
+    }*/
     return firstIndex;
 }
 
