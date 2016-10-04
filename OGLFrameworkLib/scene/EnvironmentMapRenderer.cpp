@@ -12,7 +12,7 @@
 namespace cgu {
 
     EnvironmentMapRenderer::EnvironmentMapRenderer(ApplicationBase* app) :
-        envMapProgram_(app->GetGPUProgramManager()->GetResource("shader/screenQuad.vp|shader/envmap/drawEnvMap.fp")),
+        envMapProgram_(app->GetGPUProgramManager()->GetResource("shader/envmap/drawEnvMap.vp|shader/envmap/drawEnvMap.fp")),
         envMapUniformIds_(envMapProgram_->GetUniformLocations({ "envMapTex", "vpInv", "camPos" })),
         screenQuad_(*app->GetScreenQuadRenderable())
     {

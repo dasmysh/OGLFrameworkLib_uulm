@@ -9,7 +9,7 @@
 #include "DepthOfField.h"
 #include "app/ApplicationBase.h"
 #include <imgui.h>
-#include "gfx/ArcballCamera.h"
+#include "gfx/PerspectiveCamera.h"
 
 namespace cgu {
 
@@ -45,7 +45,7 @@ namespace cgu {
         }
     }
 
-    void DepthOfField::ApplyEffect(const ArcballCamera& cam, const GLTexture* color, const GLTexture* depth, const GLTexture* targetRT)
+    void DepthOfField::ApplyEffect(const PerspectiveCamera& cam, const GLTexture* color, const GLTexture* depth, const GLTexture* targetRT)
     {
         const glm::vec2 groupSize{ 32.0f, 16.0f };
 
@@ -139,14 +139,14 @@ namespace cgu {
         blurRTs[1][1].reset(new GLTexture(size.x / RT_SIZE_FACTOR, size.y / RT_SIZE_FACTOR, texDesc, nullptr));
     }
 
-    float DepthOfField::CalculateFocalLength(const ArcballCamera& cam) const
+    float DepthOfField::CalculateFocalLength(const PerspectiveCamera& cam) const
     {
         const auto scale = 2.0f * glm::tan(cam.GetFOV() * 0.5f);
         return 1.0f / scale;
         // return static_cast<float>(sourceRTSize.y) / scale;
     }
 
-    float DepthOfField::CalculateCoCRadius(const ArcballCamera& cam, float z) const
+    float DepthOfField::CalculateCoCRadius(const PerspectiveCamera& cam, float z) const
     {
         // TODO: this returns negative values. [2/12/2016 Sebastian Maisch]
         auto focalLength = CalculateFocalLength(cam);
@@ -156,7 +156,7 @@ namespace cgu {
         return resultMeters;
     }
 
-    float DepthOfField::CalculateMaxCoCRadius(const ArcballCamera& cam) const
+    float DepthOfField::CalculateMaxCoCRadius(const PerspectiveCamera& cam) const
     {
         auto maxR = glm::max(CalculateCoCRadius(cam, cam.GetNearZ()), CalculateCoCRadius(cam, cam.GetFarZ()));
         return glm::ceil(glm::min(sourceRTSize.y * maxR, sourceRTSize.x * 0.02f));
