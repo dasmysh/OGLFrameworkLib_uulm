@@ -10,6 +10,7 @@
 #include "app/ApplicationBase.h"
 #include <imgui.h>
 #include "gfx/PerspectiveCamera.h"
+#include <core/serializationHelper.h>
 
 namespace cgu {
 
@@ -160,5 +161,24 @@ namespace cgu {
     {
         auto maxR = glm::max(CalculateCoCRadius(cam, cam.GetNearZ()), CalculateCoCRadius(cam, cam.GetFarZ()));
         return glm::ceil(glm::min(sourceRTSize.y * maxR, sourceRTSize.x * 0.02f));
+    }
+
+    void DepthOfField::SaveParameters(std::ostream& ostr) const
+    {
+        serializeHelper::write(ostr, std::string("DepthOfField"));
+        serializeHelper::write(ostr, VERSION);
+        serializeHelper::write(ostr, params);
+    }
+
+    void DepthOfField::LoadParameters(std::istream& istr)
+    {
+        std::string clazzName;
+        unsigned int version;
+        serializeHelper::read(istr, clazzName);
+        if (clazzName != "DepthOfField") throw std::runtime_error("Serialization Error: wrong class.");
+        serializeHelper::read(istr, version);
+        if (version > VERSION) throw std::runtime_error("Serialization Error: wrong version.");
+
+        serializeHelper::read(istr, params);
     }
 }

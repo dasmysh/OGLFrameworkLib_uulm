@@ -35,7 +35,11 @@ namespace cgu {
         void ApplyEffect(const PerspectiveCamera& cam, const GLTexture* color, const GLTexture* depth, const GLTexture* targetRT);
         void Resize(const glm::uvec2& screenSize);
 
+        void SaveParameters(std::ostream& ostr) const;
+        void LoadParameters(std::istream& istr);
+
     private:
+        static const unsigned int VERSION = 1;
         static const unsigned int RT_SIZE_FACTOR = 1;
         using FrontBackTargets = std::array<std::unique_ptr<GLTexture>, 2>;
 

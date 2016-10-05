@@ -12,6 +12,7 @@
 #include "core/serializationHelper.h"
 #include "Mesh.h"
 #include <unordered_map>
+#include <fstream>
 
 #undef min
 #undef max

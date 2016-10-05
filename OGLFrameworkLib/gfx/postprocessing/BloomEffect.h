@@ -38,7 +38,12 @@ namespace cgu {
         void SetExposure(float exposure) { params.exposure = exposure; }
         float GetExposure() const { return params.exposure; }
 
+        void SaveParameters(std::ostream& ostr) const;
+        void LoadParameters(std::istream& istr);
+
     private:
+
+        static const unsigned int VERSION = 1;
         using BlurPassTargets = std::array<std::unique_ptr<GLTexture>, 2>;
         static const unsigned int NUM_PASSES = 6;
 

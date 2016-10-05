@@ -49,7 +49,12 @@ namespace cgu {
         void SetExposure(float exposure) { params.exposure = exposure; }
         float GetExposure() const { return params.exposure; }
 
+        void SaveParameters(std::ostream& ostr) const;
+        void LoadParameters(std::istream& istr);
+
     private:
+        static const unsigned int VERSION = 1;
+
         /** Holds the shader used for tone-mapping. */
         std::shared_ptr<GPUProgram> tmProgram;
         /** Holds the screen renderable for the tone-mapping. */

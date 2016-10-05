@@ -11,6 +11,7 @@
 #include "core/serializationHelper.h"
 #include "SubMesh.h"
 #include <core/math/transforms.h>
+#include <fstream>
 
 
 namespace cgu {

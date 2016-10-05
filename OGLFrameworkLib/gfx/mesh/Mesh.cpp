@@ -15,6 +15,7 @@
 #include "core/TextureManager.h"
 #include "SceneMeshNode.h"
 #include <gfx/glrenderer/GLBuffer.h>
+#include <fstream>
 
 #undef min
 #undef max

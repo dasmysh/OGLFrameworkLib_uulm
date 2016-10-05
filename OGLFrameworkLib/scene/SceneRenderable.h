@@ -11,20 +11,27 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <ostream>
+#include <istream>
 
 namespace cgu {
 
     class ArcballCamera;
+    class PerspectiveCamera;
     class GPUProgram;
     class MeshRenderable;
 
     class SceneRenderable
     {
     public:
+        // TODO: refactor this class and remove renderable. [10/5/2016 Sebastian Maisch]
         SceneRenderable(MeshRenderable* renderable, const glm::vec3& pos, const glm::quat& orient);
+        virtual ~SceneRenderable();
 
         void UpdatePositionOrientation(const glm::vec3& pos, const glm::quat& orient);
         void Draw(const ArcballCamera& camera) const;
+        virtual void SaveScene(std::ostream& ostr, const PerspectiveCamera& camera) const;
+        virtual void LoadScene(std::istream& istr, PerspectiveCamera& camera);
 
         const glm::quat& GetOrientation() const { return orientation_; }
         const glm::mat4& GetWorldMatrix() const { return worldMatrix_; }

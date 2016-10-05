@@ -14,6 +14,7 @@
 #include <core/serializationHelper.h>
 #include "ConnectivityMesh.h"
 #include "ConnectivityMeshImpl.h"
+#include <fstream>
 
 #undef min
 #undef max

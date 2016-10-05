@@ -11,6 +11,7 @@
 #include "ShadowMap.h"
 #include "app/ApplicationBase.h"
 #include <GLFW/glfw3.h>
+#include <core/serializationHelper.h>
 
 namespace cgu {
 
@@ -155,6 +156,38 @@ namespace cgu {
         return nextTextureUnit;
     }
 
+    void SpotLight::SaveParameters(std::ostream& ostr) const
+    {
+        auto view = camera_.GetViewMatrix();
+        auto proj = camera_.GetProjMatrix();
+
+        serializeHelper::write(ostr, std::string("SpotLight"));
+        serializeHelper::write(ostr, VERSION);
+        serializeHelper::write(ostr, view);
+        serializeHelper::write(ostr, proj);
+        serializeHelper::write(ostr, intensity_);
+        serializeHelper::write(ostr, falloffWidth_);
+        serializeHelper::write(ostr, attenuation_);
+    }
+
+    void SpotLight::LoadParameters(std::istream& istr)
+    {
+        std::string clazzName;
+        unsigned int version;
+        serializeHelper::read(istr, clazzName);
+        if (clazzName != "FilmicTMOperator") throw std::runtime_error("Serialization Error: wrong class.");
+        serializeHelper::read(istr, version);
+        if (version > VERSION) throw std::runtime_error("Serialization Error: wrong version.");
+
+        glm::mat4 view, proj;
+        serializeHelper::read(istr, view);
+        serializeHelper::read(istr, proj);
+        serializeHelper::read(istr, intensity_);
+        serializeHelper::read(istr, falloffWidth_);
+        serializeHelper::read(istr, attenuation_);
+        camera_.ResetCamera(proj, view);
+    }
+
     /**
      *  Constructor.
      */
@@ -192,5 +225,25 @@ namespace cgu {
         lightsUBO_->UploadData(0, sizeof(SpotLightParams) * static_cast<unsigned int>(lightParams_.size()), lightParams_.data());
         lightsUBO_->BindBuffer();
         return nextTexture;
+    }
+
+    void SpotLightArray::SaveParameters(std::ostream& ostr) const
+    {
+        serializeHelper::write(ostr, std::string("SpotLight"));
+        serializeHelper::write(ostr, VERSION);
+
+        for (const auto& lgt : lights_) lgt.SaveParameters(ostr);
+    }
+
+    void SpotLightArray::LoadParameters(std::istream& istr)
+    {
+        std::string clazzName;
+        unsigned int version;
+        serializeHelper::read(istr, clazzName);
+        if (clazzName != "FilmicTMOperator") throw std::runtime_error("Serialization Error: wrong class.");
+        serializeHelper::read(istr, version);
+        if (version > VERSION) throw std::runtime_error("Serialization Error: wrong version.");
+
+        for (auto& lgt : lights_) lgt.LoadParameters(istr);
     }
 }

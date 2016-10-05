@@ -11,6 +11,7 @@
 #include "WaypointAnimation.h"
 #include <core/AnimationManagerSerializationHelper.h>
 #include <app/gui/GuiHelper.h>
+#include <fstream>
 
 namespace cgu {
 

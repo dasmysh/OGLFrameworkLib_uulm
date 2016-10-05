@@ -10,6 +10,7 @@
 #include "gfx/ArcballCamera.h"
 #include "gfx/glrenderer/MeshRenderable.h"
 #include <glm/glm.hpp>
+#include <core/serializationHelper.h>
 
 namespace cgu {
 
@@ -21,6 +22,8 @@ namespace cgu {
     {
         UpdatePositionOrientation(position_, orientation_);
     }
+
+    SceneRenderable::~SceneRenderable() = default;
 
     SceneRenderable::SceneRenderable(const glm::vec3& pos, const glm::quat& orient) :
         renderable_(nullptr),
@@ -50,5 +53,26 @@ namespace cgu {
     {
         camera.SetView();
         renderable_->Draw(worldMatrix_);
+    }
+
+    void SceneRenderable::SaveScene(std::ostream& ostr, const PerspectiveCamera& camera) const
+    {
+        auto view = camera.GetViewMatrix();
+        auto proj = camera.GetProjMatrix();
+
+        serializeHelper::write(ostr, worldMatrix_);
+        serializeHelper::write(ostr, view);
+        serializeHelper::write(ostr, proj);
+    }
+
+    void SceneRenderable::LoadScene(std::istream& istr, PerspectiveCamera& camera)
+    {
+        glm::mat4 view, proj;
+        serializeHelper::read(istr, worldMatrix_);
+        serializeHelper::read(istr, view);
+        serializeHelper::read(istr, proj);
+
+        camera.ResetCamera(proj, view);
+        ResetScene(worldMatrix_);
     }
 }

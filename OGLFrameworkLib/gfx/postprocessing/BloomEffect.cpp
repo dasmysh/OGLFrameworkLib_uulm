@@ -10,6 +10,7 @@
 #include "app/ApplicationBase.h"
 #include "app/GLWindow.h"
 #include <imgui.h>
+#include <core/serializationHelper.h>
 
 namespace cgu {
 
@@ -131,5 +132,24 @@ namespace cgu {
             blurPassRTs[1].reset(new GLTexture(sizeBlurRT.x, sizeBlurRT.y, texDesc, nullptr));
             base *= 2;
         }
+    }
+
+    void BloomEffect::SaveParameters(std::ostream& ostr) const
+    {
+        serializeHelper::write(ostr, std::string("BloomEffect"));
+        serializeHelper::write(ostr, VERSION);
+        serializeHelper::write(ostr, params);
+    }
+
+    void BloomEffect::LoadParameters(std::istream& istr)
+    {
+        std::string clazzName;
+        unsigned int version;
+        serializeHelper::read(istr, clazzName);
+        if (clazzName != "LoadScene") throw std::runtime_error("Serialization Error: wrong class.");
+        serializeHelper::read(istr, version);
+        if (version > VERSION) throw std::runtime_error("Serialization Error: wrong version.");
+
+        serializeHelper::read(istr, params);
     }
 }

@@ -71,7 +71,11 @@ namespace cgu {
 
         void SetPosition(const glm::vec3& position) { camera_.SetPosition(position); }
 
+        void SaveParameters(std::ostream& ostr) const;
+        void LoadParameters(std::istream& istr);
+
     private:
+        static const unsigned int VERSION = 1;
 
         SpotLight(const glm::vec3&  intensity, float fov, const glm::vec3& pos, std::unique_ptr<ShadowMap> shadowMap, ApplicationBase* app);
 
@@ -104,7 +108,11 @@ namespace cgu {
         /** Returns the managed lights array. */
         std::vector<SpotLight>& GetLights() { return lights_; }
 
+        void SaveParameters(std::ostream& ostr) const;
+        void LoadParameters(std::istream& istr);
+
     private:
+        static const unsigned int VERSION = 1;
         /** Holds the lights. */
         std::vector<SpotLight> lights_;
         /** Holds the lights parameters. */
