@@ -40,8 +40,8 @@ namespace cgu {
     {
         if (ImGui::TreeNode("DepthOfField Parameters"))
         {
-            ImGui::InputFloat("DoF Focus", &params.focusZ, 0.01f);
-            ImGui::InputFloat("Aperture Radius", &params.apertureRadius, 0.0001f);
+            ImGui::InputFloat("DoF Focus", &params.focusZ, 0.005f);
+            ImGui::InputFloat("Aperture Radius", &params.apertureRadius, 0.00001f);
             ImGui::TreePop();
         }
     }

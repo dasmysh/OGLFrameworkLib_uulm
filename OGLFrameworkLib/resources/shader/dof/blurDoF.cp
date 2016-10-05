@@ -66,7 +66,7 @@ void main() {
     backResult.a = 1.0f;
 #endif
 
-    backResult.rgb /= backWeightSum;
+    backResult.rgb /= max(backWeightSum, 0.00001f);
     frontResult /= max(frontWeightSum, 0.00001f);
 
     imageStore(targetFrontTex, pos, frontResult);
