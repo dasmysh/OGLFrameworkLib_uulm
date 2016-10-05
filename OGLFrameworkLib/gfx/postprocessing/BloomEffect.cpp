@@ -146,7 +146,7 @@ namespace cgu {
         std::string clazzName;
         unsigned int version;
         serializeHelper::read(istr, clazzName);
-        if (clazzName != "LoadScene") throw std::runtime_error("Serialization Error: wrong class.");
+        if (clazzName != "BloomEffect") throw std::runtime_error("Serialization Error: wrong class.");
         serializeHelper::read(istr, version);
         if (version > VERSION) throw std::runtime_error("Serialization Error: wrong version.");
 

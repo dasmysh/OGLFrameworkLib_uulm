@@ -175,7 +175,7 @@ namespace cgu {
         std::string clazzName;
         unsigned int version;
         serializeHelper::read(istr, clazzName);
-        if (clazzName != "FilmicTMOperator") throw std::runtime_error("Serialization Error: wrong class.");
+        if (clazzName != "SpotLight") throw std::runtime_error("Serialization Error: wrong class.");
         serializeHelper::read(istr, version);
         if (version > VERSION) throw std::runtime_error("Serialization Error: wrong version.");
 
@@ -229,7 +229,7 @@ namespace cgu {
 
     void SpotLightArray::SaveParameters(std::ostream& ostr) const
     {
-        serializeHelper::write(ostr, std::string("SpotLight"));
+        serializeHelper::write(ostr, std::string("SpotLightArray"));
         serializeHelper::write(ostr, VERSION);
 
         for (const auto& lgt : lights_) lgt.SaveParameters(ostr);
@@ -240,7 +240,7 @@ namespace cgu {
         std::string clazzName;
         unsigned int version;
         serializeHelper::read(istr, clazzName);
-        if (clazzName != "FilmicTMOperator") throw std::runtime_error("Serialization Error: wrong class.");
+        if (clazzName != "SpotLightArray") throw std::runtime_error("Serialization Error: wrong class.");
         serializeHelper::read(istr, version);
         if (version > VERSION) throw std::runtime_error("Serialization Error: wrong version.");
 
