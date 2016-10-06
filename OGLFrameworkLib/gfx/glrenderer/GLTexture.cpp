@@ -239,15 +239,16 @@ namespace cgu {
      *  Downloads the textures data to a vector.
      *  @param data the vector to contain the data.
      */
-    void GLTexture::DownloadData(std::vector<uint8_t>& data) const
+    void GLTexture::DownloadData(std::vector<uint8_t>& data, size_t offset, size_t size) const
     {
-        data.resize(width * height * depth * descriptor.bytesPP);
+        if (size == 0) size = width * height * depth * descriptor.bytesPP;
+        data.resize(size);
         assert(data.size() != 0);
 
         // TODO: create external PBOs for real asynchronous up-/download [8/19/2015 Sebastian Maisch]
         BufferRAII pbo;
         OGL_CALL(glBindBuffer, GL_PIXEL_PACK_BUFFER, pbo);
-        OGL_CALL(glBufferData, GL_PIXEL_PACK_BUFFER, data.size(), nullptr, GL_STREAM_READ);
+        OGL_CALL(glBufferData, GL_PIXEL_PACK_BUFFER, width * height * depth * descriptor.bytesPP, nullptr, GL_STREAM_READ);
 
         OGL_CALL(glBindTexture, id.textureType, id.textureId);
         OGL_CALL(glGetTexImage, id.textureType, 0, descriptor.format, descriptor.type, 0);
@@ -255,7 +256,7 @@ namespace cgu {
         OGL_CALL(glMemoryBarrier, GL_ALL_BARRIER_BITS);
         auto gpuMem = OGL_CALL(glMapBuffer, GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
         if (gpuMem) {
-            memcpy(data.data(), gpuMem, data.size());
+            memcpy(data.data() + offset, gpuMem, size);
             OGL_CALL(glUnmapBuffer, GL_PIXEL_PACK_BUFFER);
         }
 

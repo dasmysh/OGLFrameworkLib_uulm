@@ -12,13 +12,16 @@
 #include <gfx/PerspectiveCamera.h>
 #include <fstream>
 #include <boost/filesystem/operations.hpp>
+#include <gpgpu/Image2DStatistics.h>
+#include <app/ApplicationBase.h>
 
 namespace cgu {
 
-    ScreenCaptureHelper::ScreenCaptureHelper(const std::string& directory, const glm::uvec2& size) :
-        directory_(directory)
+    ScreenCaptureHelper::ScreenCaptureHelper(const std::string& directory, const glm::uvec2& size, ApplicationBase* app) :
+        directory_(directory),
+        application_(app)
     {
-        boost::filesystem::create_directory(directory_);
+        boost::filesystem::create_directory(application_->GetConfig().evalDirectory + "/" + directory_);
 
         cgu::FrameBufferDescriptor scrShotTargetDesc;
         scrShotTargetDesc.texDesc_.push_back(cgu::TextureDescriptor{ 4, GL_SRGB8_ALPHA8, GL_RGBA, GL_UNSIGNED_BYTE });
@@ -75,7 +78,9 @@ namespace cgu {
         catch (...) {
             frameTimes_[techniqueName] = std::make_pair(timePerDraw, 1.0f);
         }
-        scrShotTarget_->GetTextures()[0]->SaveTextureToFile(directory_ + "/" + name + ".png");
+        auto fileName = directory_ + "/" + name;
+        fileNames_[techniqueName] = fileName;
+        scrShotTarget_->GetTextures()[0]->SaveTextureToFile(application_->GetConfig().evalDirectory + "/" + fileName + ".png");
     }
 
     void ScreenCaptureHelper::SetupVideo(const std::vector<std::string>& techniqueNames)
@@ -111,11 +116,34 @@ namespace cgu {
     void ScreenCaptureHelper::WriteStatistics()
     {
         const std::string statisticsFilename = "statistics.txt";
-        std::ofstream statisticsOut(directory_ + "/" + statisticsFilename, std::ios::out);
+        std::ofstream statisticsOut(application_->GetConfig().evalDirectory + "/" + directory_ + "/" + statisticsFilename, std::ios::out);
 
-        for (const auto& entry : frameTimes_) {
-            statisticsOut << "Frame Time " << entry.first << ":   " << entry.second.first / entry.second.second << std::endl;
+        try {
+            auto gtFileName = fileNames_.at("GT");
+            eval::Image2DStatistics imageStats(gtFileName + ".png", application_);
+            for (const auto& entry : fileNames_) {
+                if (entry.first == "GT") continue;
+                auto diffResults = imageStats.CreateDiffImage(entry.second + ".png", entry.second + "_diff.png");
+                statisticsOut << entry.first << ":" << std::endl;
+                auto frameTime = frameTimes_[entry.first];
+                statisticsOut << "Frame Time:                " << frameTime.first / frameTime.second << std::endl;
+                statisticsOut << "Max. Error:                " << diffResults.errorMax_ << std::endl;
+                statisticsOut << "Num. Error Pixels:         " << diffResults.numErrorPixels_ << std::endl;
+                statisticsOut << "RMS Error (Avg,ErrPixles): " << diffResults.errorRMSAvg_ << std::endl;
+                statisticsOut << "RMS Error (Avg,All):       " << diffResults.errorRMSAvgAll_ << std::endl;
+                statisticsOut << "RMS Error (Max,ErrPixles): " << diffResults.errorRMSMax_ << std::endl;
+                statisticsOut << "RMS Error (Max,All):       " << diffResults.errorRMSMaxAll_ << std::endl;
+                statisticsOut << "PSNR (Avg,ErrPixels):      " << diffResults.psnrAvg_ << std::endl;
+                statisticsOut << "PSNR (Avg,All):            " << diffResults.psnrAvgAll_ << std::endl;
+                statisticsOut << "PSNR (Max,ErrPixels):      " << diffResults.psnrMax_ << std::endl;
+                statisticsOut << "PSNR (Max,All):            " << diffResults.psnrMaxAll_ << std::endl << std::endl;
+            }
         }
-        statisticsOut << std::endl;
+        catch (...) {
+            for (const auto& entry : frameTimes_) {
+                statisticsOut << entry.first << ":" << std::endl;
+                statisticsOut << "Frame Time:   " << entry.second.first / entry.second.second << std::endl << std::endl;
+            }
+        }
     }
 }

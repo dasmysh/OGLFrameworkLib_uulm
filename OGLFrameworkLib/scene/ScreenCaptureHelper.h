@@ -15,11 +15,12 @@ namespace cgu {
 
     class PerspectiveCamera;
     class GLRenderTarget;
+    class ApplicationBase;
 
     class ScreenCaptureHelper
     {
     public:
-        explicit ScreenCaptureHelper(const std::string& directory, const glm::uvec2& size);
+        explicit ScreenCaptureHelper(const std::string& directory, const glm::uvec2& size, ApplicationBase* app);
         ~ScreenCaptureHelper();
 
         void RenderScreenShot(const std::string& name, const PerspectiveCamera& camera, std::function<void(const PerspectiveCamera&, GLRenderTarget&)> drawFn);
@@ -37,6 +38,11 @@ namespace cgu {
         std::map<std::string, std::pair<float, float>> frameTimes_;
         /** Holds the technique names for video. */
         std::vector<std::string> techniqueNames_;
+        /** Holds the file names for screen shots. */
+        std::map<std::string, std::string> fileNames_;
+
+        /** Holds the application object. */
+        ApplicationBase* application_;
     };
 }
 
