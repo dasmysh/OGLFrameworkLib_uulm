@@ -23,7 +23,7 @@ namespace cgu {
         explicit GaussianBlur(const GLTexture* source, const std::string& texFormat, const std::string& blurColorType, const std::string& blurSwizzle, ApplicationBase* app);
         ~GaussianBlur();
 
-        void ApplyBlur();
+        void ApplyBlur(float width = 1.0f);
         void Resize();
 
     private:

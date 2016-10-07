@@ -24,14 +24,14 @@ namespace cgu {
 
     GaussianBlur::~GaussianBlur() = default;
 
-    void GaussianBlur::ApplyBlur()
+    void GaussianBlur::ApplyBlur(float width)
     {
         const glm::vec2 groupSize{ 32.0f, 16.0f };
         auto numGroups = glm::ivec2(glm::ceil(glm::vec2(size_) / groupSize));
 
         gaussianProgram_->UseProgram();
         gaussianProgram_->SetUniform(gaussianUniformIds_[2], glm::vec2(1.0f, 0.0f));
-        gaussianProgram_->SetUniform(gaussianUniformIds_[3], 5.5f);
+        gaussianProgram_->SetUniform(gaussianUniformIds_[3], width);
         std::vector<int> textureStages;
 
         /*for (auto i = 0; i < blurredShadowMap_.size(); ++i) {
