@@ -51,6 +51,7 @@ namespace cgu {
         void EndRun();
 
         bool IsPaused() const { return pause_; }
+        bool IsGUIMode() const { return guiMode_; }
 
         void SetPause(bool pause);
 
@@ -97,6 +98,8 @@ namespace cgu {
         double elapsedTime_;
         /** The current scene. */
         unsigned int currentScene_;
+        /** Hold whether GUI mode is switched on. */
+        bool guiMode_ = true;
 
     protected:
         /**

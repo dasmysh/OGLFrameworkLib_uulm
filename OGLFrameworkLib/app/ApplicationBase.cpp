@@ -208,6 +208,10 @@ namespace cgu {
                 mainWin.CloseWindow();
                 handled = true;
                 break;
+            case GLFW_KEY_F2:
+                guiMode_ = !guiMode_;
+                handled = true;
+                break;
             case GLFW_KEY_F9:
                 programManager_->RecompileAll();
                 handled = true;
@@ -293,10 +297,12 @@ namespace cgu {
         }
 
         ImGui_ImplGlfwGL3_NewFrame();
-        mainWin.BatchDraw([&](GLBatchRenderTarget & rt) {
-            this->RenderGUI();
-            ImGui::Render();
-        });
+        if (guiMode_) {
+            mainWin.BatchDraw([&](GLBatchRenderTarget & rt) {
+                this->RenderGUI();
+                ImGui::Render();
+            });
+        }
         mainWin.Present();
     }
 }
