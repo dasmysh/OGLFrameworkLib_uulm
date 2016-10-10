@@ -36,7 +36,9 @@ namespace cgu {
      */
     FrameBuffer::FrameBuffer(unsigned int fbWidth, unsigned int fbHeight, const FrameBufferDescriptor& d) :
         isBackbuffer(false),
-        desc(d)
+        desc(d),
+        width(0),
+        height(0)
     {
         for (auto& texDesc : desc.texDesc_) {
             if (texDesc.texType_ == GL_TEXTURE_2D && d.numSamples_ != 1) texDesc.texType_ = GL_TEXTURE_2D_MULTISAMPLE;
@@ -50,7 +52,9 @@ namespace cgu {
      */
     FrameBuffer::FrameBuffer(const FrameBuffer& orig) :
         isBackbuffer(false),
-        desc(orig.desc)
+        desc(orig.desc),
+        width(0),
+        height(0)
     {
         Resize(orig.width, orig.height);
     }
@@ -126,6 +130,7 @@ namespace cgu {
      */
     void FrameBuffer::Resize(unsigned int fbWidth, unsigned int fbHeight)
     {
+        if (width == fbWidth && height == fbHeight) return;
         width = fbWidth;
         height = fbHeight;
 
@@ -135,6 +140,7 @@ namespace cgu {
         OGL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, fbo);
         unsigned int colorAtt = 0;
         drawBuffers.clear();
+        textures.clear();
         for (const auto& texDesc : desc.texDesc_) {
             TextureRAII tex;
             OGL_CALL(glBindTexture, texDesc.texType_, tex);
@@ -160,7 +166,7 @@ namespace cgu {
             textures.emplace_back(std::move(texture));
         }
 
-
+        renderBuffers.clear();
         for (const auto& rbDesc : desc.rbDesc_) {
             RenderbufferRAII rb;
             OGL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, rb);
