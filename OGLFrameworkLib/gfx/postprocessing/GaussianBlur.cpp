@@ -24,6 +24,11 @@ namespace cgu {
 
     GaussianBlur::~GaussianBlur() = default;
 
+    void GaussianBlur::UpdateResizedTarget(const GLTexture* source)
+    {
+        source_ = source;
+    }
+
     void GaussianBlur::ApplyBlur(float width)
     {
         const glm::vec2 groupSize{ 32.0f, 16.0f };

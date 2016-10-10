@@ -51,7 +51,8 @@ namespace cgu {
         void EndRun();
 
         bool IsPaused() const { return pause_; }
-        void SetPause(bool pause) { pause_ = pause; }
+
+        void SetPause(bool pause);
 
         virtual bool HandleKeyboard(int key, int scancode, int action, int mods, GLWindow* sender);
         bool HandleMouse(int button, int action, int mods, float mouseWheelDelta, GLWindow* sender);

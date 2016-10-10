@@ -185,12 +185,19 @@ namespace cgu {
         return cameraView_.get();
     }
 
+    void ApplicationBase::SetPause(bool pause)
+    {
+        LOG_IF(INFO, pause) << L"Begin pause";
+        LOG_IF(INFO, !pause) << L"End pause";
+        pause_ = pause;
+    }
+
     /**
-     * Handles all keyboard input.
-     * @param vkCode the key pressed
-     * @param bKeyDown <code>true</code> if the key is pressed, else it is released
-     * @param sender the window that send the keyboard messages
-     */
+         * Handles all keyboard input.
+         * @param vkCode the key pressed
+         * @param bKeyDown <code>true</code> if the key is pressed, else it is released
+         * @param sender the window that send the keyboard messages
+         */
     bool ApplicationBase::HandleKeyboard(int key, int scancode, int action, int mods, GLWindow* sender)
     {
         auto handled = false;

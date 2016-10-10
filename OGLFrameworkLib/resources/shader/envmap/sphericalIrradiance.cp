@@ -50,4 +50,5 @@ void main() {
     // dummy = vec4(1.0f, 0.0f, 0.0f,1.0f);
 
     imageStore(irradianceMap, pos, value);
+    // imageStore(irradianceMap, pos, vec4(imageLoad(sphericalTex, pos).rgb, 1.0f));
 }
