@@ -347,6 +347,7 @@ namespace cgu {
 
     void GLWindow::WindowSizeCallback(int width, int height)
     {
+        LOG(INFO) << L"Got window resize event (" << width << ", " << height << ") ...";
         assert(this->app != nullptr);
         LOG(DEBUG) << L"Begin HandleResize()";
 
