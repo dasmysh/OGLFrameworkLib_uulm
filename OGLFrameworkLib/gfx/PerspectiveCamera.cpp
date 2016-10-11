@@ -113,15 +113,15 @@ namespace cgu {
 
     void PerspectiveCamera::ResetCamera(const glm::mat4& proj, const glm::mat4& view)
     {
-        perspective_ = proj;
         nearZ_ = proj[3][2] / (proj[2][2] - 1);
         farZ_ = proj[3][2] / (proj[2][2] + 1);
         auto t = proj[3][2] / ((proj[2][2] - 1) * proj[1][1]);
         auto r = proj[3][2] / ((proj[2][2] - 1) * proj[0][0]);
 
         fovY_ = 2.f * glm::atan(t / nearZ_);
-        aspectRatio_ = r / t;
+        // aspectRatio_ = r / t; // no need to change aspect ratio here!!!
 
+        perspective_ = glm::perspective(fovY_, aspectRatio_, nearZ_, farZ_);
         view_ = view;
 
         auto viewInv = glm::inverse(view);
