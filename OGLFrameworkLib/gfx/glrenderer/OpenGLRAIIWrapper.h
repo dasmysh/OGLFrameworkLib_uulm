@@ -39,7 +39,7 @@ namespace cgu {
         OpenGLRAIIWrapper(const OpenGLRAIIWrapper&) = delete;
         OpenGLRAIIWrapper& operator=(const OpenGLRAIIWrapper&) = delete;
         OpenGLRAIIWrapper(OpenGLRAIIWrapper&& rhs) : obj(rhs.obj) { rhs.obj = T::null_obj; }
-        OpenGLRAIIWrapper& operator=(OpenGLRAIIWrapper&& rhs) { obj = rhs.obj; rhs.obj = T::null_obj; return *this; }
+        OpenGLRAIIWrapper& operator=(OpenGLRAIIWrapper&& rhs) { this->~OpenGLRAIIWrapper(); obj = rhs.obj; rhs.obj = T::null_obj; return *this; }
         ~OpenGLRAIIWrapper() { obj = T::Destroy(obj); }
 
         operator typename T::value_type() const { return obj; }
