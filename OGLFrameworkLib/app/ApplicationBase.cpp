@@ -50,7 +50,7 @@ namespace cgu {
         orthoView_(),
         cameraView_(),
         fontProgram_(nullptr),
-        screenQuadRenderable_(nullptr)        
+        screenQuadRenderable_(nullptr)
     {
         texManager_.reset(new TextureManager(this));
         volManager_.reset(new VolumeManager(this));
