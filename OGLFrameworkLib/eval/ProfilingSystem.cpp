@@ -28,7 +28,7 @@ namespace cgu {
         auto t = localtime(&timeEnd);
 
         profileOut_ << "--------------------------------------------------------------------------------" << std::endl;
-        profileOut_ << "Ending profiling run (" << std::put_time(t, "%Y/%m/%d %H:%M:%S") << ").";
+        profileOut_ << "Ending profiling run (" << std::put_time(t, "%Y/%m/%d %H:%M:%S") << ")." << std::endl;
         profileOut_ << "--------------------------------------------------------------------------------" << std::endl;
         profileOut_.close();
     }
@@ -60,7 +60,7 @@ namespace cgu {
         auto t = localtime(&timeBegin);
 
         profileOut_ << "--------------------------------------------------------------------------------" << std::endl;
-        profileOut_ << "Starting new profiling run (" << std::put_time(t, "%Y/%m/%d %H:%M:%S") << ") ...";
+        profileOut_ << "Starting new profiling run (" << std::put_time(t, "%Y/%m/%d %H:%M:%S") << ") ..." << std::endl;
         profileOut_ << "--------------------------------------------------------------------------------" << std::endl;
         profileOut_.flush();
     }
@@ -72,7 +72,7 @@ namespace cgu {
         double startTime = static_cast<double>(qwTime.QuadPart);
 
         sectionStack_.emplace(sectionName, startTime);
-        profileOut_ << "Section " << sectionName << "started.";
+        profileOut_ << "Section " << sectionName << " started." << std::endl;
     }
 
     void ProfilingSystem::EndSection(const std::string& sectionName)
@@ -87,7 +87,7 @@ namespace cgu {
         sectionStack_.pop();
 
         auto duration = (endTime - stackSectionStartTime) / ticksPerSec_;
-        profileOut_ << sectionName << ": " << duration;
+        profileOut_ << sectionName << ": " << duration << std::endl;
         profileOut_.flush();
     }
 }

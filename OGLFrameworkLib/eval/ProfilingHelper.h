@@ -29,4 +29,8 @@ namespace cgu {
     };
 }
 
+#define PROFILECAT3(a, c) a##c
+#define PROFILE_2(arg, line) cgu::ProfilingHelper PROFILECAT3(_profile, line)((arg))
+#define PROFILE(arg)    PROFILE_2((arg), __LINE__)
+
 #endif // PROFILINGHELPER_H
