@@ -95,6 +95,8 @@ namespace cgu {
         unsigned int FindContainingTriangle(const glm::vec3 point) const;
         const std::vector<std::unique_ptr<ConnectivitySubMesh>>& GetSubMeshes() const;
 
+        std::vector<size_t> GetAdjacentVertices(size_t vtxId) const;
+
         const std::vector<MeshConnectVertex>& GetVertices() const;
         const std::vector<MeshConnectTriangle>& GetTriangles() const;
         const MeshConnectTriangle& GetTriangle(unsigned int idx) const;

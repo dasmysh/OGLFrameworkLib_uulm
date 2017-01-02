@@ -92,6 +92,11 @@ namespace cgu {
         return impl_->GetSubMeshes();
     }
 
+    std::vector<size_t> ConnectivityMesh::GetAdjacentVertices(size_t vtxId) const
+    {
+        return impl_->GetAdjacentVertices(vtxId);
+    }
+
     const std::vector<MeshConnectVertex>& ConnectivityMesh::GetVertices() const
     {
         return impl_->GetVertices();

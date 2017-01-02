@@ -16,6 +16,7 @@
 #include "SubMesh.h"
 #include <boost/filesystem/operations.hpp>
 #include "ConnectivityMesh.h"
+#include <queue>
 
 cgu::impl::ConnectivityMeshImpl::ConnectivityMeshImpl(const Mesh* mesh) :
 mesh_(mesh)
@@ -242,6 +243,29 @@ unsigned int cgu::impl::ConnectivityMeshImpl::FindContainingTriangle(const glm::
     if (result != -1) return result;
     }
     throw std::out_of_range("Containing triangle not found!");*/
+}
+
+
+
+std::vector<size_t> cgu::impl::ConnectivityMeshImpl::GetAdjacentVertices(size_t vtxId) const
+{
+    const auto& cvtx = GetVertices()[vtxId];
+    std::vector<size_t> connectedIndices;
+
+    for (auto tIdx : cvtx.triangles) {
+        for (auto tVIdx : GetTriangle(tIdx).vertex_) {
+            if (tVIdx == cvtx.idx) continue;
+
+            auto insert = true;
+            for (auto i = 0U; i < connectedIndices.size(); ++i) {
+                if (connectedIndices[i] == tVIdx) insert = false;
+            }
+
+            if (insert) connectedIndices.push_back(tVIdx);
+        }
+    }
+
+    return connectedIndices;
 }
 
 bool cgu::impl::ConnectivityMeshImpl::load(const std::string& meshFile)
