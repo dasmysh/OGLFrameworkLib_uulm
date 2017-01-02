@@ -12,6 +12,8 @@
 
 namespace cgu {
 
+    std::unique_ptr<ProfilingSystem> ProfilingSystem::instance_ = nullptr;
+
     ProfilingSystem::ProfilingSystem() :
         ticksPerSec_(0.0),
         application_(nullptr)
@@ -34,7 +36,7 @@ namespace cgu {
 
     ProfilingSystem* ProfilingSystem::instance()
     {
-        if (!instance_) instance_ = std::make_unique<ProfilingSystem>();
+        if (!instance_) instance_.reset(new ProfilingSystem());
         return instance_.get();
     }
 
@@ -82,8 +84,6 @@ namespace cgu {
         LARGE_INTEGER qwTime;
         QueryPerformanceCounter(&qwTime);
         double endTime = static_cast<double>(qwTime.QuadPart);
-
-        const auto stackSectionStartTime = sectionStack_.top().startTime_;
         sectionStack_.pop();
 
         auto duration = (endTime - stackSectionStartTime) / ticksPerSec_;

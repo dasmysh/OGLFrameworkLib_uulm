@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include <stack>
+#include <fstream>
 
 namespace cgu {
 
@@ -29,6 +30,8 @@ namespace cgu {
     class ProfilingSystem
     {
     public:
+        ~ProfilingSystem();
+
         void Init(const std::string& evalFilename, ApplicationBase* app, bool newFile = true);
 
         void StartSection(const std::string& sectionName);
@@ -38,7 +41,6 @@ namespace cgu {
 
     private:
         ProfilingSystem();
-        ~ProfilingSystem();
 
         /** Holds the systems instance. */
         static std::unique_ptr<ProfilingSystem> instance_;
