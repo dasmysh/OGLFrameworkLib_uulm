@@ -47,6 +47,9 @@ namespace cgu {
         const SceneMeshNode* GetRootNode() const { return rootNode_.get(); }
         const GLBuffer* GetIndexBuffer() const { return iBuffer_.get(); }
 
+        const std::vector<glm::vec3>& GetNormals() const { return normals_; }
+        const std::vector<std::vector<unsigned int>>& GetIds() const { return ids_; }
+
         template<class VTX>
         void GetVertices(std::vector<VTX>& vertices) const;
         template<class VTX>
@@ -58,11 +61,13 @@ namespace cgu {
         template<class VTX> const GLBuffer* GetVertexBuffer() const { return vBuffers_.at(typeid(VTX)).get(); }
         virtual std::string GetFullFilename() const { return ""; };
 
+        void write(std::ofstream& ofs) const;
+        bool read(std::ifstream& ifs, TextureManager& texMan);
+
     protected:
         void SetRootTransform(const glm::mat4& rootTransform) { rootTransform_ = rootTransform; }
         std::vector<glm::vec3>& GetVertices() { return vertices_; }
         std::vector<glm::vec3>& GetNormals() { return normals_; }
-        const std::vector<glm::vec3>& GetNormals() const { return normals_; }
         std::vector<std::vector<glm::vec3>>& GetTexCoords() { return texCoords_; }
         std::vector<glm::vec3>& GetTangents() { return tangents_; }
         const std::vector<glm::vec3>& GetTangents() const { return tangents_; }
@@ -71,7 +76,6 @@ namespace cgu {
         std::vector<std::vector<glm::vec4>>& GetColors() { return colors_; }
         const std::vector<std::vector<glm::vec4>>& GetColors() const { return colors_; }
         std::vector<std::vector<unsigned int>>& GetIds() { return ids_; }
-        const std::vector<std::vector<unsigned int>>& GetIds() const { return ids_; }
         std::vector<unsigned int>& GetIndices() { return indices_; }
 
         void ReserveMesh(unsigned int maxUVChannels, unsigned int maxColorChannels, unsigned int numVertices, unsigned int numIndices, unsigned int numMaterials);
@@ -80,9 +84,6 @@ namespace cgu {
         void CreateIndexBuffer();
 
         void CreateSceneNodes(aiNode* rootNode);
-
-        void write(std::ofstream& ofs) const;
-        bool read(std::ifstream& ifs, TextureManager& texMan);
 
     private:
         using VersionableSerializerType = serializeHelper::VersionableSerializer<'M', 'E', 'S', 'H', 1001>;
