@@ -116,9 +116,13 @@ namespace cgu {
     void ScreenCaptureHelper::WriteStatistics()
     {
         const std::string statisticsFilename = "statistics.txt";
+        const std::string errorPlotFilename = "errorPlot.csv";
         std::ofstream statisticsOut(application_->GetConfig().evalDirectory + "/" + directory_ + "/" + statisticsFilename, std::ios::out);
+        std::ofstream errorPlotOut(application_->GetConfig().evalDirectory + "/" + directory_ + "/" + errorPlotFilename, std::ios::out);
 
+        errorPlotOut << "ID\tName\tFrameTime\tMaxError\tNumErrorPixels\tRMSErrorAvg\tRMSErrorAvgAll\tRMSErrorMax\tRMSErrorMaxAll\tPSNRAvg\tPSNRAvgAll\tPSNRMax\tPSNRMaxAll" << std::endl;
         try {
+            unsigned int id = 0;
             auto gtFileName = fileNames_.at("GT");
             eval::Image2DStatistics imageStats(gtFileName + ".png", application_);
             for (const auto& entry : fileNames_) {
@@ -137,6 +141,10 @@ namespace cgu {
                 statisticsOut << "PSNR (Avg,All):            " << diffResults.psnrAvgAll_ << std::endl;
                 statisticsOut << "PSNR (Max,ErrPixels):      " << diffResults.psnrMax_ << std::endl;
                 statisticsOut << "PSNR (Max,All):            " << diffResults.psnrMaxAll_ << std::endl << std::endl;
+
+                errorPlotOut << id << '\t' << entry.first << '\t' << frameTime.first / frameTime.second << '\t' << diffResults.errorMax_ << '\t' << diffResults.numErrorPixels_
+                    << '\t' << diffResults.errorRMSAvg_ << '\t' << diffResults.errorRMSAvgAll_ << '\t' << diffResults.errorRMSMax_ << '\t' << diffResults.errorRMSMaxAll_
+                    << '\t' << diffResults.psnrAvg_ << '\t' << diffResults.psnrAvgAll_ << '\t' << diffResults.psnrMax_ << '\t' << diffResults.psnrMaxAll_ << std::endl;
             }
         }
         catch (...) {
