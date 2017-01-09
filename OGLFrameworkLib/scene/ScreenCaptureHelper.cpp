@@ -145,6 +145,7 @@ namespace cgu {
                 errorPlotOut << id << '\t' << entry.first << '\t' << frameTime.first / frameTime.second << '\t' << diffResults.errorMax_ << '\t' << diffResults.numErrorPixels_
                     << '\t' << diffResults.errorRMSAvg_ << '\t' << diffResults.errorRMSAvgAll_ << '\t' << diffResults.errorRMSMax_ << '\t' << diffResults.errorRMSMaxAll_
                     << '\t' << diffResults.psnrAvg_ << '\t' << diffResults.psnrAvgAll_ << '\t' << diffResults.psnrMax_ << '\t' << diffResults.psnrMaxAll_ << std::endl;
+                id += 1;
             }
         }
         catch (...) {
