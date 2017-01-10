@@ -16,6 +16,7 @@ namespace cgu {
 
     ProfilingSystem::ProfilingSystem() :
         ticksPerSec_(0.0),
+        profilingSectionId_(0),
         application_(nullptr)
     {
     }
@@ -63,6 +64,11 @@ namespace cgu {
         profileOut_ << "Starting new profiling run (" << std::put_time(t, "%Y/%m/%d %H:%M:%S") << ") ..." << std::endl;
         profileOut_ << "--------------------------------------------------------------------------------" << std::endl;
         profileOut_.flush();
+
+        profileStatsOut_ = std::ofstream(application_->GetConfig().evalDirectory + "/" + evalFilename_ + ".csv", mode);
+        if (!newFile) profileStatsOut_ << std::endl << std::endl;
+        profileStatsOut_ << "ID\tSectionName\tTimings" << std::endl;
+        profileStatsOut_.flush();
     }
 
     void ProfilingSystem::StartSection(const std::string& sectionName)
@@ -89,5 +95,8 @@ namespace cgu {
         auto duration = (endTime - stackSectionStartTime) / ticksPerSec_;
         profileOut_ << sectionName << ": " << duration << std::endl;
         profileOut_.flush();
+
+        profileStatsOut_ << profilingSectionId_ << '\t' << sectionName << '\t' << duration << std::endl;
+        profileStatsOut_.flush();
     }
 }

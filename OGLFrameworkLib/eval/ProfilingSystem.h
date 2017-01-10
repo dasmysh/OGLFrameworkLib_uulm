@@ -53,6 +53,10 @@ namespace cgu {
         std::stack<ProfilingSection> sectionStack_;
         /** Holds the profiling out stream. */
         std::ofstream profileOut_;
+        /** Holds the evaluation statistics output stream. */
+        std::ofstream profileStatsOut_;
+        /** Holds a counter for profiling section ids. */
+        unsigned int profilingSectionId_;
 
         /** Holds the application object. */
         ApplicationBase* application_;
