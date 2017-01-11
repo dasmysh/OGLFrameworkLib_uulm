@@ -47,7 +47,10 @@ namespace cguMath {
 
     template<typename real, typename GEN, typename DIST = std::uniform_real_distribution<real>> glm::tvec3<real, glm::highp> SampleTriangleThirdBarycentric(GEN& randomGenerator)
     {
-        // Idea: x > y; x > z => solve for r1
+        // Idea: x > y (1); x > z (2) => solve for r1
+        // (1) -> sqrtR1 < 1 / (2 - r2)
+        // (2) -> sqrtR1 < 1 / (r2 + 1)
+        // => r2 > 0.5 --> (2) else (1)
         DIST r2dist;
         auto r2 = r2dist(randomGenerator);
         auto r1Max = (r2 > static_cast<real>(0.5)) ? (static_cast<real>(1.0) / (r2 + static_cast<real>(1.0))) : (static_cast<real>(1.0) / (static_cast<real>(2.0) - r2));
