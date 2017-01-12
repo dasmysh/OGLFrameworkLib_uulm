@@ -49,6 +49,7 @@ namespace cgu {
 
         const std::vector<glm::vec3>& GetNormals() const { return normals_; }
         const std::vector<std::vector<unsigned int>>& GetIds() const { return ids_; }
+        const std::vector<std::vector<glm::vec4>>& GetColors() const { return colors_; }
 
         template<class VTX>
         void GetVertices(std::vector<VTX>& vertices) const;
@@ -74,7 +75,6 @@ namespace cgu {
         std::vector<glm::vec3>& GetBinormals() { return binormals_; }
         const std::vector<glm::vec3>& GetBinormals() const { return binormals_; }
         std::vector<std::vector<glm::vec4>>& GetColors() { return colors_; }
-        const std::vector<std::vector<glm::vec4>>& GetColors() const { return colors_; }
         std::vector<std::vector<unsigned int>>& GetIds() { return ids_; }
         std::vector<unsigned int>& GetIndices() { return indices_; }
 
