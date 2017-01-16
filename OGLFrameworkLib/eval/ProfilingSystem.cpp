@@ -98,5 +98,6 @@ namespace cgu {
 
         profileStatsOut_ << profilingSectionId_ << '\t' << sectionName << '\t' << duration << std::endl;
         profileStatsOut_.flush();
+        profilingSectionId_ += 1;
     }
 }
